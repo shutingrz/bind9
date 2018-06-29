@@ -6014,6 +6014,23 @@ options {
 	    </varlistentry>
 
 	    <varlistentry>
+	      <term><command>prefetch-additional</command></term>
+	      <listitem>
+		<para>
+		  When answering a query for which there might have been
+		  additional section data (for example, address
+		  records associated with MX or SRV responses), but such
+		  data was not found in the cache, send a query for the
+		  data so it will be available in the cache the next time
+		  it is needed. The default is <userinput>yes</userinput>.
+		</para>
+		<para>
+		  Currently, only one prefetch query is initiated per query.
+		</para>
+	      </listitem>
+	    </varlistentry>
+
+	    <varlistentry>
 	      <term><command>recursion</command></term>
 	      <listitem>
 		<para>
@@ -6128,6 +6145,20 @@ options {
 		  do not send a correct COOKIE option may be limited
 		  to receiving smaller responses via the
 		  <command>nocookie-udp-size</command> option.
+		  The default is <userinput>yes</userinput>.
+		</para>
+	      </listitem>
+	    </varlistentry>
+
+	    <varlistentry>
+	      <term><command>srv-full-additional</command></term>
+	      <listitem>
+		<para>
+		  If <userinput>yes</userinput>, then when answering
+		  recursive queries for type SRV, the additional section
+		  will be fully populated before a response is returned.
+		  If <userinput>no</userinput>, then the additional section
+		  is only populated by data already present in the cache.
 		  The default is <userinput>yes</userinput>.
 		</para>
 	      </listitem>
