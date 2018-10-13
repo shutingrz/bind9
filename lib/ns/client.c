@@ -337,13 +337,15 @@ client_allocsendbuf(ns_client_t *client, isc_buffer_t *buffer,
 }
 
 static isc_result_t
-client_sendpkg(ns_client_t *client, isc_buffer_t *buffer) {
+client_sendpkg(ns_client_t *client, isc_buffer_t *buffer, bool lowac) {
 	isc_region_t r;
 
 	isc_buffer_usedregion(buffer, &r);
 
 	INSIST(client->handle != NULL);
-
+	if (lowac) {
+		dns_lowac_put(client->view->lowac, ISC_LIST_HEAD(client->message->sections[0]), (char*) r.base, r.length);
+	}
 	return (isc_nm_send(client->handle, &r, client_senddone, client));
 }
 
@@ -379,8 +381,8 @@ ns_client_sendraw(ns_client_t *client, dns_message_t *message) {
 	r.base[0] = (client->message->id >> 8) & 0xff;
 	r.base[1] = client->message->id & 0xff;
 
-	result = client_sendpkg(client, &buffer);
-	if (result == ISC_R_SUCCESS) {
+	result = client_sendpkg(client, &buffer, true);
+	if (result == ISC_R_SUCCESS)
 		return;
 	}
 
@@ -596,7 +598,7 @@ ns_client_send(ns_client_t *client) {
 		respsize = isc_buffer_usedlength(&tcpbuffer) - 2;
 
 		isc_nmhandle_ref(client->handle);
-		result = client_sendpkg(client, &tcpbuffer);
+		result = client_sendpkg(client, &tcpbuffer, true);
 		if (result != ISC_R_SUCCESS) {
 			/* We won't get a callback to clean it up */
 			isc_nmhandle_unref(client->handle);
@@ -633,7 +635,7 @@ ns_client_send(ns_client_t *client) {
 		respsize = isc_buffer_usedlength(&buffer);
 
 		isc_nmhandle_ref(client->handle);
-		result = client_sendpkg(client, &buffer);
+		result = client_sendpkg(client, &buffer, true);
 		if (result != ISC_R_SUCCESS) {
 			/* We won't get a callback to clean it up */
 			isc_nmhandle_unref(client->handle);
@@ -1604,6 +1606,47 @@ ns__client_put_cb(void *client0) {
 	}
 }
 
+static isc_result_t
+lowac_checksend(ns_client_t *client) {
+	isc_result_t result;
+	unsigned char *data;
+	isc_buffer_t buffer;
+	isc_buffer_t tcpbuffer;
+	unsigned char sendbuf[SEND_BUFFER_SIZE];
+	result = client_allocsendbuf(client, &buffer, &tcpbuffer, 0,
+				     sendbuf, &data);
+	if (result != ISC_R_SUCCESS) {
+		return (result);
+	}
+	int blen;
+	result = dns_lowac_get(client->view->lowac, ISC_LIST_HEAD(client->message->sections[0]), (char*) data, &blen, TCP_CLIENT(client));
+	if (result != ISC_R_SUCCESS) {
+		goto done;
+	}
+	if (TCP_CLIENT(client)) {
+	        data[2] = (client->message->id >> 8) & 0xff;
+	        data[3] = client->message->id & 0xff;
+	} else {
+	        data[0] = (client->message->id >> 8) & 0xff;
+	        data[1] = client->message->id & 0xff;
+	}
+	isc_buffer_add(&buffer, blen);
+	
+	if (client->sendcb != NULL) {
+		client->sendcb(&buffer);
+	} else if (TCP_CLIENT(client)) {
+		result = client_sendpkg(client, &buffer, false);
+	} else {
+		result = client_sendpkg(client, &buffer, false);
+	}
+done:
+	if (client->tcpbuf != NULL) {
+		isc_mem_put(client->mctx, client->tcpbuf, TCP_BUFFER_SIZE);
+		client->tcpbuf = NULL;
+	}
+	return result;
+}
+
 /*
  * Handle an incoming request event from the socket (UDP case)
  * or tcpmsg (TCP case).
@@ -1994,6 +2037,11 @@ ns__client_request(isc_nmhandle_t *handle, isc_region_t *region, void *arg) {
 	ns_client_log(client, NS_LOGCATEGORY_CLIENT,
 		      NS_LOGMODULE_CLIENT, ISC_LOG_DEBUG(5),
 		      "using view '%s'", client->view->name);
+
+	result = lowac_checksend(client);
+	if (result == ISC_R_SUCCESS) {
+		return;
+	}
 
 	/*
 	 * Check for a signature.  We log bad signatures regardless of
