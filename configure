@@ -1044,6 +1044,7 @@ with_gost
 with_eddsa
 with_aes
 enable_openssl_hash
+enable_fips_mode
 with_cc_alg
 with_lmdb
 with_libxml2
@@ -1744,6 +1745,7 @@ Optional Features:
   --enable-threads        enable multithreading
   --enable-native-pkcs11  use native PKCS11 for all crypto [default=no]
   --enable-openssl-hash   use OpenSSL for hash functions [default=no]
+  --enable-fips-mode      enable FIPS mode in OpenSSL library [default=no]
   --enable-largefile      64-bit file support
   --enable-backtrace      log stack backtrace on abort [default=yes]
   --enable-symtable       use internal symbol table for backtrace
@@ -17398,6 +17400,46 @@ _ACEOF
 fi
 done
 
+
+	#
+	# Check whether FIPS mode is available and whether we should enable it
+	#
+	# Check whether --enable-fips-mode was given.
+if test "${enable_fips_mode+set}" = set; then :
+  enableval=$enable_fips_mode;
+else
+  enable_fips_mode="no"
+fi
+
+
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to enable FIPS mode in OpenSSL library" >&5
+$as_echo_n "checking whether to enable FIPS mode in OpenSSL library... " >&6; }
+	case $enable_fips_mode in #(
+  yes) :
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+			for ac_func in FIPS_mode
+do :
+  ac_fn_c_check_func "$LINENO" "FIPS_mode" "ac_cv_func_FIPS_mode"
+if test "x$ac_cv_func_FIPS_mode" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_FIPS_MODE 1
+_ACEOF
+
+else
+  { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
+$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
+as_fn_error $? "OpenSSL FIPS mode requested but not available.
+See \`config.log' for more details" "$LINENO" 5; }
+fi
+done
+ ;; #(
+  no) :
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; } ;; #(
+  *) :
+     ;;
+esac
 
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for OpenSSL ECDSA support" >&5
 $as_echo_n "checking for OpenSSL ECDSA support... " >&6; }

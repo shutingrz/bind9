@@ -255,7 +255,7 @@ int sigwait(const unsigned int *set, int *sig);
 /* Define to 1 if you have the <fcntl.h> header file. */
 #undef HAVE_FCNTL_H
 
-/* Define if OpenSSL provides FIPS_mode() */
+/* Define to 1 if you have the `FIPS_mode' function. */
 #undef HAVE_FIPS_MODE
 
 /* Define to 1 if you have the `fseeko' function. */

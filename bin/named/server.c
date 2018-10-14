@@ -8737,6 +8737,11 @@ view_loaded(void *arg) {
 		   "forcing zone maintenance");
 
 	ns_os_started();
+#ifdef HAVE_FIPS_MODE
+	isc_log_write(ns_g_lctx, NS_LOGCATEGORY_GENERAL, NS_LOGMODULE_SERVER,
+		      ISC_LOG_NOTICE,
+		      "FIPS mode is %s", FIPS_mode() ? "enabled" : "disabled");
+#endif
 	isc_log_write(ns_g_lctx, NS_LOGCATEGORY_GENERAL, NS_LOGMODULE_SERVER,
 		      ISC_LOG_NOTICE, "running");
 

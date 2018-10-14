@@ -1730,6 +1730,21 @@ DSO_METHOD_dlfcn();
 
 	AC_CHECK_FUNCS([DH_get0_key ECDSA_SIG_get0 RSA_set0_key DSA_get0_pqg])
 
+	#
+	# Check whether FIPS mode is available and whether we should enable it
+	#
+	AC_ARG_ENABLE([fips-mode],
+		      [AS_HELP_STRING([--enable-fips-mode],
+				      [enable FIPS mode in OpenSSL library [default=no]])],
+		      [], [enable_fips_mode="no"])
+
+	AC_MSG_CHECKING([whether to enable FIPS mode in OpenSSL library])
+	AS_CASE([$enable_fips_mode],
+		[yes], [AC_MSG_RESULT([yes])
+			AC_CHECK_FUNCS([FIPS_mode],
+				       [], [AC_MSG_FAILURE([OpenSSL FIPS mode requested but not available.])])],
+		[no], [AC_MSG_RESULT([no])])
+
 	AC_MSG_CHECKING(for OpenSSL ECDSA support)
 	have_ecdsa=""
 	AC_TRY_RUN([
