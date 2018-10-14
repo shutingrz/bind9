@@ -611,6 +611,10 @@ view_flushanddetach(dns_view_t **viewp, bool flush) {
 		if (view->catzs != NULL) {
 			dns_catz_catzs_detach(&view->catzs);
 		}
+		if (view->lowac != NULL) {
+			dns_lowac_destroy(view->lowac);
+		}
+		done = all_done(view);
 		UNLOCK(&view->lock);
 
 		/* Need to detach zones outside view lock */
