@@ -641,6 +641,9 @@ AC_CHECK_FUNCS([pthread_setaffinity_np cpuset_setaffinity processor_bind sched_s
 AC_CHECK_FUNCS([pthread_setname_np pthread_set_name_np])
 AC_CHECK_HEADERS([pthread_np.h], [], [], [#include <pthread.h>])
 
+# libuv
+AC_SEARCH_LIBS([uv_run], [uv], [], AC_MSG_ERROR([The uv library was not found. Please install libuv!]))
+
 #
 # flockfile is usually provided by pthreads
 #
@@ -2817,6 +2820,7 @@ AC_CONFIG_FILES([
 	lib/isc/include/isc/platform.h
 	lib/isc/include/pk11/Makefile
 	lib/isc/include/pkcs11/Makefile
+	lib/isc/netmgr/Makefile
 	lib/isc/tests/Makefile
 	lib/isc/unix/Makefile
 	lib/isc/unix/include/Makefile
