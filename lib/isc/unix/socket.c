@@ -2780,10 +2780,8 @@ internal_accept(isc__socket_t *sock) {
 
 	INSIST(VALID_SOCKET(sock));
 
-	LOCK(&sock->lock);
 	if (sock->fd < 0) {
 		/* Socket is gone */
-		UNLOCK(&sock->lock);
 		return;
 	}
 	socket_log(sock, NULL, TRACE,
@@ -2802,7 +2800,6 @@ internal_accept(isc__socket_t *sock) {
 	dev = ISC_LIST_HEAD(sock->accept_list);
 	if (dev == NULL) {
 		unwatch_fd(thread, sock->fd, SELECT_POKE_ACCEPT);
-		UNLOCK(&sock->lock);
 		return;
 	}
 
@@ -2918,11 +2915,10 @@ internal_accept(isc__socket_t *sock) {
 	/*
 	 * Poke watcher if there are more pending accepts.
 	 */
-	if (ISC_LIST_EMPTY(sock->accept_list))
+	if (ISC_LIST_EMPTY(sock->accept_list)) {
 		unwatch_fd(thread, sock->fd,
 			   SELECT_POKE_ACCEPT);
-
-	UNLOCK(&sock->lock);
+	}
 
 	if (fd != -1) {
 		result = make_nonblock(fd);
@@ -3019,7 +3015,6 @@ internal_accept(isc__socket_t *sock) {
 
  soft_error:
 	watch_fd(thread, sock->fd, SELECT_POKE_ACCEPT);
-	UNLOCK(&sock->lock);
 
 	inc_stats(manager->stats, sock->statsindex[STATID_ACCEPTFAIL]);
 	return;
@@ -3031,10 +3026,8 @@ internal_recv(isc__socket_t *sock) {
 
 	INSIST(VALID_SOCKET(sock));
 
-	LOCK(&sock->lock);
 	if (sock->fd < 0) {
 		/* Socket is gone */
-		UNLOCK(&sock->lock);
 		return;
 	}
 	dev = ISC_LIST_HEAD(sock->recv_list);
@@ -3081,7 +3074,6 @@ internal_recv(isc__socket_t *sock) {
 		unwatch_fd(&sock->manager->threads[sock->threadid], sock->fd,
 			   SELECT_POKE_READ);
 	}
-	UNLOCK(&sock->lock);
 }
 
 static void
@@ -3090,10 +3082,8 @@ internal_send(isc__socket_t *sock) {
 
 	INSIST(VALID_SOCKET(sock));
 
-	LOCK(&sock->lock);
 	if (sock->fd < 0) {
 		/* Socket is gone */
-		UNLOCK(&sock->lock);
 		return;
 	}
 	dev = ISC_LIST_HEAD(sock->send_list);
@@ -3127,7 +3117,6 @@ internal_send(isc__socket_t *sock) {
 		unwatch_fd(&sock->manager->threads[sock->threadid],
 			   sock->fd, SELECT_POKE_WRITE);
 	}
-	UNLOCK(&sock->lock);
 }
 
 /*
@@ -3168,6 +3157,7 @@ process_fd(isc__socketthread_t *thread, int fd, bool readable,
 		return;
 	}
 
+	LOCK(&sock->lock);
 	if (readable) {
 		if (sock->listener) {
 			internal_accept(sock);
@@ -3183,6 +3173,7 @@ process_fd(isc__socketthread_t *thread, int fd, bool readable,
 			internal_send(sock);
 		}
 	}
+	UNLOCK(&sock->lock);
 
 	UNLOCK(&thread->fdlock[lockid]);
 	if (isc_refcount_decrement(&sock->references) == 1) {
@@ -4877,8 +4868,6 @@ internal_connect(isc__socket_t *sock) {
 
 	INSIST(VALID_SOCKET(sock));
 
-	LOCK(&sock->lock);
-
 	/*
 	 * Get the first item off the connect list.
 	 * If it is empty, unlock the socket and return.
@@ -4909,7 +4898,6 @@ internal_connect(isc__socket_t *sock) {
 		 */
 		if (SOFT_ERROR(errno) || errno == EINPROGRESS) {
 			sock->connecting = 1;
-			UNLOCK(&sock->lock);
 			return;
 		}
 
@@ -4962,8 +4950,6 @@ internal_connect(isc__socket_t *sock) {
  finish:
 	unwatch_fd(&sock->manager->threads[sock->threadid], sock->fd,
 		   SELECT_POKE_CONNECT);
-
-	UNLOCK(&sock->lock);
 }
 
 isc_result_t
