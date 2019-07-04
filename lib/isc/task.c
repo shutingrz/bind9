@@ -107,7 +107,7 @@ struct isc__task {
 	isc_eventlist_t			on_shutdown;
 	unsigned int			nevents;
 	unsigned int			quantum;
-	unsigned int			flags;
+	atomic_uint_fast32_t		flags;
 	isc_stdtime_t			now;
 	isc_time_t			tnow;
 	char				name[16];
@@ -123,7 +123,11 @@ struct isc__task {
 #define TASK_F_SHUTTINGDOWN		0x01
 #define TASK_F_PRIVILEGED		0x02
 
-#define TASK_SHUTTINGDOWN(t)		(((t)->flags & TASK_F_SHUTTINGDOWN) \
+#define TASK_SHUTTINGDOWN(t)		((atomic_load_relaxed(&(t)->flags)	\
+					  & TASK_F_SHUTTINGDOWN)		\
+					 != 0)
+#define TASK_PRIVILEGED(t)		((atomic_load_relaxed(&(t)->flags)	\
+					  & TASK_F_PRIVILEGED)			\
 					 != 0)
 
 #define TASK_MANAGER_MAGIC		ISC_MAGIC('T', 'S', 'K', 'M')
@@ -301,7 +305,7 @@ isc_task_create_bound(isc_taskmgr_t *manager0, unsigned int quantum,
 	INIT_LIST(task->on_shutdown);
 	task->nevents = 0;
 	task->quantum = (quantum > 0) ? quantum : manager->default_quantum;
-	task->flags = 0;
+	atomic_init(&task->flags, 0);
 	task->now = 0;
 	isc_time_settoepoch(&task->tnow);
 	memset(task->name, 0, sizeof(task->name));
@@ -362,9 +366,9 @@ task_shutdown(isc__task_t *task) {
 
 	XTRACE("task_shutdown");
 
-	if (! TASK_SHUTTINGDOWN(task)) {
+	if (!TASK_SHUTTINGDOWN(task)) {
 		XTRACE("shutting down");
-		task->flags |= TASK_F_SHUTTINGDOWN;
+		(void)atomic_fetch_or_relaxed(&task->flags, TASK_F_SHUTTINGDOWN);
 		if (task->state == task_state_idle) {
 			INSIST(EMPTY(task->events));
 			task->state = task_state_ready;
@@ -699,8 +703,6 @@ isc_task_purgeevent(isc_task_t *task0, isc_event_t *event) {
 
 	/*
 	 * Purge 'event' from a task's event queue.
-	 *
-	 * XXXRTH:  WARNING:  This method may be removed before beta.
 	 */
 
 	REQUIRE(VALID_TASK(task));
@@ -956,7 +958,7 @@ pop_readyq(isc__taskmgr_t *manager, int c) {
 static inline void
 push_readyq(isc__taskmgr_t *manager, isc__task_t *task, int c) {
 	ENQUEUE(manager->queues[c].ready_tasks, task, ready_link);
-	if ((task->flags & TASK_F_PRIVILEGED) != 0) {
+	if (TASK_PRIVILEGED(task)) {
 		ENQUEUE(manager->queues[c].ready_priority_tasks, task,
 			ready_priority_link);
 	}
@@ -1605,18 +1607,16 @@ isc_taskmgr_excltask(isc_taskmgr_t *mgr0, isc_task_t **taskp) {
 isc_result_t
 isc_task_beginexclusive(isc_task_t *task0) {
 	isc__task_t *task = (isc__task_t *)task0;
-	isc__taskmgr_t *manager;
-
 	REQUIRE(VALID_TASK(task));
 
-	manager = task->manager;
+	isc__taskmgr_t *manager = task->manager;
 
 	REQUIRE(task->state == task_state_running);
 
 	LOCK(&manager->excl_lock);
 	REQUIRE(task == task->manager->excl ||
 		(atomic_load_relaxed(&task->manager->exiting) &&
-				     task->manager->excl == NULL));
+		 task->manager->excl == NULL));
 	UNLOCK(&manager->excl_lock);
 
 	if (atomic_load_relaxed(&manager->exclusive_req) ||
@@ -1642,11 +1642,11 @@ isc_task_beginexclusive(isc_task_t *task0) {
 void
 isc_task_endexclusive(isc_task_t *task0) {
 	isc__task_t *task = (isc__task_t *)task0;
-	isc__taskmgr_t *manager;
-
 	REQUIRE(VALID_TASK(task));
+
+	isc__taskmgr_t *manager = task->manager;
+
 	REQUIRE(task->state == task_state_running);
-	manager = task->manager;
 
 	if (manager->nm != NULL) {
 		isc_nm_resume(manager->nm);
@@ -1663,8 +1663,9 @@ isc_task_endexclusive(isc_task_t *task0) {
 
 void
 isc_task_pause(isc_task_t *task0) {
-	REQUIRE(ISCAPI_TASK_VALID(task0));
 	isc__task_t *task = (isc__task_t *)task0;
+	REQUIRE(VALID_TASK(task));
+
 	isc__taskmgr_t *manager = task->manager;
 	bool running = false;
 
@@ -1693,7 +1694,7 @@ isc_task_unpause(isc_task_t *task0) {
 	isc__task_t *task = (isc__task_t *)task0;
 	bool was_idle = false;
 
-	REQUIRE(ISCAPI_TASK_VALID(task0));
+	REQUIRE(VALID_TASK(task));
 
 	LOCK(&task->lock);
 	INSIST(task->state == task_state_paused);
@@ -1712,49 +1713,49 @@ isc_task_unpause(isc_task_t *task0) {
 
 void
 isc_task_setprivilege(isc_task_t *task0, bool priv) {
-	REQUIRE(ISCAPI_TASK_VALID(task0));
 	isc__task_t *task = (isc__task_t *)task0;
+	REQUIRE(VALID_TASK(task));
 	isc__taskmgr_t *manager = task->manager;
 	bool oldpriv;
 
-	LOCK(&task->lock);
-	oldpriv = ((task->flags & TASK_F_PRIVILEGED) != 0);
-	if (priv)
-		task->flags |= TASK_F_PRIVILEGED;
-	else
-		task->flags &= ~TASK_F_PRIVILEGED;
-	UNLOCK(&task->lock);
+	if (priv) {
+		oldpriv = (atomic_fetch_or_relaxed(&task->flags,
+						   TASK_F_PRIVILEGED) &
+			   TASK_F_PRIVILEGED);
+	} else {
+		oldpriv = (atomic_fetch_and_relaxed(&task->flags,
+						    ~TASK_F_PRIVILEGED) &
+			   TASK_F_PRIVILEGED);
+	}
 
-	if (priv == oldpriv)
+	if (priv == oldpriv) {
 		return;
+	}
 
 	LOCK(&manager->queues[task->threadid].lock);
-	if (priv && ISC_LINK_LINKED(task, ready_link))
+	if (priv && ISC_LINK_LINKED(task, ready_link)) {
 		ENQUEUE(manager->queues[task->threadid].ready_priority_tasks,
 			task, ready_priority_link);
-	else if (!priv && ISC_LINK_LINKED(task, ready_priority_link))
+	} else if (!priv && ISC_LINK_LINKED(task, ready_priority_link)) {
 		DEQUEUE(manager->queues[task->threadid].ready_priority_tasks,
 			task, ready_priority_link);
+	}
 	UNLOCK(&manager->queues[task->threadid].lock);
 }
 
 bool
 isc_task_privilege(isc_task_t *task0) {
 	isc__task_t *task = (isc__task_t *)task0;
-	bool priv;
 	REQUIRE(VALID_TASK(task));
 
-	LOCK(&task->lock);
-	priv = ((task->flags & TASK_F_PRIVILEGED) != 0);
-	UNLOCK(&task->lock);
-	return (priv);
+	return (TASK_PRIVILEGED(task));
 }
 
 bool
 isc_task_exiting(isc_task_t *t) {
 	isc__task_t *task = (isc__task_t *)t;
-
 	REQUIRE(VALID_TASK(task));
+
 	return (TASK_SHUTTINGDOWN(task));
 }
 
