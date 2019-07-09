@@ -2281,31 +2281,18 @@ static void
 httpssvc(void **state) {
 	text_ok_t text_ok[] = {
 		TEXT_INVALID("1 . \"\""), TEXT_VALID("1 0 . \"\""),
-		TEXT_VALID("1 0 \"\" \"\""),
 		TEXT_VALID("1 2 svc.example.net. \"hq=\\\":8003\\\"\""),
 		TEXT_SENTINEL()
 	};
-	wire_ok_t wire_ok[] = {
-		/*
-		 * Too short
-		 */
-		WIRE_INVALID(0x00, 0x00, 0x00, 0x00, 0x00),
-		/*
-		 * Too extra data at end (svclen == 0x0000).
-		 */
-		WIRE_INVALID(0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00),
-		/*
-		 * SvcDomain/SvcDomainLen mismatch.
-		 */
-		WIRE_INVALID(0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00),
-		/*
-		 * Svc/SvcLen mismatch.
-		 */
-		WIRE_INVALID(0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0x00),
-		/*
-		 * Minimal length record.
-		 */
-		WIRE_VALID(0x00, 0x00, 0x00, 0x00, 0x00, 0x00), WIRE_SENTINEL()
+	wire_ok_t wire_ok[] = { /*
+				 * Too short
+				 */
+				WIRE_INVALID(0x00, 0x00, 0x00),
+				/*
+				 * Minimal length record.
+				 */
+				WIRE_VALID(0x00, 0x00, 0x00, 0x00),
+				WIRE_SENTINEL()
 	};
 
 	UNUSED(state);
