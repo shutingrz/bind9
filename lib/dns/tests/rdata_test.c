@@ -2279,11 +2279,11 @@ wks(void **state) {
 
 static void
 httpssvc(void **state) {
-	text_ok_t text_ok[] = {
-		TEXT_INVALID("1 . \"\""), TEXT_VALID("1 0 . \"\""),
-		TEXT_VALID("1 2 svc.example.net. \"hq=\\\":8003\\\"\""),
-		TEXT_SENTINEL()
-	};
+	text_ok_t text_ok[] = { TEXT_INVALID("1 . \"\""), TEXT_INVALID("0 0 ."),
+				TEXT_VALID("1 0 . \"\""),
+				TEXT_VALID("1 2 svc.example.net. "
+					   "\"hq=\\\":8003\\\"\""),
+				TEXT_SENTINEL() };
 	wire_ok_t wire_ok[] = { /*
 				 * Too short
 				 */
