@@ -25,7 +25,7 @@ k2=$("$KEYGEN" -q -a "$DEFAULT_ALGORITHM" -b "$DEFAULT_BITS" -n zone "$zone")
 
 cat "$infile" "$k1.key" "$k2.key" > "$zonefile"
 
-"$SIGNER" -P -3 - -A -o "$zone" -O full -f "$zonefile.unsplit" -e now-3600 -s now-7200 "$zonefile" > /dev/null 2>&1
+"$SIGNER" -P -3 - -A -o "$zone" -O full -f "$zonefile.unsplit" -e now-3600 -s now-7200 "$zonefile" > /dev/null
 awk 'BEGIN { r = ""; }
      $4 == "RRSIG" && $5 == "SOA" && r == "" { r = $0; next; }
      { print }

@@ -34,7 +34,7 @@ keyname=$("$KEYGEN" -q -a "$DEFAULT_ALGORITHM" -b "$DEFAULT_BITS" -n zone "$zone
 
 cat "$infile" "$keyname.key" > "$zonefile"
 
-"$SIGNER" -P -g -o "$zone" "$zonefile" > /dev/null 2>&1
+"$SIGNER" -P -g -o "$zone" "$zonefile" > /dev/null
 
 # Configure the resolving server with a staitc key.
 keyfile_to_static_keys "$keyname" > trusted.conf

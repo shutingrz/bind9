@@ -30,7 +30,7 @@ keyfile_to_initial_keys "$keyname" > revoked.conf
 # create a current set of keys, and sign the root zone
 "$KEYGEN" -q -a "$DEFAULT_ALGORITHM" -b "$DEFAULT_BITS" $zone > /dev/null
 "$KEYGEN" -q -a "$DEFAULT_ALGORITHM" -b "$DEFAULT_BITS" -f KSK $zone > /dev/null
-"$SIGNER" -S -o "$zone" -f "$zonefile" "$infile" > /dev/null 2>&1
+"$SIGNER" -S -o "$zone" -f "$zonefile" "$infile" > /dev/null
 
 keyname=$("$KEYGEN" -q -a "$DEFAULT_ALGORITHM" -b "$DEFAULT_BITS" -n zone ".")
 
