@@ -224,6 +224,8 @@ flush(dns_zone_t *zone, void *uap) {
 
 static void
 zt_destroy(dns_zt_t *zt) {
+	isc_refcount_destroy(&zt->references);
+	isc_refcount_destroy(&zt->loads_pending);
 	if (atomic_load_acquire(&zt->flush)) {
 		(void)dns_zt_apply(zt, false, NULL, flush, NULL);
 	}
@@ -289,7 +291,7 @@ isc_result_t
 dns_zt_asyncload(dns_zt_t *zt, bool newonly,
 		 dns_zt_allloaded_t alldone, void *arg) {
 	isc_result_t result;
-	int pending;
+	uint32_t loads_pending;
 
 	REQUIRE(VALID_ZT(zt));
 	zt->loadparams = isc_mem_get(zt->mctx, sizeof(struct zt_load_params));
@@ -302,16 +304,16 @@ dns_zt_asyncload(dns_zt_t *zt, bool newonly,
 
 	result = dns_zt_apply(zt, false, NULL, asyncload, zt);
 
-	pending = isc_refcount_current(&zt->loads_pending);
+	loads_pending = isc_refcount_current(&zt->loads_pending);
 
-	if (pending != 0) {
+	if (loads_pending != 0) {
 		zt->loaddone = alldone;
 		zt->loaddone_arg = arg;
 	}
 
 	RWUNLOCK(&zt->rwlock, isc_rwlocktype_write);
 
-	if (pending == 0) {
+	if (loads_pending == 0) {
 		isc_mem_put(zt->mctx, zt->loadparams, sizeof(struct zt_load_params));
 		zt->loadparams = NULL;
 		alldone(arg);
@@ -332,14 +334,13 @@ asyncload(dns_zone_t *zone, void *zt_) {
 	REQUIRE(zone != NULL);
 
 	isc_refcount_increment(&zt->references);
+	isc_refcount_increment0(&zt->loads_pending);
 
-	isc_refcount_increment(&zt->loads_pending);
-
-	result = dns_zone_asyncload(zone, zt->loadparams->newonly, *zt->loadparams->dl, zt);
+	result = dns_zone_asyncload(zone, zt->loadparams->newonly,
+				    *zt->loadparams->dl, zt);
 	if (result != ISC_R_SUCCESS) {
-
-		isc_refcount_decrement(&zt->references);
 		isc_refcount_decrement(&zt->loads_pending);
+		isc_refcount_decrement(&zt->references);
 	}
 	return (ISC_R_SUCCESS);
 }
@@ -530,25 +531,31 @@ static isc_result_t
 doneloading(dns_zt_t *zt, dns_zone_t *zone, isc_task_t *task) {
 	dns_zt_allloaded_t alldone = NULL;
 	void *arg = NULL;
+	uint_fast32_t loads_pending;
 
 	UNUSED(zone);
 	UNUSED(task);
 
 	REQUIRE(VALID_ZT(zt));
 
-	if (isc_refcount_decrement(&zt->loads_pending) == 1) {
+	RWLOCK(&zt->rwlock, isc_rwlocktype_write);
+	loads_pending = isc_refcount_decrement(&zt->loads_pending);
+	if (loads_pending == 1) {
 		alldone = zt->loaddone;
 		arg = zt->loaddone_arg;
 		zt->loaddone = NULL;
 		zt->loaddone_arg = NULL;
-		isc_mem_put(zt->mctx, zt->loadparams, sizeof(struct zt_load_params));
+		isc_mem_put(zt->mctx, zt->loadparams,
+			    sizeof(struct zt_load_params));
 		zt->loadparams = NULL;
 		if (alldone != NULL) {
 			alldone(arg);
 		}
 	}
+	RWUNLOCK(&zt->rwlock, isc_rwlocktype_write);
 
 	if (isc_refcount_decrement(&zt->references) == 1) {
+		INSIST(loads_pending == 1);
 		zt_destroy(zt);
 	}
 
