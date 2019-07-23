@@ -396,12 +396,14 @@ dns_keytable_find(dns_keytable_t *keytable, const dns_name_t *keyname,
 				  DNS_RBTFIND_NOOPTIONS, NULL, NULL);
 	if (result == ISC_R_SUCCESS) {
 		if (node->data != NULL) {
-			isc_refcount_increment0(&keytable->active_nodes);
-			dns_keynode_attach(node->data, keynodep);
-		} else
+			dns_keytable_attachkeynode(keytable, node->data,
+						   keynodep);
+		} else {
 			result = ISC_R_NOTFOUND;
-	} else if (result == DNS_R_PARTIALMATCH)
+		}
+	} else if (result == DNS_R_PARTIALMATCH) {
 		result = ISC_R_NOTFOUND;
+	}
 	RWUNLOCK(&keytable->rwlock, isc_rwlocktype_read);
 
 	return (result);
@@ -420,11 +422,11 @@ dns_keytable_nextkeynode(dns_keytable_t *keytable, dns_keynode_t *keynode,
 	REQUIRE(VALID_KEYNODE(keynode));
 	REQUIRE(nextnodep != NULL && *nextnodep == NULL);
 
-	if (keynode->next == NULL)
+	if (keynode->next == NULL) {
 		return (ISC_R_NOTFOUND);
+	}
 
-	dns_keynode_attach(keynode->next, nextnodep);
-	isc_refcount_increment(&keytable->active_nodes);
+	dns_keytable_attachkeynode(keytable, keynode->next, nextnodep);
 
 	return (ISC_R_SUCCESS);
 }
@@ -472,8 +474,7 @@ dns_keytable_findkeynode(dns_keytable_t *keytable, const dns_name_t *name,
 				break;
 		}
 		if (knode != NULL) {
-			isc_refcount_increment0(&keytable->active_nodes);
-			dns_keynode_attach(knode, keynodep);
+			dns_keytable_attachkeynode(keytable, knode, keynodep);
 		} else
 			result = DNS_R_PARTIALMATCH;
 	} else if (result == DNS_R_PARTIALMATCH)
@@ -510,9 +511,8 @@ dns_keytable_findnextkeynode(dns_keytable_t *keytable, dns_keynode_t *keynode,
 			break;
 	}
 	if (knode != NULL) {
-		isc_refcount_increment(&keytable->active_nodes);
+		dns_keytable_attachkeynode(keytable, knode, nextnodep);
 		result = ISC_R_SUCCESS;
-		dns_keynode_attach(knode, nextnodep);
 	} else
 		result = ISC_R_NOTFOUND;
 
@@ -559,7 +559,7 @@ dns_keytable_attachkeynode(dns_keytable_t *keytable, dns_keynode_t *source,
 	REQUIRE(VALID_KEYNODE(source));
 	REQUIRE(target != NULL && *target == NULL);
 
-	isc_refcount_increment(&keytable->active_nodes);
+	isc_refcount_increment0(&keytable->active_nodes);
 
 	dns_keynode_attach(source, target);
 }
@@ -574,7 +574,7 @@ dns_keytable_detachkeynode(dns_keytable_t *keytable, dns_keynode_t **keynodep)
 	REQUIRE(VALID_KEYTABLE(keytable));
 	REQUIRE(keynodep != NULL && VALID_KEYNODE(*keynodep));
 
-	INSIST(isc_refcount_decrement(&keytable->active_nodes) > 0);
+	isc_refcount_decrement(&keytable->active_nodes);
 	dns_keynode_detach(keytable->mctx, keynodep);
 }
 
@@ -732,7 +732,7 @@ dns_keytable_forall(dns_keytable_t *keytable,
 			break;
 		}
 	}
-	INSIST(isc_refcount_decrement(&keytable->active_nodes) > 0);
+	isc_refcount_decrement(&keytable->active_nodes);
 
    cleanup:
 	dns_rbtnodechain_invalidate(&chain);
