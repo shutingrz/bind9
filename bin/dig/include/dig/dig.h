@@ -88,31 +88,27 @@ typedef struct dig_searchlist dig_searchlist_t;
 
 /*% The dig_lookup structure */
 struct dig_lookup {
-	bool pending, /*%< Pending a successful answer */
-		waiting_connect, doing_xfr, ns_search_only, /*%< dig
-							     * +nssearch,
-							     * host -C */
-		identify, /*%< Append an "on server <foo>" message */
+	bool aaonly, accept_reply_unexpected_src, /*% print replies from
+						   * unexpected sources. */
+		adflag, badcookie, besteffort, cdflag, comments, dns64prefix,
+		dnssec, doing_xfr, done_as_is, ednsneg, expandaaaa, expire,
+		header_only, identify,	/*%< Append an "on server <foo>" message
+					 */
 		identify_previous_line, /*% Prepend a "Nameserver <foo>:"
 					 * message, with newline and tab */
-		ignore, recurse, aaonly, adflag, cdflag, raflag, tcflag, zflag,
-		trace,	    /*% dig +trace */
-		trace_root, /*% initial query for either +trace or +nssearch
-			     * */
-		tcp_mode, tcp_mode_set, comments, stats, section_question,
-		section_answer, section_authority, section_additional,
-		servfail_stops, new_search, need_search, done_as_is, besteffort,
-		dnssec, expire, sendcookie, seenbadcookie, badcookie,
-		nsid, /*% Name Server ID (RFC 5001) */
-		tcp_keepalive, header_only, ednsneg, mapped,
-		print_unknown_format, multiline, nottl, noclass, onesoa,
-		use_usec, nocrypto, ttlunits, idnin, idnout, expandaaaa, qr,
-		accept_reply_unexpected_src; /*%  print replies from
-					      * unexpected
-					      *   sources. */
-	char textname[MXNAME];		     /*% Name we're going to be
-					      * looking up */
-	char		 cmdline[MXNAME];
+		idnin, idnout, ignore, mapped, multiline, need_search,
+		new_search, noclass, nocrypto, nottl,
+		ns_search_only,	 /*%< dig +nssearch, host -C */
+		nsid,		 /*% Name Server ID (RFC 5001) */
+		onesoa, pending, /*%< Pending a successful answer */
+		print_unknown_format, qr, raflag, recurse, section_additional,
+		section_answer, section_authority, section_question,
+		seenbadcookie, sendcookie, servfail_stops, stats, tcflag,
+		tcp_keepalive, tcp_mode, tcp_mode_set, trace, /*% dig +trace */
+		trace_root, /*% initial query for either +trace or +nssearch */
+		ttlunits, use_usec, waiting_connect, zflag;
+	char textname[MXNAME]; /*% Name we're going to be looking up */
+	char cmdline[MXNAME];
 	dns_rdatatype_t	 rdtype;
 	dns_rdatatype_t	 qrdtype;
 	dns_rdataclass_t rdclass;
