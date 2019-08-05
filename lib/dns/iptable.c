@@ -31,7 +31,7 @@ dns_iptable_create(isc_mem_t *mctx, dns_iptable_t **target) {
 	tab = isc_mem_get(mctx, sizeof(*tab));
 	tab->mctx = NULL;
 	isc_mem_attach(mctx, &tab->mctx);
-	isc_refcount_init(&tab->refcount, 1);
+	isc_refcount_init(&tab->references, 1);
 	tab->radix = NULL;
 	tab->magic = DNS_IPTABLE_MAGIC;
 
@@ -138,7 +138,7 @@ dns_iptable_merge(dns_iptable_t *tab, dns_iptable_t *source, bool pos)
 void
 dns_iptable_attach(dns_iptable_t *source, dns_iptable_t **target) {
 	REQUIRE(DNS_IPTABLE_VALID(source));
-	isc_refcount_increment(&source->refcount);
+	isc_refcount_increment(&source->references);
 	*target = source;
 }
 
@@ -148,8 +148,8 @@ dns_iptable_detach(dns_iptable_t **tabp) {
 	dns_iptable_t *tab = *tabp;
 	*tabp = NULL;
 
-	if (isc_refcount_decrement(&tab->refcount) == 1) {
-		isc_refcount_destroy(&tab->refcount);
+	if (isc_refcount_decrement(&tab->references) == 1) {
+		isc_refcount_destroy(&tab->references);
 		destroy_iptable(tab);
 	}
 }

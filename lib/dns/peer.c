@@ -62,7 +62,7 @@ dns_peerlist_new(isc_mem_t *mem, dns_peerlist_t **list) {
 
 	ISC_LIST_INIT(l->elements);
 	l->mem = mem;
-	isc_refcount_init(&l->refs, 1);
+	isc_refcount_init(&l->references, 1);
 	l->magic = DNS_PEERLIST_MAGIC;
 
 	*list = l;
@@ -76,7 +76,7 @@ dns_peerlist_attach(dns_peerlist_t *source, dns_peerlist_t **target) {
 	REQUIRE(target != NULL);
 	REQUIRE(*target == NULL);
 
-	isc_refcount_increment(&source->refs);
+	isc_refcount_increment(&source->references);
 
 	*target = source;
 }
@@ -92,7 +92,7 @@ dns_peerlist_detach(dns_peerlist_t **list) {
 	plist = *list;
 	*list = NULL;
 
-	if (isc_refcount_decrement(&plist->refs) == 1) {
+	if (isc_refcount_decrement(&plist->references) == 1) {
 		peerlist_delete(&plist);
 	}
 }
@@ -107,7 +107,7 @@ peerlist_delete(dns_peerlist_t **list) {
 
 	l = *list;
 
-	isc_refcount_destroy(&l->refs);
+	isc_refcount_destroy(&l->references);
 
 	server = ISC_LIST_HEAD(l->elements);
 	while (server != NULL) {
@@ -225,7 +225,7 @@ dns_peer_newprefix(isc_mem_t *mem, const isc_netaddr_t *addr,
 		.transfer_format = dns_one_answer,
 	};
 
-	isc_refcount_init(&peer->refs,  1);
+	isc_refcount_init(&peer->references,  1);
 
 	ISC_LINK_INIT(peer, next);
 
@@ -240,7 +240,7 @@ dns_peer_attach(dns_peer_t *source, dns_peer_t **target) {
 	REQUIRE(target != NULL);
 	REQUIRE(*target == NULL);
 
-	isc_refcount_increment(&source->refs);
+	isc_refcount_increment(&source->references);
 
 	*target = source;
 }
@@ -256,7 +256,7 @@ dns_peer_detach(dns_peer_t **peer) {
 	p = *peer;
 	*peer = NULL;
 
-	if (isc_refcount_decrement(&p->refs) == 1) {
+	if (isc_refcount_decrement(&p->references) == 1) {
 		peer_delete(&p);
 	}
 }
@@ -271,7 +271,7 @@ peer_delete(dns_peer_t **peer) {
 
 	p = *peer;
 
-	isc_refcount_destroy(&p->refs);
+	isc_refcount_destroy(&p->references);
 
 	mem = p->mem;
 	p->mem = NULL;

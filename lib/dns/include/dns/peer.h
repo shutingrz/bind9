@@ -48,7 +48,7 @@
 
 struct dns_peerlist {
 	unsigned int		magic;
-	isc_refcount_t		refs;
+	isc_refcount_t		references;
 
 	isc_mem_t	       *mem;
 
@@ -57,7 +57,7 @@ struct dns_peerlist {
 
 struct dns_peer {
 	unsigned int		magic;
-	isc_refcount_t		refs;
+	isc_refcount_t		references;
 
 	isc_mem_t	       *mem;
 
