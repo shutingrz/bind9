@@ -246,8 +246,8 @@ if [ -x ${DELV} ] ; then
    ret=0
    echo_i "checking positive validation NSEC using dns_client ($n)"
    delv_with_opts @10.53.0.4 a a.example > delv.out$n || ret=1
-   grep "a.example..*10.0.0.1" delv.out$n > /dev/null || ret=1
-   grep "a.example..*.RRSIG.A [0-9][0-9]* 2 300 .*" delv.out$n > /dev/null || ret=1
+   grep "a\\.example\\..*10.0.0.1" delv.out$n > /dev/null || ret=1
+   grep "a\\.example\\..*.RRSIG.A [0-9][0-9]* 2 300 .*" delv.out$n > /dev/null || ret=1
    n=$((n+1))
    test "$ret" -eq 0 || echo_i "failed"
    status=$((status+ret))
@@ -269,8 +269,8 @@ if [ -x ${DELV} ] ; then
    ret=0
    echo_i "checking positive validation NSEC3 using dns_client ($n)"
    delv_with_opts @10.53.0.4 a a.nsec3.example > delv.out$n || ret=1
-   grep "a.nsec3.example..*10.0.0.1" delv.out$n > /dev/null || ret=1
-   grep "a.nsec3.example..*RRSIG.A [0-9][0-9]* 3 300.*" delv.out$n > /dev/null || ret=1
+   grep "a\\.nsec3\\.example\\..*10.0.0.1" delv.out$n > /dev/null || ret=1
+   grep "a\\.nsec3\\.example\\..*RRSIG.A [0-9][0-9]* 3 300.*" delv.out$n > /dev/null || ret=1
    n=$((n+1))
    test "$ret" -eq 0 || echo_i "failed"
    status=$((status+ret))
@@ -320,8 +320,8 @@ if [ -x ${DELV} ] ; then
    ret=0
    echo_i "checking positive wildcard validation NSEC using dns_client ($n)"
    delv_with_opts @10.53.0.4 a a.wild.example > delv.out$n || ret=1
-   grep "a.wild.example..*10.0.0.27" delv.out$n > /dev/null || ret=1
-   grep -E "a.wild.example..*RRSIG.A [0-9]+ 2 300.*" delv.out$n > /dev/null || ret=1
+   grep "a\\.wild\\.example\\..*10.0.0.27" delv.out$n > /dev/null || ret=1
+   grep -E "a\\.wild\\.example\\..*RRSIG.A [0-9]+ 2 300.*" delv.out$n > /dev/null || ret=1
    n=$((n+1))
    test "$ret" -eq 0 || echo_i "failed"
    status=$((status+ret))
@@ -362,8 +362,8 @@ if [ -x ${DELV} ] ; then
    ret=0
    echo_i "checking positive wildcard validation NSEC3 using dns_client ($n)"
    delv_with_opts @10.53.0.4 a a.wild.nsec3.example > delv.out$n || ret=1
-   grep -E "a.wild.nsec3.example..*10.0.0.6" delv.out$n > /dev/null || ret=1
-   grep -E "a.wild.nsec3.example..*RRSIG.A [0-9][0-9]* 3 300.*" delv.out$n > /dev/null || ret=1
+   grep -E "a\\.wild\\.nsec3\\.example\\..*10.0.0.6" delv.out$n > /dev/null || ret=1
+   grep -E "a\\.wild\\.nsec3\\.example\\..*RRSIG.A [0-9][0-9]* 3 300.*" delv.out$n > /dev/null || ret=1
    n=$((n+1))
    test "$ret" -eq 0 || echo_i "failed"
    status=$((status+ret))
@@ -388,8 +388,8 @@ if [ -x ${DELV} ] ; then
    ret=0
    echo_i "checking positive wildcard validation OPTOUT using dns_client ($n)"
    delv_with_opts @10.53.0.4 a a.wild.optout.example > delv.out$n || ret=1
-   grep "a.wild.optout.example..*10.0.0.6" delv.out$n > /dev/null || ret=1
-   grep "a.wild.optout.example..*RRSIG.A [0-9][0-9]* 3 300.*" delv.out$n > /dev/null || ret=1
+   grep "a\\.wild\\.optout\\.example\\..*10.0.0.6" delv.out$n > /dev/null || ret=1
+   grep "a\\.wild\\.optout\\.example\\..*RRSIG.A [0-9][0-9]* 3 300.*" delv.out$n > /dev/null || ret=1
    n=$((n+1))
    test "$ret" -eq 0 || echo_i "failed"
    status=$((status+ret))
@@ -616,7 +616,7 @@ if [ -x ${DELV} ] ; then
    ret=0
    echo_i "checking 1-server insecurity proof NSEC using dns_client ($n)"
    delv_with_opts @10.53.0.4 a a.insecure.example > delv.out$n || ret=1
-   grep "a.insecure.example..*10.0.0.1" delv.out$n > /dev/null || ret=1
+   grep "a\\.insecure\\.example\\..*10.0.0.1" delv.out$n > /dev/null || ret=1
    n=$((n+1))
    test "$ret" -eq 0 || echo_i "failed"
    status=$((status+ret))
@@ -638,7 +638,7 @@ if [ -x ${DELV} ] ; then
    ret=0
    echo_i "checking 1-server insecurity proof NSEC3 using dns_client ($n)"
    delv_with_opts @10.53.0.4 a a.insecure.nsec3.example > delv.out$n || ret=1
-   grep "a.insecure.nsec3.example..*10.0.0.1" delv.out$n > /dev/null || ret=1
+   grep "a\\.insecure\\.nsec3\\.example\\..*10.0.0.1" delv.out$n > /dev/null || ret=1
    n=$((n+1))
    test "$ret" -eq 0 || echo_i "failed"
    status=$((status+ret))
@@ -660,7 +660,7 @@ if [ -x ${DELV} ] ; then
    ret=0
    echo_i "checking 1-server insecurity proof OPTOUT using dns_client ($n)"
    delv_with_opts @10.53.0.4 a a.insecure.optout.example > delv.out$n || ret=1
-   grep "a.insecure.optout.example..*10.0.0.1" delv.out$n > /dev/null || ret=1
+   grep "a\\.insecure\\.optout\\.example\\..*10.0.0.1" delv.out$n > /dev/null || ret=1
    n=$((n+1))
    test "$ret" -eq 0 || echo_i "failed"
    status=$((status+ret))
@@ -2016,7 +2016,7 @@ rndccmd 10.53.0.4 nta -d > rndc.out.ns4.test$n.1
 grep "badds.example/_default: expiry" rndc.out.ns4.test$n.1 > /dev/null || ret=1
 dig_with_opts a.badds.example. a @10.53.0.4 > dig.out.ns4.test$n.1 || ret=1
 grep "status: SERVFAIL" dig.out.ns4.test$n.1 > /dev/null && ret=1
-grep "^a.badds.example." dig.out.ns4.test$n.1 > /dev/null || ret=1
+grep "^a\\.badds\\.example\\." dig.out.ns4.test$n.1 > /dev/null || ret=1
 rndccmd 10.53.0.4 nta -remove badds.example > rndc.out.ns4.test$n.2
 grep "Negative trust anchor removed: badds.example/_default" rndc.out.ns4.test$n.2 > /dev/null || ret=1
 rndccmd 10.53.0.4 nta -d > rndc.out.ns4.test$n.3
@@ -3730,9 +3730,9 @@ status=$((status+ret))
 echo_i "check that DNSKEY and other occluded data are excluded from the delegating bitmap ($n)"
 ret=0
 dig_with_opts axfr occluded.example @10.53.0.3 > dig.out.ns3.test$n || ret=1
-grep "^delegation.occluded.example..*NSEC.*NS KEY DS RRSIG NSEC$" dig.out.ns3.test$n > /dev/null || ret=1
-grep "^delegation.occluded.example..*DNSKEY.*" dig.out.ns3.test$n > /dev/null || ret=1
-grep "^delegation.occluded.example..*AAAA.*" dig.out.ns3.test$n > /dev/null || ret=1
+grep "^delegation\\.occluded\\.example\\..*NSEC.*NS KEY DS RRSIG NSEC$" dig.out.ns3.test$n > /dev/null || ret=1
+grep "^delegation\\.occluded\\.example\\..*DNSKEY.*" dig.out.ns3.test$n > /dev/null || ret=1
+grep "^delegation\\.occluded\\.example\\..*AAAA.*" dig.out.ns3.test$n > /dev/null || ret=1
 n=$((n+1))
 test "$ret" -eq 0 || echo_i "failed"
 status=$((status+ret))
