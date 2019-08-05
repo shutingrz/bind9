@@ -534,7 +534,7 @@ struct dns_resolver {
 };
 
 #define RES_MAGIC			ISC_MAGIC('R', 'e', 's', '!')
-#define VALID_RESOLVER(res)		ISC_MAGIC_VALID(res, RES_MAGIC)
+#define VALID_RESOLVER(res)		ISC_OBJECT_VALID(res, RES_MAGIC)
 
 /*%
  * Private addrinfo flags.  These must not conflict with DNS_FETCHOPT_NOEDNS0

@@ -50,7 +50,7 @@
 #include <dst/dst.h>
 
 #define DNS_CLIENT_MAGIC		ISC_MAGIC('D', 'N', 'S', 'c')
-#define DNS_CLIENT_VALID(c)		ISC_MAGIC_VALID(c, DNS_CLIENT_MAGIC)
+#define DNS_CLIENT_VALID(c)		ISC_OBJECT_VALID(c, DNS_CLIENT_MAGIC)
 
 #define RCTX_MAGIC			ISC_MAGIC('R', 'c', 't', 'x')
 #define RCTX_VALID(c)			ISC_MAGIC_VALID(c, RCTX_MAGIC)
