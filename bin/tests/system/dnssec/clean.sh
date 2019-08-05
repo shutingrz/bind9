@@ -24,9 +24,10 @@ rm -f ./canonical?.*
 rm -f ./delv.out*
 rm -f ./delve.out*
 rm -f ./dig.out.*
-rm -f ./dsfromkey.out.*
-rm -f ./keygen.err
+rm -f ./dsfromkey.out.* ./dsfromkey.err.*
+rm -f ./keygen.out.* ./keygen.err ./keygen.err.* ./*/keygen.err.*
 rm -f ./dnssectools.out*
+rm -f ./dnssectools.err*
 rm -f ./named.secroots.test*
 rm -f ./nosign.before
 rm -f ./ns*/*.nta
@@ -106,5 +107,5 @@ rm -f ./signer/general/dsset*
 rm -f ./signer/general/signed.zone
 rm -f ./signer/general/signer.out.*
 rm -f ./signer/nsec3param.out
-rm -f ./signer/signer.out.*
+rm -f ./signer.out.* ./signer/signer.out.* ./signer.err.* ./*/signer.err.* ./*/*/signer.err.*
 rm -f ./signing.out*

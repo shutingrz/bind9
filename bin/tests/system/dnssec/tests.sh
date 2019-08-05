@@ -40,6 +40,55 @@ rndccmd() {
     "$RNDC" -c "$SYSTEMTESTTOP/common/rndc.conf" -p "$CONTROLPORT" -s "$@"
 }
 
+cleanup_dnssec_signzone_output() (
+    grep -Ev "^(Verifying the zone using the following algorithms|Zone fully signed|Algorithm|[[:space:]]]+ZSKs|Signatures generated|Signatures retained|Signatures dropped|Signatures successfully verified|Signatures unsuccessfully verified|Signing time in seconds|Signatures per second|Runtime in seconds):"
+    return 0
+)
+
+dnssec_signzone_errmsg() (
+    r=0
+    msg="$1"
+    shift
+    "$SIGNER" "$@" 2> signer.err.$n || r=$?
+    if test -n "$msg" && ! grep -E -q "$msg" signer.err.$n;
+    then
+	echo_i "Expected $SIGNER error message '$msg' not found." >&2
+	exit 1
+    fi
+    if test -n "$msg"; then
+	cleanup_dnssec_signzone_output signer.err.$n | grep -E -v "$msg" >&2 || true
+    else
+	cleanup_dnssec_signzone_output signer.err.$n >&2
+    fi
+    exit "$r"
+)
+
+dnssec_signzone() {
+    dnssec_signzone_errmsg "" "$@"
+}
+
+dnssec_keygen_errmsg() (
+    r=0
+    msg="$1"
+    shift
+    "$KEYGEN" "$@" 2> keygen.err.$n || r=$?
+    if test -n "$msg" && ! grep -E -q "$msg" keygen.err.$n;
+    then
+	echo_i "Expected $KEYGEN error message '$msg' not found." >&2
+	exit 1
+    fi
+    if test -n "$msg"; then
+	grep -E -v "$msg" keygen.err.$n >&2 || true
+    else
+	cat < keygen.err.$n >&2
+    fi
+    exit "$r"
+)
+
+dnssec_keygen() {
+    dnssec_keygen_errmsg "" "$@"
+}
+
 # TODO: Move wait_for_log and loadkeys_on to conf.sh.common
 wait_for_log() {
         msg=$1
@@ -1273,7 +1322,7 @@ ret=0
 (
 cd signer/general || exit 1
 rm -f signed.zone
-$SIGNER -f signed.zone -o example.com. test1.zone > signer.out.$n
+dnssec_signzone -f signed.zone -o example.com. test1.zone > signer.out.$n
 test -f signed.zone
 ) || ret=1
 n=$((n+1))
@@ -1285,7 +1334,8 @@ ret=0
 (
 cd signer/general || exit 1
 rm -f signed.zone
-$SIGNER -f signed.zone -o example.com. test2.zone > signer.out.$n
+msg="No self-signed KSK DNSKEY found"
+dnssec_signzone_errmsg "$msg" -f signed.zone -o example.com. test2.zone > signer.out.$n 2> signer.err.$n
 test -f signed.zone
 ) && ret=1
 n=$((n+1))
@@ -1297,7 +1347,8 @@ ret=0
 (
 cd signer/general || exit 1
 rm -f signed.zone
-$SIGNER -f signed.zone -o example.com. test3.zone > signer.out.$n
+msg="fatal: No non-KSK DNSKEY found; supply a ZSK or use '-z'"
+dnssec_signzone_errmsg "$msg" -f signed.zone -o example.com. test3.zone > signer.out.$n
 test -f signed.zone
 ) && ret=1
 n=$((n+1))
@@ -1309,7 +1360,8 @@ ret=0
 (
 cd signer/general || exit 1
 rm -f signed.zone
-$SIGNER -f signed.zone -o example.com. test4.zone > signer.out.$n
+msg="warning: dns_dnssec_keylistfromrdataset: error reading .*: file not found"
+dnssec_signzone_errmsg "$msg" -f signed.zone -o example.com. test4.zone > signer.out.$n
 test -f signed.zone
 ) || ret=1
 n=$((n+1))
@@ -1321,7 +1373,8 @@ ret=0
 (
 cd signer/general || exit 1
 rm -f signed.zone
-$SIGNER -f signed.zone -o example.com. test5.zone > signer.out.$n
+msg="dnssec-signzone: warning: dns_dnssec_keylistfromrdataset: error reading"
+dnssec_signzone_errmsg "$msg" -f signed.zone -o example.com. test5.zone > signer.out.$n
 test -f signed.zone
 ) || ret=1
 n=$((n+1))
@@ -1333,7 +1386,8 @@ ret=0
 (
 cd signer/general || exit 1
 rm -f signed.zone
-$SIGNER -f signed.zone -o example.com. test6.zone > signer.out.$n
+msg="warning: dns_dnssec_keylistfromrdataset: error reading .*: file not found"
+dnssec_signzone_errmsg "$msg" -f signed.zone -o example.com. test6.zone > signer.out.$n
 test -f signed.zone
 ) || ret=1
 n=$((n+1))
@@ -1345,7 +1399,8 @@ ret=0
 (
 cd signer/general || exit 1
 rm -f signed.zone
-$SIGNER -f signed.zone -o example.com. test7.zone > signer.out.$n
+msg="warning: dns_dnssec_keylistfromrdataset: error reading .*: file not found|DNSKEY is not signed"
+dnssec_signzone_errmsg "$msg" -f signed.zone -o example.com. test7.zone > signer.out.$n
 test -f signed.zone
 ) && ret=1
 n=$((n+1))
@@ -1357,7 +1412,8 @@ ret=0
 (
 cd signer/general || exit 1
 rm -f signed.zone
-$SIGNER -f signed.zone -o example.com. test8.zone > signer.out.$n
+msg="warning: dns_dnssec_keylistfromrdataset: error reading .*: file not found|SOA is not signed"
+dnssec_signzone_errmsg "$msg" -f signed.zone -o example.com. test8.zone > signer.out.$n
 test -f signed.zone
 ) && ret=1
 n=$((n+1))
@@ -1370,8 +1426,8 @@ zone=example
 # If dnssec-keygen fails, the test script will exit immediately.  Prevent that
 # from happening, and also trigger a test failure if dnssec-keygen unexpectedly
 # succeeds, by using "&& ret=1".
-$KEYGEN -a 255 $zone > dnssectools.out.test$n 2>&1 && ret=1
-grep -q "unsupported algorithm: 255" dnssectools.out.test$n || ret=1
+msg="unsupported algorithm: 255"
+dnssec_keygen_errmsg "$msg" -a 255 $zone > keygen.out.$n && ret=1
 n=$((n+1))
 test "$ret" -eq 0 || echo_i "failed"
 status=$((status+ret))
@@ -1380,7 +1436,7 @@ echo_i "checking that a DS record cannot be generated for a key using an unsuppo
 ret=0
 zone=example
 # Fake an unsupported algorithm key
-unsupportedkey=$("$KEYGEN" -q -a "$DEFAULT_ALGORITHM" -b "$DEFAULT_BITS" -n zone "$zone")
+unsupportedkey=$(dnssec_keygen -q -a "$DEFAULT_ALGORITHM" -b "$DEFAULT_BITS" -n zone "$zone")
 awk '$3 == "DNSKEY" { $6 = 255 } { print }' ${unsupportedkey}.key > ${unsupportedkey}.tmp
 mv ${unsupportedkey}.tmp ${unsupportedkey}.key
 # If dnssec-dsfromkey fails, the test script will exit immediately.  Prevent
@@ -1399,8 +1455,8 @@ cat signer/example.db.in "${unsupportedkey}.key" > signer/example.db
 # If dnssec-signzone fails, the test script will exit immediately.  Prevent that
 # from happening, and also trigger a test failure if dnssec-signzone
 # unexpectedly succeeds, by using "&& ret=1".
-$SIGNER -o example signer/example.db ${unsupportedkey} > dnssectools.out.test$n 2> dnssectools.err.test$n && ret=1
-grep -q "algorithm is unsupported" dnssectools.err.test$n || ret=1
+msg="algorithm is unsupported"
+dnssec_signzone_errmsg "$msg" -o example signer/example.db "${unsupportedkey}" > signer.out.$n && ret=1
 n=$((n+1))
 test "$ret" -eq 0 || echo_i "failed"
 status=$((status+ret))
@@ -1423,12 +1479,12 @@ get_rsasha1_key_ids_from_sigs() {
 echo_i "checking that we can sign a zone with out-of-zone records ($n)"
 ret=0
 zone=example
-key1=$($KEYGEN -K signer -q -a NSEC3RSASHA1 -b 1024 -n zone $zone)
-key2=$($KEYGEN -K signer -q -f KSK -a NSEC3RSASHA1 -b 1024 -n zone $zone)
+key1=$(dnssec_keygen -K signer -q -a NSEC3RSASHA1 -b 1024 -n zone $zone)
+key2=$(dnssec_keygen -K signer -q -f KSK -a NSEC3RSASHA1 -b 1024 -n zone $zone)
 (
 cd signer || exit 1
 cat example.db.in "$key1.key" "$key2.key" > example.db
-$SIGNER -o example -f example.db example.db > /dev/null
+dnssec_signzone -o example -f example.db example.db > /dev/null
 ) || ret=1
 n=$((n+1))
 test "$ret" -eq 0 || echo_i "failed"
@@ -1437,12 +1493,12 @@ status=$((status+ret))
 echo_i "checking that we can sign a zone (NSEC3) with out-of-zone records ($n)"
 ret=0
 zone=example
-key1=$($KEYGEN -K signer -q -a NSEC3RSASHA1 -b 1024 -n zone $zone)
-key2=$($KEYGEN -K signer -q -f KSK -a NSEC3RSASHA1 -b 1024 -n zone $zone)
+key1=$(dnssec_keygen -K signer -q -a NSEC3RSASHA1 -b 1024 -n zone $zone)
+key2=$(dnssec_keygen -K signer -q -f KSK -a NSEC3RSASHA1 -b 1024 -n zone $zone)
 (
 cd signer || exit 1
 cat example.db.in "$key1.key" "$key2.key" > example.db
-$SIGNER -3 - -H 10 -o example -f example.db example.db > /dev/null
+dnssec_signzone -3 - -H 10 -o example -f example.db example.db > /dev/null
 awk '/^IQF9LQTLK/ {
 		printf("%s", $0);
 		while (!index($0, ")")) {
@@ -1453,7 +1509,7 @@ awk '/^IQF9LQTLK/ {
 		printf("\n");
 	}' example.db | sed 's/[ 	][ 	]*/ /g' > nsec3param.out
 
-grep "IQF9LQTLKKNFK0KVIFELRAK4IC4QLTMG.example. 0 IN NSEC3 1 0 10 - ( IQF9LQTLKKNFK0KVIFELRAK4IC4QLTMG A NS SOA RRSIG DNSKEY NSEC3PARAM )" nsec3param.out > /dev/null
+grep -F "IQF9LQTLKKNFK0KVIFELRAK4IC4QLTMG.example. 0 IN NSEC3 1 0 10 - ( IQF9LQTLKKNFK0KVIFELRAK4IC4QLTMG A NS SOA RRSIG DNSKEY NSEC3PARAM )" nsec3param.out > /dev/null
 ) || ret=1
 n=$((n+1))
 test "$ret" -eq 0 || echo_i "failed"
@@ -1462,13 +1518,13 @@ status=$((status+ret))
 echo_i "checking NSEC3 signing with empty nonterminals above a delegation ($n)"
 ret=0
 zone=example
-key1=$($KEYGEN -K signer -q -a NSEC3RSASHA1 -b 1024 -n zone $zone)
-key2=$($KEYGEN -K signer -q -f KSK -a NSEC3RSASHA1 -b 1024 -n zone $zone)
+key1=$(dnssec_keygen -K signer -q -a NSEC3RSASHA1 -b 1024 -n zone $zone)
+key2=$(dnssec_keygen -K signer -q -f KSK -a NSEC3RSASHA1 -b 1024 -n zone $zone)
 (
 cd signer || exit 1
 cat example.db.in "$key1.key" "$key2.key" > example3.db
 echo "some.empty.nonterminal.nodes.example 60 IN NS ns.example.tld" >> example3.db
-$SIGNER -3 - -A -H 10 -o example -f example3.db example3.db > /dev/null
+dnssec_signzone -3 - -A -H 10 -o example -f example3.db example3.db > /dev/null
 awk '/^IQF9LQTLK/ {
 		printf("%s", $0);
 		while (!index($0, ")")) {
@@ -1479,7 +1535,7 @@ awk '/^IQF9LQTLK/ {
 		printf("\n");
 	}' example.db | sed 's/[ 	][ 	]*/ /g' > nsec3param.out
 
-grep "IQF9LQTLKKNFK0KVIFELRAK4IC4QLTMG.example. 0 IN NSEC3 1 0 10 - ( IQF9LQTLKKNFK0KVIFELRAK4IC4QLTMG A NS SOA RRSIG DNSKEY NSEC3PARAM )" nsec3param.out > /dev/null
+grep -F "IQF9LQTLKKNFK0KVIFELRAK4IC4QLTMG.example. 0 IN NSEC3 1 0 10 - ( IQF9LQTLKKNFK0KVIFELRAK4IC4QLTMG A NS SOA RRSIG DNSKEY NSEC3PARAM )" nsec3param.out > /dev/null
 ) || ret=1
 n=$((n+1))
 test "$ret" -eq 0 || echo_i "failed"
@@ -1488,14 +1544,14 @@ status=$((status+ret))
 echo_i "checking that dnsssec-signzone updates originalttl on ttl changes ($n)"
 ret=0
 zone=example
-key1=$($KEYGEN -K signer -q -a RSASHA1 -b 1024 -n zone $zone)
-key2=$($KEYGEN -K signer -q -f KSK -a RSASHA1 -b 1024 -n zone $zone)
+key1=$(dnssec_keygen -K signer -q -a RSASHA1 -b 1024 -n zone $zone)
+key2=$(dnssec_keygen -K signer -q -f KSK -a RSASHA1 -b 1024 -n zone $zone)
 (
 cd signer || exit 1
 cat example.db.in "$key1.key" "$key2.key" > example.db
-$SIGNER -o example -f example.db.before example.db > /dev/null
+dnssec_signzone -o example -f example.db.before example.db > /dev/null
 sed 's/60.IN.SOA./50 IN SOA /' example.db.before > example.db.changed
-$SIGNER -o example -f example.db.after example.db.changed > /dev/null
+dnssec_signzone -o example -f example.db.after example.db.changed > /dev/null
 )
 grep "SOA 5 1 50" signer/example.db.after > /dev/null || ret=1
 n=$((n+1))
@@ -1505,20 +1561,20 @@ status=$((status+ret))
 echo_i "checking dnssec-signzone keeps valid signatures from removed keys ($n)"
 ret=0
 zone=example
-key1=$($KEYGEN -K signer -q -f KSK -a RSASHA1 -b 1024 -n zone $zone)
-key2=$($KEYGEN -K signer -q -a RSASHA1 -b 1024 -n zone $zone)
+key1=$(dnssec_keygen -K signer -q -f KSK -a RSASHA1 -b 1024 -n zone $zone)
+key2=$(dnssec_keygen -K signer -q -a RSASHA1 -b 1024 -n zone $zone)
 keyid2=$(keyfile_to_key_id "$key2")
-key3=$($KEYGEN -K signer -q -a RSASHA1 -b 1024 -n zone $zone)
+key3=$(dnssec_keygen -K signer -q -a RSASHA1 -b 1024 -n zone $zone)
 keyid3=$(keyfile_to_key_id "$key3")
 (
 cd signer || exit 1
 cat example.db.in "$key1.key" "$key2.key" > example.db
-$SIGNER -D -o example example.db > /dev/null
+dnssec_signzone -D -o example example.db > /dev/null
 
 # now switch out key2 for key3 and resign the zone
 cat example.db.in "$key1.key" "$key3.key" > example.db
 echo "\$INCLUDE \"example.db.signed\"" >> example.db
-$SIGNER -D -o example example.db > /dev/null
+dnssec_signzone -D -o example example.db > /dev/null
 ) || ret=1
 get_rsasha1_key_ids_from_sigs | grep "^$keyid2$" > /dev/null || ret=1
 get_rsasha1_key_ids_from_sigs | grep "^$keyid3$" > /dev/null || ret=1
@@ -1530,7 +1586,7 @@ echo_i "checking dnssec-signzone -R purges signatures from removed keys ($n)"
 ret=0
 (
 cd signer || exit 1
-$SIGNER -RD -o example example.db > /dev/null
+dnssec_signzone -RD -o example example.db > /dev/null
 ) || ret=1
 get_rsasha1_key_ids_from_sigs | grep "^$keyid2$" > /dev/null && ret=1
 get_rsasha1_key_ids_from_sigs | grep "^$keyid3$" > /dev/null || ret=1
@@ -1544,11 +1600,11 @@ zone=example
 (
 cd signer || exit 1
 cp -f example.db.in example.db
-$SIGNER -SD -o example example.db > /dev/null
+dnssec_signzone -SD -o example example.db > /dev/null
 echo "\$INCLUDE \"example.db.signed\"" >> example.db
 # now retire key2 and resign the zone
 $SETTIME -I now "$key2" > /dev/null 2>&1
-$SIGNER -SD -o example example.db > /dev/null
+dnssec_signzone -SD -o example example.db > /dev/null
 ) || ret=1
 get_rsasha1_key_ids_from_sigs | grep "^$keyid2$" > /dev/null || ret=1
 get_rsasha1_key_ids_from_sigs | grep "^$keyid3$" > /dev/null || ret=1
@@ -1560,7 +1616,7 @@ echo_i "checking dnssec-signzone -Q purges signatures from inactive keys ($n)"
 ret=0
 (
 cd signer || exit 1
-$SIGNER -SDQ -o example example.db > /dev/null
+dnssec_signzone -SDQ -o example example.db > /dev/null
 ) || ret=1
 get_rsasha1_key_ids_from_sigs | grep "^$keyid2$" > /dev/null && ret=1
 get_rsasha1_key_ids_from_sigs | grep "^$keyid3$" > /dev/null || ret=1
@@ -1572,14 +1628,14 @@ echo_i "checking dnssec-signzone retains unexpired signatures ($n)"
 ret=0
 (
 cd signer || exit 1
-$SIGNER -Sxt -o example example.db > signer.out.1
-$SIGNER -Sxt -o example -f example.db.signed example.db.signed > signer.out.2
+dnssec_signzone -Sxt -o example example.db > signer.out.1.$n
+dnssec_signzone -Sxt -o example -f example.db.signed example.db.signed > signer.out.2.$n
 ) || ret=1
-gen1=$(awk '/generated/ {print $3}' signer/signer.out.1)
-retain1=$(awk '/retained/ {print $3}' signer/signer.out.1)
-gen2=$(awk '/generated/ {print $3}' signer/signer.out.2)
-retain2=$(awk '/retained/ {print $3}' signer/signer.out.2)
-drop2=$(awk '/dropped/ {print $3}' signer/signer.out.2)
+gen1=$(awk '/generated/ {print $3}' signer/signer.out.1.$n)
+retain1=$(awk '/retained/ {print $3}' signer/signer.out.1.$n)
+gen2=$(awk '/generated/ {print $3}' signer/signer.out.2.$n)
+retain2=$(awk '/retained/ {print $3}' signer/signer.out.2.$n)
+drop2=$(awk '/dropped/ {print $3}' signer/signer.out.2.$n)
 [ "$retain2" -eq $((gen1+retain1)) ] || ret=1
 [ "$gen2" -eq 0 ] || ret=1
 [ "$drop2" -eq 0 ] || ret=1
@@ -1600,7 +1656,7 @@ ns.sub2.example. IN A 10.53.0.2
 EOF
 echo "\$INCLUDE \"example2.db.signed\"" >> example2.db
 touch example2.db.signed
-$SIGNER -DS -O full -f example2.db.signed -o example example2.db > /dev/null
+dnssec_signzone -DS -O full -f example2.db.signed -o example example2.db > /dev/null
 ) || ret=1
 grep "^sub1\\.example\\..*RRSIG[ 	]A[ 	]" signer/example2.db.signed > /dev/null 2>&1 || ret=1
 grep "^ns\\.sub2\\.example\\..*RRSIG[ 	]A[ 	]" signer/example2.db.signed > /dev/null 2>&1 || ret=1
@@ -1614,7 +1670,7 @@ sub2.example. IN NS ns.sub2.example.
 ns.sub2.example. IN A 10.53.0.2
 EOF
 echo "\$INCLUDE \"example2.db.signed\"" >> example2.db
-$SIGNER -DS -O full -f example2.db.signed -o example example2.db > /dev/null
+dnssec_signzone -DS -O full -f example2.db.signed -o example example2.db > /dev/null
 ) || ret=1
 grep "^sub1\\.example\\..*RRSIG[ 	]A[ 	]" signer/example2.db.signed > /dev/null 2>&1 && ret=1
 grep "^ns\\.sub2\\.example\\..*RRSIG[ 	]A[ 	]" signer/example2.db.signed > /dev/null 2>&1 && ret=1
@@ -1634,7 +1690,7 @@ ns.sub2.example. IN A 10.53.0.2
 EOF
 echo "\$INCLUDE \"example2.db.signed\"" >> example2.db
 touch example2.db.signed
-$SIGNER -DS -3 feedabee -O full -f example2.db.signed -o example example2.db > /dev/null
+dnssec_signzone -DS -3 feedabee -O full -f example2.db.signed -o example example2.db > /dev/null
 ) || ret=1
 grep "^sub1\\.example\\..*RRSIG[ 	]A[ 	]" signer/example2.db.signed > /dev/null 2>&1 || ret=1
 grep "^ns\\.sub2\\.example\\..*RRSIG[ 	]A[ 	]" signer/example2.db.signed > /dev/null 2>&1 || ret=1
@@ -1648,7 +1704,7 @@ sub2.example. IN NS ns.sub2.example.
 ns.sub2.example. IN A 10.53.0.2
 EOF
 echo "\$INCLUDE \"example2.db.signed\"" >> example2.db
-$SIGNER -DS -3 feedabee -O full -f example2.db.signed -o example example2.db > /dev/null
+dnssec_signzone -DS -3 feedabee -O full -f example2.db.signed -o example example2.db > /dev/null
 ) || ret=1
 grep "^sub1\\.example\\..*RRSIG[ 	]A[ 	]" signer/example2.db.signed > /dev/null 2>&1 && ret=1
 grep "^ns\\.sub2\\.example\\..*RRSIG[ 	]A[ 	]" signer/example2.db.signed > /dev/null 2>&1 && ret=1
@@ -1660,11 +1716,12 @@ echo_i "checking dnssec-signzone output format ($n)"
 ret=0
 (
 cd signer || exit 1
-$SIGNER -O full -f - -Sxt -o example example.db > signer.out.3 2> /dev/null
-$SIGNER -O text -f - -Sxt -o example example.db > signer.out.4 2> /dev/null
-$SIGNER -O raw -f signer.out.5 -Sxt -o example example.db > /dev/null
-$SIGNER -O raw=0 -f signer.out.6 -Sxt -o example example.db > /dev/null
-$SIGNER -O raw -f - -Sxt -o example example.db > signer.out.7 2> /dev/null
+msg="dnssec-signzone: warning: dns_dnssec_keylistfromrdataset: error reading"
+dnssec_signzone_errmsg "$msg" -O full -f - -Sxt -o example example.db > signer.out.1.$n
+dnssec_signzone_errmsg "$msg" -O text -f - -Sxt -o example example.db > signer.out.2.$n
+dnssec_signzone_errmsg "$msg" -O raw -f signer.out.3.$n -Sxt -o example example.db > /dev/null
+dnssec_signzone_errmsg "$msg" -O raw=0 -f signer.out.4.$n -Sxt -o example example.db > /dev/null
+dnssec_signzone_errmsg "$msg" -O raw -f - -Sxt -o example example.db > signer.out.5.$n
 ) || ret=1
 awk '/IN *SOA/ {if (NF != 11) exit(1)}' signer/signer.out.3 || ret=1
 awk '/IN *SOA/ {if (NF != 7) exit(1)}' signer/signer.out.4 || ret=1
@@ -1679,7 +1736,8 @@ echo_i "checking TTLs are capped by dnssec-signzone -M ($n)"
 ret=0
 (
 cd signer || exit 1
-$SIGNER -O full -f signer.out.8 -S -M 30 -o example example.db > /dev/null
+msg="dnssec-signzone: warning: dns_dnssec_keylistfromrdataset: error reading"
+dnssec_signzone_errmsg "$msg" -O full -f signer.out.$n -S -M 30 -o example example.db > /dev/null
 ) || ret=1
 awk '/^;/ { next; } $2 > 30 { exit 1; }' signer/signer.out.8 || ret=1
 n=$((n+1))
@@ -1690,11 +1748,11 @@ echo_i "checking dnssec-signzone -N date ($n)"
 ret=0
 (
 cd signer || exit 1
-TZ=UTC $SIGNER -O full -f signer.out.9 -S -N date -o example example2.db > /dev/null
+TZ=UTC dnssec_signzone -O full -f signer.out.$n -S -N date -o example example2.db > /dev/null
 ) || ret=1
 # shellcheck disable=SC2016
 now=$(TZ=UTC $PERL -e '@lt=localtime(); printf "%.4d%0.2d%0.2d00\n",$lt[5]+1900,$lt[4]+1,$lt[3];')
-serial=$(awk '/^;/ { next; } $4 == "SOA" { print $7 }' signer/signer.out.9)
+serial=$(awk '/^;/ { next; } $4 == "SOA" { print $7 }' signer/signer.out.$n)
 [ "$now" -eq "$serial" ] || ret=1
 n=$((n+1))
 test "$ret" -eq 0 || echo_i "failed"
@@ -2397,7 +2455,7 @@ echo_i "checking that the NSEC3 record for the apex is properly signed when a DN
 ret=0
 (
 cd ns3 || exit 1
-kskname=$($KEYGEN -q -3 -a RSASHA1 -fk update-nsec3.example)
+kskname=$(dnssec_keygen -q -3 -a RSASHA1 -fk update-nsec3.example)
 (
 echo zone update-nsec3.example
 echo server 10.53.0.3 "$PORT"
@@ -2741,10 +2799,11 @@ status=$((status+ret))
 # includes it anyway to avoid confusion (RT #21731)
 echo_i "check dnssec-dsfromkey error message when keyfile is not found ($n)"
 ret=0
-key=$($KEYGEN -a RSASHA1 -q example.) || ret=1
+msg="dnssec-keygen: warning: dns_dnssec_findmatchingkeys: error reading key file" 
+key=$(dnssec_keygen_errmsg "$msg" -a RSASHA1 -q example.) || ret=1
 mv "$key.key" "$key"
-$DSFROMKEY "$key" > dsfromkey.out.$n 2>&1 && ret=1
-grep "$key.key: file not found" dsfromkey.out.$n > /dev/null || ret=1
+$DSFROMKEY "$key" > dsfromkey.out.$n 2> dsfromkey.err.$n && ret=1
+grep "$key.key: file not found" dsfromkey.err.$n > /dev/null || ret=1
 n=$((n+1))
 test "$ret" -eq 0 || echo_i "failed"
 status=$((status+ret))
@@ -2828,7 +2887,7 @@ cd ns3 || exit 1
 for file in K*.moved; do
   mv "$file" "$(basename "$file" .moved)"
 done
-$SIGNER -S -N increment -e now+1mi -o expiring.example expiring.example.db > /dev/null
+dnssec_signzone -S -N increment -e now+1mi -o expiring.example expiring.example.db > /dev/null
 ) || ret=1
 rndc_reload ns3 10.53.0.3 expiring.example
 
@@ -3191,9 +3250,10 @@ n=$((n+1))
 test "$ret" -eq 0 || echo_i "failed"
 status=$((status+ret))
 
-echo_i "check that 'dnssec-keygen -S' works for all supported algorithms ($n)"
+echo_i "check that '$KEYGEN -S' works for all supported algorithms ($n)"
 ret=0
 alg=1
+msg="fatal: unsupported algorithm:"
 until test $alg -eq 256
 do
     case $alg in
@@ -3204,12 +3264,12 @@ do
 	    alg=$((alg+1))
 	    continue;;
 	1|5|7|8|10) # RSA algorithms
-	    key1=$($KEYGEN -a "$alg" -b "1024" -n zone example 2> keygen.err || true)
+	    key1=$(dnssec_keygen_errmsg "$msg" -a "$alg" -b "1024" -n zone example 2>/dev/null || true)
 	    ;;
 	*)
-	    key1=$($KEYGEN -a "$alg" -n zone example 2> keygen.err || true)
+	    key1=$(dnssec_keygen_errmsg "$msg" -a "$alg" -n zone example 2>/dev/null || true)
     esac
-    if grep "unsupported algorithm" keygen.err > /dev/null
+    if grep "unsupported algorithm" keygen.err.$n > /dev/null
     then
 	alg=$((alg+1))
 	continue
@@ -3217,16 +3277,16 @@ do
     if test -z "$key1"
     then
 	echo_i "'$KEYGEN -a $alg': failed"
-	cat keygen.err
+	cat keygen.err.$n
 	ret=1
 	alg=$((alg+1))
 	continue
     fi
     $SETTIME -I now+4d "$key1.private" > /dev/null
-    key2=$($KEYGEN -v 10 -i 3d -S "$key1.private" 2> /dev/null)
+    key2=$(dnssec_keygen -v 10 -i 3d -S "$key1.private" 2> /dev/null || true)
     test -f "$key2.key" -a -f "$key2.private" || {
 	ret=1
-	echo_i "'dnssec-keygen -S' failed for algorithm: $alg"
+	echo_i "'$KEYGEN -S' failed for algorithm: $alg"
     }
     alg=$((alg+1))
 done
@@ -3560,10 +3620,10 @@ ret=0
 # generate signed zone with MX and AAAA records at apex.
 (
 cd signer || exit 1
-$KEYGEN -q -a RSASHA1 -3 -fK remove > /dev/null
-$KEYGEN -q -a RSASHA1 -33 remove > /dev/null
+dnssec_keygen -q -a RSASHA1 -3 -fK remove > /dev/null
+dnssec_keygen -q -a RSASHA1 -33 remove > /dev/null
 echo > remove.db.signed
-$SIGNER -S -o remove -D -f remove.db.signed remove.db.in > signer.out.1.$n
+dnssec_signzone -S -o remove -D -f remove.db.signed remove.db.in > signer.out.1.$n
 )
 grep "RRSIG MX" signer/remove.db.signed > /dev/null || {
 	ret=1 ; cp signer/remove.db.signed signer/remove.db.signed.pre$n;
@@ -3571,7 +3631,7 @@ grep "RRSIG MX" signer/remove.db.signed > /dev/null || {
 # re-generate signed zone without MX and AAAA records at apex.
 (
 cd signer || exit 1
-$SIGNER -S -o remove -D -f remove.db.signed remove2.db.in > signer.out.2.$n
+dnssec_signzone -S -o remove -D -f remove.db.signed remove2.db.in > signer.out.2.$n
 )
 grep "RRSIG MX" signer/remove.db.signed > /dev/null &&  {
 	ret=1 ; cp signer/remove.db.signed signer/remove.db.signed.post$n;
@@ -3586,7 +3646,7 @@ ret=0
 (
 cd signer || exit 1
 echo > remove.db.signed
-$SIGNER -3 - -S -o remove -D -f remove.db.signed remove.db.in > signer.out.1.$n
+dnssec_signzone -3 - -S -o remove -D -f remove.db.signed remove.db.in > signer.out.1.$n
 )
 grep "RRSIG MX" signer/remove.db.signed > /dev/null || {
 	ret=1 ; cp signer/remove.db.signed signer/remove.db.signed.pre$n;
@@ -3594,7 +3654,7 @@ grep "RRSIG MX" signer/remove.db.signed > /dev/null || {
 # re-generate signed zone without MX and AAAA records at apex.
 (
 cd signer || exit 1
-$SIGNER -3 - -S -o remove -D -f remove.db.signed remove2.db.in > signer.out.2.$n
+dnssec_signzone -3 - -S -o remove -D -f remove.db.signed remove2.db.in > signer.out.2.$n
 )
 grep "RRSIG MX" signer/remove.db.signed > /dev/null &&  {
 	ret=1 ; cp signer/remove.db.signed signer/remove.db.signed.post$n;
@@ -3893,9 +3953,9 @@ test "$ret" -eq 0 || echo_i "failed"
 status=$((status+ret))
 
 # Roll the ZSK.
-zsk2=$("$KEYGEN" -q -a "$DEFAULT_ALGORITHM" -b "$DEFAULT_BITS" -K ns2 -n zone "$zone")
+zsk2=$(dnssec_keygen -q -a "$DEFAULT_ALGORITHM" -b "$DEFAULT_BITS" -K ns2 -n zone "$zone")
 keyfile_to_key_id "$zsk2" > ns2/$zone.zsk.id2
-ZSK_ID2=`cat ns2/$zone.zsk.id2`
+ZSK_ID2=$(cat ns2/$zone.zsk.id2)
 
 echo_i "load new ZSK $ZSK_ID2 for $zone ($n)"
 ret=0
@@ -3965,7 +4025,7 @@ mv ns2/$KSK.key.bak ns2/$KSK.key
 mv ns2/$KSK.private.bak ns2/$KSK.private
 
 # Roll the ZSK again.
-zsk3=$("$KEYGEN" -q -a "$DEFAULT_ALGORITHM" -b "$DEFAULT_BITS" -K ns2 -n zone "$zone")
+zsk3=$(dnssec_keygen -q -a "$DEFAULT_ALGORITHM" -b "$DEFAULT_BITS" -K ns2 -n zone "$zone")
 keyfile_to_key_id "$zsk3" > ns2/$zone.zsk.id3
 ZSK_ID3=`cat ns2/$zone.zsk.id3`
 
