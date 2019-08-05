@@ -431,8 +431,6 @@ incctx_destroy(isc_mem_t *mctx, dns_incctx_t *ictx) {
 
 static void
 loadctx_destroy(dns_loadctx_t *lctx) {
-	REQUIRE(DNS_LCTX_VALID(lctx));
-
 	isc_refcount_destroy(&lctx->references);
 
 	lctx->magic = 0;
