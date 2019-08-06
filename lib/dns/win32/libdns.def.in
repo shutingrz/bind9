@@ -1040,6 +1040,7 @@ dns_validator_destroy
 dns_validator_send
 dns_view_adddelegationonly
 dns_view_addzone
+dns_view_allownewzones
 dns_view_asyncload
 dns_view_attach
 dns_view_checksig
@@ -1048,6 +1049,7 @@ dns_view_createresolver
 dns_view_createzonetable
 dns_view_detach
 dns_view_dialup
+dns_view_disallownewzones
 dns_view_dumpdbtostream
 dns_view_excludedelegationonly
 dns_view_find

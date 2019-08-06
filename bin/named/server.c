@@ -7452,7 +7452,7 @@ setup_newzones(dns_view_t *view, cfg_obj_t *config, cfg_obj_t *vconfig,
 	}
 
 	if (!allow) {
-		dns_view_setnewzones(view, false, NULL, NULL, 0ULL);
+		dns_view_disallownewzones(view);
 		if (num_zones != NULL)
 			*num_zones = 0;
 		return (ISC_R_SUCCESS);
@@ -7471,10 +7471,10 @@ setup_newzones(dns_view_t *view, cfg_obj_t *config, cfg_obj_t *vconfig,
 	isc_mem_attach(view->mctx, &nzcfg->mctx);
 	cfg_aclconfctx_attach(actx, &nzcfg->actx);
 
-	result = dns_view_setnewzones(view, true, nzcfg,
-				      newzone_cfgctx_destroy, mapsize);
+	result = dns_view_allownewzones(view, nzcfg,
+					newzone_cfgctx_destroy, mapsize);
 	if (result != ISC_R_SUCCESS) {
-		dns_view_setnewzones(view, false, NULL, NULL, 0ULL);
+		dns_view_disallownewzones(view);
 		return (result);
 	}
 
