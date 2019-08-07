@@ -194,8 +194,8 @@ struct dns_view {
 	bool				matchrecursiveonly;
 
 	/* Locked by themselves. */
+	isc_refcount_t			ereferences;
 	isc_refcount_t			references;
-	isc_refcount_t			weakrefs;
 
 	/* Locked by lock. */
 	unsigned int			attributes;
