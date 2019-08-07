@@ -102,9 +102,6 @@ peerlist_delete(dns_peerlist_t **list) {
 	dns_peerlist_t *l;
 	dns_peer_t *server, *stmp;
 
-	REQUIRE(list != NULL);
-	REQUIRE(DNS_PEERLIST_VALID(*list));
-
 	l = *list;
 
 	isc_refcount_destroy(&l->references);
@@ -265,9 +262,6 @@ static void
 peer_delete(dns_peer_t **peer) {
 	dns_peer_t *p;
 	isc_mem_t *mem;
-
-	REQUIRE(peer != NULL);
-	REQUIRE(DNS_PEER_VALID(*peer));
 
 	p = *peer;
 
