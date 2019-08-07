@@ -659,10 +659,7 @@ sooner(void *v1, void *v2) {
 
 static void
 set_index(void *what, unsigned int index) {
-	isc__timer_t *timer;
-
-	timer = what;
-	REQUIRE(VALID_TIMER(timer));
+	isc__timer_t *timer = what;
 
 	timer->index = index;
 }
