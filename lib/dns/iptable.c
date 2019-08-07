@@ -156,9 +156,6 @@ dns_iptable_detach(dns_iptable_t **tabp) {
 
 static void
 destroy_iptable(dns_iptable_t *dtab) {
-
-	REQUIRE(DNS_IPTABLE_VALID(dtab));
-
 	if (dtab->radix != NULL) {
 		isc_radix_destroy(dtab->radix, NULL);
 		dtab->radix = NULL;
