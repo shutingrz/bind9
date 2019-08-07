@@ -1208,7 +1208,7 @@ detach(dns_db_t **dbp) {
 	*dbp = NULL;
 
 	if (isc_refcount_decrement(&rbtdb->references) == 1) {
-		(void)isc_refcount_current(&rbtdb->references);
+		isc_refcount_destroy(&rbtdb->references);
 		maybe_free_rbtdb(rbtdb);
 	}
 }
@@ -2364,7 +2364,7 @@ cleanup_dead_nodes_callback(isc_task_t *task, isc_event_t *event) {
 	else {
 		isc_event_free(&event);
 		if (isc_refcount_decrement(&rbtdb->references) == 1) {
-			(void)isc_refcount_current(&rbtdb->references);
+			isc_refcount_destroy(&rbtdb->references);
 			maybe_free_rbtdb(rbtdb);
 		}
 	}
