@@ -1,3 +1,6 @@
+5370.	[func]		Dig can now report the DNS64 prefixes in use
+			(+dns64prefix). [GL #1154]
+
 5369.	[func]		Add the ability to specify whether or not to wait
 			for nameserver domain names to be looked up, with
 			a new RPZ modifying directive 'nsdname-wait-recurse'.
