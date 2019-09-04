@@ -35,11 +35,28 @@
 
 ISC_LANG_BEGINDECLS
 
+/* Stores a KASP key */
+struct dns_kasp_key {
+	isc_mem_t*			mctx;
+
+	/* Locked by themselves. */
+	isc_refcount_t			references;
+
+	/* Under owner's locking control. */
+	ISC_LINK(struct dns_kasp_key)   link;
+
+	/* Configuration */
+	time_t				lifetime;
+	uint32_t			algorithm;
+	int				length;
+	uint8_t				role;
+};
+
+/* Stores a DNSSEC policy */
 struct dns_kasp {
 	unsigned int			magic;
 	isc_mem_t*			mctx;
 	char*				name;
-	char* 				dbfile;
 
 	/* Internals. */
 	isc_mutex_t			lock;
@@ -50,7 +67,6 @@ struct dns_kasp {
 
 	/* Under owner's locking control. */
 	ISC_LINK(struct dns_kasp)	link;
-	dns_kasplist_t*			kasplist;
 
 	/* Configuration: signatures */
 	time_t				signatures_resign;
@@ -60,6 +76,13 @@ struct dns_kasp {
 	time_t				signatures_validity_denial;
 	time_t				signatures_jitter;
 	time_t				signatures_inception_offset;
+
+	/* Keys */
+	dns_kasp_keylist_t		keys;
+	time_t				dnskey_publish_safety;
+	time_t				dnskey_retire_safety;
+	uint32_t			dnskey_ttl;
+
 
 	// TODO: The rest of the KASP configuration
 };
@@ -75,7 +98,14 @@ struct dns_kasp {
 #define DNS_KASP_SIG_VALIDITY_DENIAL	(86400*14)
 #define DNS_KASP_SIG_JITTER		(0)
 #define DNS_KASP_SIG_INCEPTION_OFFSET	(3600)
+#define DNS_KASP_KEY_TTL		(3600)
+#define DNS_KASP_KEY_PUBLISH_SAFETY	(300)
+#define DNS_KASP_KEY_RETIRE_SAFETY	(300)
 #define DNS_KASP_ZONE_MAXTTL		(86400)
+
+/* Key roles */
+#define DNS_KASP_KEY_ROLE_KSK		0x01
+#define DNS_KASP_KEY_ROLE_ZSK		0x02
 
 isc_result_t
 dns_kasp_create(isc_mem_t *mctx, const char* name, dns_kasp_t **kaspp);
@@ -84,18 +114,18 @@ dns_kasp_create(isc_mem_t *mctx, const char* name, dns_kasp_t **kaspp);
  *
  * Requires:
  *
- *\li	'mctx' is a valid memory context.
+ *\li  'mctx' is a valid memory context.
  *
- *\li	'name' is a valid C string.
+ *\li  'name' is a valid C string.
  *
- *\li	kaspp != NULL && *kaspp == NULL
+ *\li  kaspp != NULL && *kaspp == NULL
  *
  * Returns:
  *
- *\li	#ISC_R_SUCCESS
- *\li	#ISC_R_NOMEMORY
+ *\li  #ISC_R_SUCCESS
+ *\li  #ISC_R_NOMEMORY
  *
- *\li	Other errors are possible.
+ *\li  Other errors are possible.
  */
 
 void
@@ -158,6 +188,20 @@ dns_kasp_thaw(dns_kasp_t *kasp);
  *\li   'kasp' is no longer frozen.
  */
 
+const char*
+dns_kasp_getname(dns_kasp_t *kasp);
+/*%<
+ * Get kasp name.
+ *
+ * Requires:
+ *
+ *\li   'kasp' is a valid, frozen kasp.
+ *
+ * Returns:
+ *
+ *\li   name of 'kasp'.
+ */
+
 isc_result_t
 dns_kasplist_find(dns_kasplist_t *list, const char *name, dns_kasp_t **kaspp);
 /*%<
@@ -172,6 +216,37 @@ dns_kasplist_find(dns_kasplist_t *list, const char *name, dns_kasp_t **kaspp);
  *
  *\li   #ISC_R_SUCCESS          A matching kasp was found.
  *\li   #ISC_R_NOTFOUND         No matching kasp was found.
+ */
+
+isc_result_t
+dns_kasp_key_create(isc_mem_t* mctx, dns_kasp_key_t **keyp);
+/*%<
+ * Create a key inside a KASP.
+ *
+ * Requires:
+ *
+ *\li  'mctx' is a valid memory context.
+ *
+ *\li  keyp != NULL && *keyp == NULL
+ *
+ * Returns:
+ *
+ *\li  #ISC_R_SUCCESS
+ *\li  #ISC_R_NOMEMORY
+ *
+ *\li  Other errors are possible.
+ */
+
+void
+dns_kasp_key_destroy(dns_kasp_key_t* key);
+/*%<
+ * Destroy a KASP key.
+ *
+ * Requires:
+ *
+ *\li  'key' is a valid KASP key.
+ *
+ *\li  kasp != NULL && key != NULL
  */
 
 ISC_LANG_ENDDECLS

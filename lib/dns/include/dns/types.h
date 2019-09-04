@@ -93,6 +93,8 @@ typedef struct dns_iptable			dns_iptable_t;
 typedef uint32_t				dns_iterations_t;
 typedef struct dns_kasp				dns_kasp_t;
 typedef ISC_LIST(dns_kasp_t)			dns_kasplist_t;
+typedef struct dns_kasp_key			dns_kasp_key_t;
+typedef ISC_LIST(dns_kasp_key_t)		dns_kasp_keylist_t;
 typedef uint16_t				dns_keyflags_t;
 typedef struct dns_keynode			dns_keynode_t;
 typedef ISC_LIST(dns_keynode_t)			dns_keynodelist_t;

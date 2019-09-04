@@ -417,6 +417,9 @@ dns_kasp_create
 dns_kasp_attach
 dns_kasp_detach
 dns_kasp_freeze
+dns_kasp_getname
+dns_kasp_key_create
+dns_kasp_key_destroy
 dns_kasp_thaw
 dns_kasplist_find
 dns_keydata_fromdnskey

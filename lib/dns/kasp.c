@@ -41,7 +41,6 @@ dns_kasp_create(isc_mem_t *mctx, const char *name, dns_kasp_t **kaspp)
 	isc_refcount_init(&kasp->references, 1);
 
 	ISC_LINK_INIT(kasp, link);
-	kasp->kasplist = NULL;
 
 	kasp->signatures_resign = DNS_KASP_SIG_RESIGN;
 	kasp->signatures_refresh = DNS_KASP_SIG_REFRESH;
@@ -50,6 +49,12 @@ dns_kasp_create(isc_mem_t *mctx, const char *name, dns_kasp_t **kaspp)
 	kasp->signatures_validity_denial = DNS_KASP_SIG_VALIDITY_DENIAL;
 	kasp->signatures_jitter = DNS_KASP_SIG_JITTER;
 	kasp->signatures_inception_offset = DNS_KASP_SIG_INCEPTION_OFFSET;
+
+	ISC_LIST_INIT(kasp->keys);
+
+	kasp->dnskey_ttl = DNS_KASP_KEY_TTL;
+	kasp->dnskey_publish_safety = DNS_KASP_KEY_PUBLISH_SAFETY;
+	kasp->dnskey_retire_safety = DNS_KASP_KEY_RETIRE_SAFETY;
 
 	// TODO: The rest of the KASP configuration
 
@@ -69,7 +74,16 @@ dns_kasp_attach(dns_kasp_t *source, dns_kasp_t **targetp) {
 
 static inline void
 destroy(dns_kasp_t *kasp) {
-	isc_mem_free(kasp->mctx, kasp->dbfile);
+	dns_kasp_key_t *key;
+	dns_kasp_key_t *key_next;
+
+	for (key = ISC_LIST_HEAD(kasp->keys); key != NULL; key = key_next) {
+		key_next = ISC_LIST_NEXT(key, link);
+		ISC_LIST_UNLINK(kasp->keys, key, link);
+		dns_kasp_key_destroy(key);
+	}
+	ISC_INSIST(ISC_LIST_EMPTY(kasp->keys));
+
 	isc_mem_free(kasp->mctx, kasp->name);
 	isc_mem_putanddetach(&kasp->mctx, kasp, sizeof(*kasp));
 }
@@ -89,6 +103,7 @@ void
 dns_kasp_freeze(dns_kasp_t *kasp) {
 	REQUIRE(DNS_KASP_VALID(kasp));
 	REQUIRE(!kasp->frozen);
+
 	kasp->frozen = true;
 }
 
@@ -96,7 +111,14 @@ void
 dns_kasp_thaw(dns_kasp_t *kasp) {
 	REQUIRE(DNS_KASP_VALID(kasp));
 	REQUIRE(kasp->frozen);
+
 	kasp->frozen = false;
+}
+
+const char*
+dns_kasp_getname(dns_kasp_t *kasp) {
+	REQUIRE(DNS_KASP_VALID(kasp));
+	return kasp->name;
 }
 
 isc_result_t
@@ -109,9 +131,7 @@ dns_kasplist_find(dns_kasplist_t *list, const char *name, dns_kasp_t **kaspp)
 	}
 	INSIST(list != NULL);
 
-	dns_kasp_t *kasp;
-	for (kasp = ISC_LIST_HEAD(*list);
-	     kasp != NULL;
+	for (kasp = ISC_LIST_HEAD(*list); kasp != NULL;
 	     kasp = ISC_LIST_NEXT(kasp, link))
 	{
 		if (strcmp(kasp->name, name) == 0) {
@@ -123,4 +143,32 @@ dns_kasplist_find(dns_kasplist_t *list, const char *name, dns_kasp_t **kaspp)
 	}
 	dns_kasp_attach(kasp, kaspp);
 	return (ISC_R_SUCCESS);
+}
+
+isc_result_t
+dns_kasp_key_create(isc_mem_t* mctx, dns_kasp_key_t **keyp)
+{
+	dns_kasp_key_t *key;
+
+	REQUIRE(keyp != NULL && *keyp == NULL);
+
+	key = isc_mem_get(mctx, sizeof(*key));
+	key->mctx = NULL;
+	isc_mem_attach(mctx, &key->mctx);
+
+	ISC_LINK_INIT(key, link);
+
+	key->lifetime = 0;
+	key->algorithm = 0;
+	key->length = -1;
+	key->role = 0;
+	*keyp = key;
+	return (ISC_R_SUCCESS);
+}
+
+void
+dns_kasp_key_destroy(dns_kasp_key_t* key)
+{
+	REQUIRE(key != NULL);
+	isc_mem_putanddetach(&key->mctx, key, sizeof(*key));
 }

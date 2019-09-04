@@ -3759,7 +3759,7 @@ register_one_plugin(const cfg_obj_t *config, const cfg_obj_t *obj,
 #endif
 
 /*
- * Utulity function for configuring kasp.
+ * Utility function for configuring durations.
  */
 static time_t
 get_duration(const cfg_obj_t **maps, const char* option, time_t dfl)
@@ -3776,6 +3776,97 @@ get_duration(const cfg_obj_t **maps, const char* option, time_t dfl)
 }
 
 /*
+ * Utility function for configuring TTL values.
+ */
+static uint32_t
+get_ttlval(const cfg_obj_t **maps, const char* option, time_t dfl)
+{
+	const cfg_obj_t *obj;
+	isc_result_t result;
+	obj = NULL;
+	result = named_config_get(maps, option, &obj);
+	if (result == ISC_R_NOTFOUND) {
+		return dfl;
+	}
+	INSIST(result == ISC_R_SUCCESS);
+	return cfg_obj_asuint32(obj);
+}
+
+/*
+ * Read kasp key from configuration.
+ */
+static isc_result_t
+kaspkey_fromconfig(const cfg_obj_t *kconfig, dns_kasp_key_t* target)
+{
+	const char* rolestr;
+	const cfg_obj_t* obj;
+
+	INSIST(kconfig != NULL && target != NULL);
+
+	rolestr = cfg_obj_asstring(cfg_tuple_get(kconfig, "role"));
+	if (strcmp(rolestr, "ksk") == 0) {
+		target->role |= DNS_KASP_KEY_ROLE_KSK;
+	} else if (strcmp(rolestr, "zsk") == 0) {
+		target->role |= DNS_KASP_KEY_ROLE_ZSK;
+	} else if (strcmp(rolestr, "csk") == 0) {
+		target->role |= DNS_KASP_KEY_ROLE_KSK;
+		target->role |= DNS_KASP_KEY_ROLE_ZSK;
+	}
+	target->lifetime = cfg_obj_asduration(
+		cfg_tuple_get(kconfig, "lifetime"));
+	target->algorithm = cfg_obj_asuint32(
+		cfg_tuple_get(kconfig, "algorithm"));
+	obj = cfg_tuple_get(kconfig, "length");
+	if (cfg_obj_isuint32(obj)) {
+		target->length = cfg_obj_asuint32(obj);
+	}
+	return (ISC_R_SUCCESS);
+}
+
+/*
+ * Create a new kasp key and add it to the kasp key list.
+ */
+static isc_result_t
+create_kaspkey(const cfg_obj_t *kconfig, dns_kasp_t* kasp)
+{
+	isc_result_t result;
+	dns_kasp_key_t *key = NULL;
+	char role = '?';
+
+	result = dns_kasp_key_create(kasp->mctx, &key);
+	if (result != ISC_R_SUCCESS) {
+		return result;
+	}
+	if (kconfig == NULL) {
+		key->role |= DNS_KASP_KEY_ROLE_KSK | DNS_KASP_KEY_ROLE_ZSK;
+		key->lifetime = 0;
+		key->algorithm = DST_ALG_ECDSA256;
+		key->length = -1;
+	} else {
+		result = kaspkey_fromconfig(kconfig, key);
+		if (result != ISC_R_SUCCESS) {
+			dns_kasp_key_destroy(key);
+			return result;
+		}
+	}
+
+	if (key->role & DNS_KASP_KEY_ROLE_KSK) {
+		role = (key->role & DNS_KASP_KEY_ROLE_ZSK) ? 'C' : 'K';
+	} else if (key->role & DNS_KASP_KEY_ROLE_ZSK) {
+		role = 'Z';
+	}
+	isc_log_write(named_g_lctx, NAMED_LOGCATEGORY_GENERAL,
+		      NAMED_LOGMODULE_SERVER, ISC_LOG_INFO,
+		      "created %cSK/%u for policy '%s'", role, key->algorithm,
+		      dns_kasp_getname(kasp));
+
+	ISC_LIST_APPEND(kasp->keys, key, link);
+	ISC_INSIST(!(ISC_LIST_EMPTY(kasp->keys)));
+
+	return (result);
+}
+
+/*
  * Configure 'kasp' according to 'kconfig'.
  *
  * If 'kconfig' is NULL the default kasp is configured.
@@ -3783,8 +3874,11 @@ get_duration(const cfg_obj_t **maps, const char* option, time_t dfl)
 static isc_result_t
 configure_kasp(dns_kasp_t *kasp, cfg_obj_t *kconfig)
 {
+	isc_result_t result;
 	const cfg_obj_t *maps[2];
 	const cfg_obj_t *koptions = NULL;
+	const cfg_obj_t *keys = NULL;
+	const cfg_listelt_t *element = NULL;
 	int i = 0;
 
 	REQUIRE(DNS_KASP_VALID(kasp));
@@ -3814,9 +3908,38 @@ configure_kasp(dns_kasp_t *kasp, cfg_obj_t *kconfig)
 		maps, "signatures-inception-offset",
 		DNS_KASP_SIG_INCEPTION_OFFSET);
 
+	/* Keys */
+	kasp->dnskey_ttl = get_ttlval(maps, "dnskey-ttl", DNS_KASP_KEY_TTL);
+	kasp->dnskey_publish_safety = get_duration(
+		maps, "dnskey-publish-safety", DNS_KASP_KEY_PUBLISH_SAFETY);
+	kasp->dnskey_retire_safety = get_duration(
+		maps, "dnskey-retire-safety", DNS_KASP_KEY_RETIRE_SAFETY);
+
+	(void)named_config_get(maps, "keys", &keys);
+	if (keys == NULL) {
+		CHECK(create_kaspkey(NULL, kasp));
+	} else {
+		for (element = cfg_list_first(keys); element != NULL;
+		     element = cfg_list_next(element))
+		{
+			cfg_obj_t *kobj = cfg_listelt_value(element);
+			CHECK(create_kaspkey(kobj, kasp));
+		}
+	}
+
 	// TODO: Rest of the configuration
 
+	ISC_INSIST(!(ISC_LIST_EMPTY(kasp->keys)));
+
 	return (ISC_R_SUCCESS);
+
+cleanup:
+
+	isc_log_write(named_g_lctx, NAMED_LOGCATEGORY_GENERAL,
+		      NAMED_LOGMODULE_SERVER, ISC_LOG_ERROR,
+		      "configure kasp '%s' failed: %s",
+		      dns_kasp_getname(kasp), isc_result_totext(result));
+	return (result);
 }
 
 /*
