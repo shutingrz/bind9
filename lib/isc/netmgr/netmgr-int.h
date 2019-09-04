@@ -189,7 +189,8 @@ typedef struct isc__netievent_udpstoplisten {
 
 typedef struct isc__netievent_udpsend {
 	isc__netievent_type	   type;
-	isc_nmhandle_t		   handle;
+	isc_nmsocket_t *	   socket;
+	isc_sockaddr_t		   peer;
 	isc__nm_uvreq_t *	   req;
 } isc__netievent_udpsend_t;
 
@@ -218,7 +219,7 @@ typedef struct isc__netievent_tcpclose {
 
 typedef struct isc__netievent_tcpsend {
 	isc__netievent_type	   type;
-	isc_nmhandle_t		   handle;
+	isc_nmsocket_t *	   socket;
 	isc__nm_uvreq_t *	   req;
 } isc__netievent_tcpsend_t;
 
@@ -292,7 +293,7 @@ struct isc_nmsocket {
 	isc_nmsocket_t *	   children;
 	int			   nchildren;
 	isc_nmiface_t *		   iface;
-	isc_nmhandle_t		   tcphandle;
+	isc_nmhandle_t *	   tcphandle;
 
 	/* extra data allocated at the end of each isc_nmhandle_t */
 	size_t			   extrahandlesize;

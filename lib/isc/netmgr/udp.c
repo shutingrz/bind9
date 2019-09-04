@@ -294,8 +294,8 @@ isc__nm_udp_send(isc_nmhandle_t *handle,
 		 * We need to create an event and pass it using async channel
 		 */
 		ievent = isc__nm_get_ievent(socket->mgr, netievent_udpsend);
-		ievent->handle.socket = rsocket;
-		ievent->handle.peer = *peer;
+		ievent->socket = rsocket;
+		ievent->peer = *peer;
 		ievent->req = uvreq;
 		isc__nm_enqueue_ievent(&socket->mgr->workers[rsocket->tid],
 				       (isc__netievent_t*) ievent);
@@ -312,10 +312,10 @@ void
 isc__nm_handle_udpsend(isc__networker_t *worker, isc__netievent_t *ievent0) {
 	isc__netievent_udpsend_t *ievent =
 		(isc__netievent_udpsend_t *) ievent0;
-	INSIST(worker->id == ievent->handle.socket->tid);
-	udp_send_direct(ievent->handle.socket,
+	INSIST(worker->id == ievent->socket->tid);
+	udp_send_direct(ievent->socket,
 			ievent->req,
-			&ievent->handle.peer);
+			&ievent->peer);
 }
 
 /*

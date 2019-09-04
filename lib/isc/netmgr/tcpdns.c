@@ -164,7 +164,7 @@ isc__nm_tcpdns_send(isc_nmhandle_t *handle,
 	INSIST(socket->type == isc_nm_tcpdnssocket);
 	tcpsend_t *t = malloc(sizeof(*t));
 	*t = (tcpsend_t) {};
-	t->handle = &handle->socket->outer->tcphandle;
+	t->handle = handle->socket->outer->tcphandle;
 	t->cb = cb;
 	t->cbarg = cbarg;
 	t->region =
