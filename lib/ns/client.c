@@ -1919,6 +1919,7 @@ ns__client_request(void *arg,
 		
 
 	}
+	isc_task_pause(client->task);
 	if (client->handle == NULL) {
 		isc_nmhandle_setdata(handle, client, client_reset_cb, client_put_cb);
 		isc_nmhandle_attach(handle, &client->handle);
@@ -1945,6 +1946,7 @@ ns__client_request(void *arg,
 
 	if (exit_check(client)) {
 		isc_nmhandle_detach(&client->handle);
+		isc_task_unpause(client->task);
 		return;
 	}
 	client->state = client->newstate = NS_CLIENTSTATE_WORKING;
@@ -1963,6 +1965,7 @@ ns__client_request(void *arg,
 			      NS_LOGMODULE_CLIENT, ISC_LOG_DEBUG(10),
 			      "dropped request: suspicious port");
 		isc_nmhandle_detach(&client->handle);
+		isc_task_unpause(client->task);
 		return;
 	}
 #endif
@@ -1987,6 +1990,7 @@ ns__client_request(void *arg,
 				      NS_LOGMODULE_CLIENT, ISC_LOG_DEBUG(10),
 				      "blackholed UDP datagram");
 			isc_nmhandle_detach(&client->handle);
+			isc_task_unpause(client->task);
 			return;
 		}
 	}
@@ -1998,6 +2002,7 @@ ns__client_request(void *arg,
 		 * this was a request or a response.  Drop it.
 		 */
 		isc_nmhandle_detach(&client->handle);
+		isc_task_unpause(client->task);
 		return;
 	}
 
@@ -2009,6 +2014,7 @@ ns__client_request(void *arg,
 	if ((flags & DNS_MESSAGEFLAG_QR) != 0) {
 		CTRACE("unexpected response");
 		isc_nmhandle_detach(&client->handle);
+		isc_task_unpause(client->task);
 		return;
 	}
 
@@ -2076,6 +2082,7 @@ ns__client_request(void *arg,
 			result = DNS_R_FORMERR;
 		}
 		ns_client_error(client, result);
+		isc_task_unpause(client->task);
 		return;
 	}
 
@@ -2125,6 +2132,7 @@ ns__client_request(void *arg,
 		 */
 		if ((client->sctx->options & NS_SERVER_EDNSFORMERR) != 0) {
 			ns_client_error(client, DNS_R_FORMERR);
+			isc_task_unpause(client->task);
 			return;
 		}
 
@@ -2133,6 +2141,7 @@ ns__client_request(void *arg,
 		 */
 		if ((client->sctx->options & NS_SERVER_EDNSNOTIMP) != 0) {
 			ns_client_error(client, DNS_R_NOTIMP);
+			isc_task_unpause(client->task);
 			return;
 		}
 
@@ -2141,6 +2150,7 @@ ns__client_request(void *arg,
 		 */
 		if ((client->sctx->options & NS_SERVER_EDNSREFUSED) != 0) {
 			ns_client_error(client, DNS_R_REFUSED);
+			isc_task_unpause(client->task);
 			return;
 		}
 
@@ -2149,12 +2159,15 @@ ns__client_request(void *arg,
 		 */
 		if ((client->sctx->options & NS_SERVER_DROPEDNS) != 0) {
 			ns_client_next(client, ISC_R_SUCCESS);
+			isc_task_unpause(client->task);
 			return;
 		}
 
 		result = process_opt(client, opt);
-		if (result != ISC_R_SUCCESS)
+		if (result != ISC_R_SUCCESS) {
+			isc_task_unpause(client->task);
 			return;
+		}
 	}
 
 	if (client->message->rdclass == 0) {
@@ -2228,6 +2241,7 @@ ns__client_request(void *arg,
 					 "destination: %s",
 					 isc_result_totext(result));
 			ns_client_next(client, ISC_R_SUCCESS);
+			isc_task_unpause(client->task);
 			return;
 		}
 	}
@@ -2262,6 +2276,7 @@ ns__client_request(void *arg,
 			      "no matching view in class '%s'", classname);
 		ns_client_dumpmessage(client, "no matching view in class");
 		ns_client_error(client, notimp ? DNS_R_NOTIMP : DNS_R_REFUSED);
+		isc_task_unpause(client->task);
 		return;
 	}
 
@@ -2362,6 +2377,7 @@ ns__client_request(void *arg,
 		if (!(client->message->tsigstatus == dns_tsigerror_badkey &&
 		      client->message->opcode == dns_opcode_update)) {
 			ns_client_error(client, sigresult);
+			isc_task_unpause(client->task);
 			return;
 		}
 	}
@@ -2455,6 +2471,7 @@ ns__client_request(void *arg,
 		CTRACE("unknown opcode");
 		ns_client_error(client, DNS_R_NOTIMP);
 	}
+	isc_task_unpause(client->task);
 }
 
 static isc_result_t
