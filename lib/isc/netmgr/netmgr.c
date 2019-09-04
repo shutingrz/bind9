@@ -391,11 +391,10 @@ isc__nmsocket_destroy(isc_nmsocket_t *socket, bool dofree) {
 		isc__nmsocket_destroy(&socket->children[i], false);
 	}
 
-	if (VALID_NMHANDLE(&socket->tcphandle) &&
-	    socket->tcphandle.dofree != NULL) {
-		socket->tcphandle.dofree(socket->tcphandle.opaque);
+	if (socket->tcphandle != NULL) {
+		isc_nmhandle_detach(&socket->tcphandle);
 	}
-	socket->tcphandle = (isc_nmhandle_t) {};
+	
 	if (socket->quota != NULL) {
 		isc_quota_detach(&socket->quota);
 	}
@@ -522,9 +521,6 @@ isc__nmsocket_init(isc_nmsocket_t *socket,
 	socket->magic = NMSOCK_MAGIC;
 	isc_refcount_init(&socket->references, 1);
 	atomic_init(&socket->active, true);
-	if (type == isc_nm_tcpsocket) {
-		socket->tcphandle = (isc_nmhandle_t) { .socket = socket};
-	}
 }
 /*
  * alloc_cb for recv operations. XXXWPK TODO use a pool
@@ -584,25 +580,17 @@ isc__nmhandle_get(isc_nmsocket_t *socket, isc_sockaddr_t *peer) {
 	ck_stack_entry_t *sentry;
 	REQUIRE(VALID_NMSOCK(socket));
 	INSIST(peer != NULL);
-	if (socket->type == isc_nm_tcpsocket) {
-		handle = &socket->tcphandle;
-		/* XXXWPK this should be more elegant */
-		INSIST(!VALID_NMHANDLE(handle));
-		*handle = (isc_nmhandle_t) {};
-		isc_refcount_init(&handle->references, 1);
-		handle->magic = NMHANDLE_MAGIC;
-	} else {
-		sentry = ck_stack_pop_mpmc(&socket->inactivehandles);
-		if (sentry != NULL) {
-			handle = nm_handle_is_get(sentry);
-		}
-		if (handle == NULL) {
-			handle = alloc_handle(socket);
-		} else {
-			INSIST(VALID_NMHANDLE(handle));
-			isc_refcount_increment(&handle->references);
-		}
+	sentry = ck_stack_pop_mpmc(&socket->inactivehandles);
+	if (sentry != NULL) {
+		handle = nm_handle_is_get(sentry);
 	}
+	if (handle == NULL) {
+		handle = alloc_handle(socket);
+	} else {
+		INSIST(VALID_NMHANDLE(handle));
+		isc_refcount_increment(&handle->references);
+	}
+
 	handle->socket = socket;
 	memcpy(&handle->peer, peer, sizeof(isc_sockaddr_t));
 
@@ -630,6 +618,10 @@ isc__nmhandle_get(isc_nmsocket_t *socket, isc_sockaddr_t *peer) {
 	handle->ah_pos = pos;
 	isc_mutex_unlock(&socket->lock);
 
+	if (socket->type == isc_nm_tcpsocket) {
+		INSIST(socket->tcphandle == NULL);
+		socket->tcphandle = handle;
+	}
 	return(handle);
 }
 
@@ -684,13 +676,9 @@ isc_nmhandle_detach(isc_nmhandle_t **handlep) {
 
 		bool reuse = false;
 		if (atomic_load(&socket->active)) {
-			if (handle != &socket->tcphandle) {
-				reuse = ck_stack_trypush_mpmc(
-					&socket->inactivehandles,
-					&handle->ilink);
-			} else {
-				reuse = true;
-			}
+			reuse = ck_stack_trypush_mpmc(
+				&socket->inactivehandles,
+				&handle->ilink);
 		}
 
 		isc_mutex_unlock(&socket->lock);

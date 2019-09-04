@@ -320,7 +320,7 @@ read_cb(uv_stream_t *stream, ssize_t nread, const uv_buf_t*buf) {
 	INSIST(buf != NULL);
 	if (nread < 0) {
 		isc__nm_free_uvbuf(socket, buf);
-		socket->rcb.recv(socket->rcbarg, &socket->tcphandle, NULL);
+		socket->rcb.recv(socket->rcbarg, socket->tcphandle, NULL);
 		/* XXXWPK TODO clean up handles, close the connection, reclaim
 		 * quota */
 		return;
@@ -331,7 +331,7 @@ read_cb(uv_stream_t *stream, ssize_t nread, const uv_buf_t*buf) {
 	INSIST(VALID_NMSOCK(socket));
 	INSIST(socket->rcb.recv != NULL);
 
-	socket->rcb.recv(socket->rcbarg, &socket->tcphandle, &region);
+	socket->rcb.recv(socket->rcbarg, socket->tcphandle, &region);
 	isc__nm_free_uvbuf(socket, buf);
 }
 
@@ -438,7 +438,7 @@ isc__nm_tcp_send(isc_nmhandle_t *handle,
 		 * We need to create an event and pass it using async channel
 		 */
 		ievent = isc__nm_get_ievent(socket->mgr, netievent_tcpsend);
-		ievent->handle.socket = socket;
+		ievent->socket = socket;
 		ievent->req = uvreq;
 		isc__nm_enqueue_ievent(&socket->mgr->workers[socket->tid],
 				       (isc__netievent_t*) ievent);
@@ -469,8 +469,8 @@ void
 isc__nm_handle_tcpsend(isc__networker_t *worker, isc__netievent_t *ievent0) {
 	isc__netievent_tcpsend_t *ievent =
 		(isc__netievent_tcpsend_t *) ievent0;
-	INSIST(worker->id == ievent->handle.socket->tid);
-	isc_result_t result = tcp_send_direct(ievent->handle.socket,
+	INSIST(worker->id == ievent->socket->tid);
+	isc_result_t result = tcp_send_direct(ievent->socket,
 					      ievent->req);
 	if (result != ISC_R_SUCCESS) {
 		ievent->req->cb.send(NULL, result, ievent->req->cbarg);
