@@ -78,8 +78,8 @@
  ***/
 
 typedef enum {
-	task_state_idle, task_state_ready, task_state_running,
-	task_state_done
+	task_state_idle, task_state_ready, task_state_paused,
+	task_state_running, task_state_done
 } task_state_t;
 
 #if defined(HAVE_LIBXML2) || defined(HAVE_JSON_C)
@@ -490,7 +490,8 @@ task_send(isc__task_t *task, isc_event_t **eventp, int c) {
 		task->state = task_state_ready;
 	}
 	INSIST(task->state == task_state_ready ||
-	       task->state == task_state_running);
+	       task->state == task_state_running ||
+	       task->state == task_state_paused);
 	ENQUEUE(task->events, event, ev_link);
 	task->nevents++;
 	*eventp = NULL;
@@ -1109,6 +1110,7 @@ dispatch(isc__taskmgr_t *manager, unsigned int threadid) {
 						  memory_order_acquire);
 
 			LOCK(&task->lock);
+			/* XXXWPK TODO */
 			INSIST(task->state == task_state_ready);
 			task->state = task_state_running;
 			XTRACE("running");
@@ -1633,6 +1635,43 @@ isc_task_endexclusive(isc_task_t *task0) {
 	}
 	UNLOCK(&manager->halt_lock);
 
+}
+
+void
+isc_task_pause(isc_task_t *task0) {
+	REQUIRE(ISCAPI_TASK_VALID(task0));
+	isc__task_t *task = (isc__task_t *)task0;
+	isc__taskmgr_t *manager = task->manager;
+	LOCK(&task->lock);
+	INSIST(task->state == task_state_idle || task->state == task_state_ready);
+	task->state = task_state_paused;
+	UNLOCK(&task->lock);
+	/* XXXWPK TODO optimize it - 'lazy' removal in runner? */
+        LOCK(&manager->queues[task->threadid].lock);
+	if (ISC_LINK_LINKED(task, ready_link)) {
+                DEQUEUE(manager->queues[task->threadid].ready_tasks,
+                        task, ready_link);
+	}
+        UNLOCK(&manager->queues[task->threadid].lock);
+}
+
+void
+isc_task_unpause(isc_task_t *task0) {
+	REQUIRE(ISCAPI_TASK_VALID(task0));
+	isc__task_t *task = (isc__task_t *)task0;
+	LOCK(&task->lock);
+	INSIST(task->state == task_state_paused);
+	bool was_idle = false;
+	if (!EMPTY(task->events)) {
+		task->state = task_state_ready;
+		was_idle = true;
+	} else {
+		task->state = task_state_idle;
+	}
+	UNLOCK(&task->lock);
+	if (was_idle) {
+		task_ready(task);
+	}
 }
 
 void

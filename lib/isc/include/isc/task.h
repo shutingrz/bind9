@@ -572,6 +572,11 @@ isc_task_endexclusive(isc_task_t *task);
  */
 
 void
+isc_task_pause(isc_task_t *task0);
+void
+isc_task_unpause(isc_task_t *task0);
+
+void
 isc_task_getcurrenttime(isc_task_t *task, isc_stdtime_t *t);
 void
 isc_task_getcurrenttimex(isc_task_t *task, isc_time_t *t);
