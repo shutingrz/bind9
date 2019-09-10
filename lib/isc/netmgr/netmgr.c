@@ -23,6 +23,7 @@
 #include <isc/mem.h>
 #include <isc/netmgr.h>
 #include <isc/quota.h>
+#include <isc/print.h>
 #include <isc/random.h>
 #include <isc/refcount.h>
 #include <isc/region.h>
@@ -394,7 +395,7 @@ isc__nmsocket_destroy(isc_nmsocket_t *socket, bool dofree) {
 	if (socket->tcphandle != NULL) {
 		isc_nmhandle_detach(&socket->tcphandle);
 	}
-	
+
 	if (socket->quota != NULL) {
 		isc_quota_detach(&socket->quota);
 	}
