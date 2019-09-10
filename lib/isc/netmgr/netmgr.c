@@ -802,6 +802,7 @@ isc_nm_send(isc_nmhandle_t *handle,
 		return (isc__nm_tcpdns_send(handle, region, cb, cbarg));
 	default:
 		INSIST(0);
+		ISC_UNREACHABLE();
 	}
 	return (ISC_R_FAILURE);
 }
