@@ -41,7 +41,7 @@ typedef struct isc__networker {
 	int			   id;          /* thread id */
 	uv_loop_t		   loop;        /* libuv loop structure */
 	uv_async_t		   async;       /* async channel to send
-	                                         * data to this networker */
+						 * data to this networker */
 	isc_mutex_t		   lock;
 	isc_mempool_t *		   mpool_bufs;
 	isc_condition_t		   cond;
@@ -76,7 +76,7 @@ struct isc_nmhandle {
 	 * handles when we're destroying the socket. */
 	isc_nmsocket_t *      socket;
 	size_t		      ah_pos;    /* Position in socket active handles
-	                                  * array */
+					  * array */
 	/* The handle is 'inflight' if netmgr is not currently processing it in
 	 * any way - it might mean that e.g. a recursive resolution is
 	 * happening. For an inflight handle we must wait for the calling
@@ -151,7 +151,7 @@ typedef struct isc__nm_uvreq {
 	int			magic;
 	isc_nm_t *		mgr;
 	uv_buf_t		uvbuf; /* translated isc_region_t, to be sent or
-	                                * received */
+					* received */
 	isc_sockaddr_t		local; /* local address */
 	isc_sockaddr_t		peer; /* peer address */
 	isc__nm_cb_t		cb;  /* callback */

@@ -623,7 +623,7 @@ client_allocsendbuf(ns_client_t *client, isc_buffer_t *buffer,
 			isc_buffer_init(tcpbuffer, data,
 					NS_CLIENT_TCP_BUFFER_SIZE);
 			isc_buffer_init(buffer, data,
-				        NS_CLIENT_TCP_BUFFER_SIZE);
+					NS_CLIENT_TCP_BUFFER_SIZE);
 		} else {
 			isc_buffer_init(buffer, data,
 					NS_CLIENT_TCP_BUFFER_SIZE);
@@ -1919,7 +1919,6 @@ ns__client_request(void *arg,
 		LOCK(&mgr->listlock);
 		ISC_LIST_APPEND(mgr->clients, client, link);
 		UNLOCK(&mgr->listlock);
-
 	}
 	isc_task_pause(client->task);
 	if (client->handle == NULL) {

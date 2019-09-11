@@ -446,7 +446,7 @@ static isc_result_t
 ns_interface_listenudp(ns_interface_t *ifp) {
 	isc_result_t result;
 	/* XXXWPK TODO we have to increase refcount on ifp, for both UDP and TCP */
-	result = isc_nm_udp_listen(ifp->mgr->nm, 
+	result = isc_nm_udp_listen(ifp->mgr->nm,
 				   (isc_nmiface_t*) &ifp->addr, /* XXXWPK TODO! */
 				   ns__client_request,
 				   sizeof(ns_client_t),

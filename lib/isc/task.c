@@ -1647,12 +1647,12 @@ isc_task_pause(isc_task_t *task0) {
 	task->state = task_state_paused;
 	UNLOCK(&task->lock);
 	/* XXXWPK TODO optimize it - 'lazy' removal in runner? */
-        LOCK(&manager->queues[task->threadid].lock);
+	LOCK(&manager->queues[task->threadid].lock);
 	if (ISC_LINK_LINKED(task, ready_link)) {
-                DEQUEUE(manager->queues[task->threadid].ready_tasks,
-                        task, ready_link);
+		DEQUEUE(manager->queues[task->threadid].ready_tasks,
+			task, ready_link);
 	}
-        UNLOCK(&manager->queues[task->threadid].lock);
+	UNLOCK(&manager->queues[task->threadid].lock);
 }
 
 void

@@ -641,7 +641,7 @@ isc_taskmgr_createinctx(isc_mem_t *mctx,
 			isc_taskmgr_t **managerp);
 isc_result_t
 isc_taskmgr_create(isc_mem_t *mctx, unsigned int workers,
-		   unsigned int default_quantum, 
+		   unsigned int default_quantum,
 		   isc_nm_t *nm, isc_taskmgr_t **managerp);
 /*%<
  * Create a new task manager.  isc_taskmgr_createinctx() also associates
