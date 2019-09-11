@@ -81,7 +81,7 @@ struct dns_kasp {
 	dns_kasp_keylist_t		keys;
 	time_t				dnskey_publish_safety;
 	time_t				dnskey_retire_safety;
-	uint32_t			dnskey_ttl;
+	dns_ttl_t			dnskey_ttl;
 
 
 	// TODO: The rest of the KASP configuration
@@ -195,6 +195,20 @@ dns_kasp_getname(dns_kasp_t *kasp);
  *
  * Requires:
  *
+ *\li   'kasp' is a valid kasp.
+ *
+ * Returns:
+ *
+ *\li   name of 'kasp'.
+ */
+
+dns_ttl_t
+dns_kasp_dnskeyttl(dns_kasp_t *kasp);
+/*%<
+ * Get dnskey ttl.
+ *
+ * Requires:
+ *
  *\li   'kasp' is a valid, frozen kasp.
  *
  * Returns:
@@ -244,9 +258,83 @@ dns_kasp_key_destroy(dns_kasp_key_t* key);
  *
  * Requires:
  *
- *\li  'key' is a valid KASP key.
+ *\li  key != NULL
+ */
+
+uint32_t
+dns_kasp_key_algorithm(dns_kasp_key_t *key);
+/*%<
+ * Get the key algorithm.
  *
- *\li  kasp != NULL && key != NULL
+ * Requires:
+ *
+ *\li  key != NULL
+ *
+ * Returns:
+ *
+ *\li  Key algorithm.
+ */
+
+int
+dns_kasp_key_size(dns_kasp_key_t *key);
+/*%<
+ * Get the key size.
+ *
+ * Requires:
+ *
+ *\li  key != NULL
+ *
+ * Returns:
+ *
+ *\li  Configured key size, or default key size for key algorithm if no size
+ *     configured.
+ */
+
+time_t
+dns_kasp_key_lifetime(dns_kasp_key_t *key);
+/*%<
+ * The lifetime of this key (how long may this key be active?)
+ *
+ * Requires:
+ *
+ *\li  key != NULL
+ *
+ * Returns:
+ *
+ *\li  Lifetime of key.
+ *
+ */
+
+bool
+dns_kasp_key_ksk(dns_kasp_key_t *key);
+/*%<
+ * Does this key act as a KSK?
+ *
+ * Requires:
+ *
+ *\li  key != NULL
+ *
+ * Returns:
+ *
+ *\li  True, if the key role has DNS_KASP_KEY_ROLE_KSK set.
+ *\li  False, otherwise.
+ *
+ */
+
+bool
+dns_kasp_key_zsk(dns_kasp_key_t *key);
+/*%<
+ * Does this key act as a ZSK?
+ *
+ * Requires:
+ *
+ *\li  key != NULL
+ *
+ * Returns:
+ *
+ *\li  True, if the key role has DNS_KASP_KEY_ROLE_ZSK set.
+ *\li  False, otherwise.
+ *
  */
 
 ISC_LANG_ENDDECLS
