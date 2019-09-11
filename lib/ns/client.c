@@ -487,7 +487,7 @@ client_shutdown(isc_task_t *task, isc_event_t *event) {
 	}
 	(void)exit_check(client);
 }
-*/ 
+*/
 static void
 ns_client_endrequest(ns_client_t *client) {
 	INSIST(client->naccepts == 0);
@@ -623,7 +623,7 @@ client_allocsendbuf(ns_client_t *client, isc_buffer_t *buffer,
 			isc_buffer_init(tcpbuffer, data,
 					NS_CLIENT_TCP_BUFFER_SIZE);
 			isc_buffer_init(buffer, data,
-				        NS_CLIENT_TCP_BUFFER_SIZE);
+					NS_CLIENT_TCP_BUFFER_SIZE);
 		} else {
 			isc_buffer_init(buffer, data,
 					NS_CLIENT_TCP_BUFFER_SIZE);
@@ -1916,7 +1916,7 @@ ns__client_request(void *arg,
 		LOCK(&mgr->listlock);
 		ISC_LIST_APPEND(mgr->clients, client, link);
 		UNLOCK(&mgr->listlock);
-		
+
 
 	}
 	isc_task_pause(client->task);
@@ -1927,7 +1927,7 @@ ns__client_request(void *arg,
 	if (isc_nmhandle_is_stream(handle)) {
 		client->attributes |= NS_CLIENTATTR_TCP;
 	}
-		
+
 	INSIST(client->recursionquota == NULL);
 
 	INSIST(client->state == NS_CLIENTSTATE_READY);
@@ -2796,7 +2796,7 @@ ns_clientmgr_destroy(ns_clientmgr_t **managerp) {
 		     if (client->task != NULL)
 		isc_task_shutdown(client->task);
 	}
-	
+
 	if (ISC_LIST_EMPTY(manager->clients))
 		need_destroy = true;
 
