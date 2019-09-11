@@ -300,30 +300,6 @@ unit:gcc:alpine3.10:amd64:
     - gcc:alpine3.10:amd64
   needs: ["gcc:alpine3.10:amd64"]
 
-# Jobs for regular GCC builds on CentOS 6 (amd64)
-
-gcc:centos6:amd64:
-  variables:
-    CC: gcc
-    CFLAGS: "-Wall -Wextra -O2 -g"
-    EXTRA_CONFIGURE: "--with-libidn2 --disable-warn-error"
-  <<: *centos_centos6_amd64_image
-  <<: *build_job
-
-system:gcc:centos6:amd64:
-  <<: *centos_centos6_amd64_image
-  <<: *system_test_job
-  dependencies:
-    - gcc:centos6:amd64
-  needs: ["gcc:centos6:amd64"]
-
-unit:gcc:centos6:amd64:
-  <<: *centos_centos6_amd64_image
-  <<: *unit_test_job
-  dependencies:
-    - gcc:centos6:amd64
-  needs: ["gcc:centos6:amd64"]
-
 # Jobs for regular GCC builds on CentOS 7 (amd64)
 
 gcc:centos7:amd64:
@@ -347,30 +323,6 @@ unit:gcc:centos7:amd64:
   dependencies:
     - gcc:centos7:amd64
   needs: ["gcc:centos7:amd64"]
-
-# Jobs for regular GCC builds on Debian 8 Jessie (amd64)
-
-gcc:jessie:amd64:
-  variables:
-    CC: gcc
-    CFLAGS: "-Wall -Wextra -O2 -g"
-    EXTRA_CONFIGURE: "--without-cmocka --with-python --disable-geoip"
-  <<: *debian_jessie_amd64_image
-  <<: *build_job
-
-system:gcc:jessie:amd64:
-  <<: *debian_jessie_amd64_image
-  <<: *system_test_job
-  dependencies:
-    - gcc:jessie:amd64
-  needs: ["gcc:jessie:amd64"]
-
-unit:gcc:jessie:amd64:
-  <<: *debian_jessie_amd64_image
-  <<: *unit_test_job
-  dependencies:
-    - gcc:jessie:amd64
-  needs: ["gcc:jessie:amd64"]
 
 # Jobs for regular GCC builds on Debian 9 Stretch (amd64)
 
