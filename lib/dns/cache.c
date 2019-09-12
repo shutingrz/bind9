@@ -317,8 +317,6 @@ cleanup_filelock:
 
 static void
 cache_free(dns_cache_t *cache) {
-	REQUIRE(VALID_CACHE(cache));
-
 	isc_refcount_destroy(&cache->references);
 	isc_refcount_destroy(&cache->live_tasks);
 
@@ -486,10 +484,9 @@ static isc_result_t
 cache_dump(dns_cache_t *cache) {
 	isc_result_t result;
 
-	REQUIRE(VALID_CACHE(cache));
-
-	if (cache->filename == NULL)
+	if (cache->filename == NULL) {
 		return (ISC_R_SUCCESS);
+	}
 
 	LOCK(&cache->filelock);
 	result = dns_master_dump(cache->mctx, cache->db, NULL,
@@ -984,6 +981,8 @@ dns_cache_getservestalettl(dns_cache_t *cache) {
 static void
 cleaner_shutdown_action(isc_task_t *task, isc_event_t *event) {
 	dns_cache_t *cache = event->ev_arg;
+
+	REQUIRE(VALID_CACHE(cache));
 
 	UNUSED(task);
 
