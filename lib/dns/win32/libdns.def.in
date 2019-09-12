@@ -76,7 +76,6 @@ dns_cache_attachdb
 dns_cache_clean
 dns_cache_create
 dns_cache_detach
-dns_cache_dump
 dns_cache_dumpstats
 dns_cache_flush
 dns_cache_flushname

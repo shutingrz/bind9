@@ -191,26 +191,6 @@ dns_cache_load(dns_cache_t *cache);
  */
 
 isc_result_t
-dns_cache_dump(dns_cache_t *cache);
-/*%<
- * If the cache has a file name, write the cache contents to disk,
- * overwriting any preexisting file.  If no file name has been set,
- * do nothing and return success.
- *
- * MT:
- *\li	Multiple simultaneous attempts to load or dump the cache
- * 	will be serialized with respect to one another, but
- *	the cache may be read and updated while the dump is
- *	in progress.  Updates performed during the dump may
- * 	or may not be reflected in the dumped file.
- *
- * Returns:
- *
- *\li	#ISC_R_SUCCESS
- *  \li    Various failures depending on the database implementation type
- */
-
-isc_result_t
 dns_cache_clean(dns_cache_t *cache, isc_stdtime_t now);
 /*%<
  * Force immediate cleaning of the cache, freeing all rdatasets

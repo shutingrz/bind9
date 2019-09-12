@@ -167,6 +167,9 @@ cleaner_shutdown_action(isc_task_t *task, isc_event_t *event);
 static void
 overmem_cleaning_action(isc_task_t *task, isc_event_t *event);
 
+static isc_result_t
+cache_dump(dns_cache_t *cache);
+
 static inline isc_result_t
 cache_create_db(dns_cache_t *cache, dns_db_t **db) {
 	isc_result_t result;
@@ -413,7 +416,7 @@ dns_cache_detach(dns_cache_t **cachep) {
 		 * When the cache is shut down, dump it to a file if one is
 		 * specified.
 		 */
-		isc_result_t result = dns_cache_dump(cache);
+		isc_result_t result = cache_dump(cache);
 		if (result != ISC_R_SUCCESS) {
 			isc_log_write(dns_lctx, DNS_LOGCATEGORY_DATABASE,
 				      DNS_LOGMODULE_CACHE, ISC_LOG_WARNING,
@@ -479,8 +482,8 @@ dns_cache_load(dns_cache_t *cache) {
 	return (result);
 }
 
-isc_result_t
-dns_cache_dump(dns_cache_t *cache) {
+static isc_result_t
+cache_dump(dns_cache_t *cache) {
 	isc_result_t result;
 
 	REQUIRE(VALID_CACHE(cache));
