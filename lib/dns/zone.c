@@ -16668,7 +16668,7 @@ dns_zonemgr_managezone(dns_zonemgr_t *zmgr, dns_zone_t *zone) {
 	/*
 	 * The timer "holds" a iref.
 	 */
-	isc_refcount_increment(&zone->irefs);
+	isc_refcount_increment0(&zone->irefs);
 
 	ISC_LIST_APPEND(zmgr->zones, zone, link);
 	zone->zmgr = zmgr;
@@ -19090,7 +19090,7 @@ dns_zone_link(dns_zone_t *zone, dns_zone_t *raw) {
 	/*
 	 * The timer "holds" a iref.
 	 */
-	isc_refcount_increment(&raw->irefs);
+	isc_refcount_increment0(&raw->irefs);
 
 	/* dns_zone_attach(raw, &zone->raw); */
 	isc_refcount_increment(&raw->references);
