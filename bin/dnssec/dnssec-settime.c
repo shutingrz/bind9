@@ -63,6 +63,7 @@ usage(void) {
 #endif
 	fprintf(stderr, "    -f:                 force update of old-style "
 						 "keys\n");
+	fprintf(stderr, "    -s:                 also update key state file\n");
 	fprintf(stderr, "    -K directory:       set key file location\n");
 	fprintf(stderr, "    -L ttl:             set default key TTL\n");
 	fprintf(stderr, "    -v level:           set level of verbosity\n");
@@ -142,6 +143,7 @@ main(int argc, char **argv) {
 	unsigned int 	size = 0;
 	uint16_t	flags = 0;
 	int		prepub = -1;
+	int		options;
 	dns_ttl_t	ttl = 0;
 	isc_stdtime_t	now;
 	isc_stdtime_t	pub = 0, act = 0, rev = 0, inact = 0, del = 0;
@@ -156,13 +158,16 @@ main(int argc, char **argv) {
 	bool	printact = false,  printrev = false;
 	bool	printinact = false, printdel = false;
 	bool	force = false;
-	bool   epoch = false;
-	bool   changed = false;
+	bool	epoch = false;
+	bool	changed = false;
+	bool	state = false;
 	isc_log_t       *log = NULL;
 	isc_stdtime_t	syncadd = 0, syncdel = 0;
 	bool	unsetsyncadd = false, setsyncadd = false;
 	bool	unsetsyncdel = false, setsyncdel = false;
 	bool	printsyncadd = false, printsyncdel = false;
+
+	options = DST_TYPE_PUBLIC|DST_TYPE_PRIVATE|DST_TYPE_STATE;
 
 	if (argc == 1)
 		usage();
@@ -180,7 +185,7 @@ main(int argc, char **argv) {
 
 	isc_stdtime_get(&now);
 
-#define CMDLINE_FLAGS "A:D:E:fhI:i:K:L:P:p:R:S:uv:V"
+#define CMDLINE_FLAGS "A:D:E:fhI:i:K:L:P:p:R:S:suv:V"
 	while ((ch = isc_commandline_parse(argc, argv, CMDLINE_FLAGS)) != -1) {
 		switch (ch) {
 		case 'E':
@@ -336,6 +341,9 @@ main(int argc, char **argv) {
 		case 'S':
 			predecessor = isc_commandline_argument;
 			break;
+		case 's':
+			state = true;
+			break;
 		case 'i':
 			prepub = strtottl(isc_commandline_argument);
 			break;
@@ -381,9 +389,7 @@ main(int argc, char **argv) {
 		if (setact || unsetact)
 			fatal("-S and -A cannot be used together");
 
-		result = dst_key_fromnamedfile(predecessor, directory,
-					       DST_TYPE_PUBLIC |
-					       DST_TYPE_PRIVATE,
+		result = dst_key_fromnamedfile(predecessor, directory, options,
 					       mctx, &prevkey);
 		if (result != ISC_R_SUCCESS)
 			fatal("Invalid keyfile %s: %s",
@@ -475,9 +481,8 @@ main(int argc, char **argv) {
 			      isc_result_totext(result));
 	}
 
-	result = dst_key_fromnamedfile(filename, directory,
-				       DST_TYPE_PUBLIC | DST_TYPE_PRIVATE,
-				       mctx, &key);
+	result = dst_key_fromnamedfile(filename, directory, options, mctx,
+				       &key);
 	if (result != ISC_R_SUCCESS)
 		fatal("Invalid keyfile %s: %s",
 		      filename, isc_result_totext(result));
@@ -621,6 +626,10 @@ main(int argc, char **argv) {
 			  epoch, stdout);
 
 	if (changed) {
+		if (!state) {
+			options = DST_TYPE_PUBLIC|DST_TYPE_PRIVATE;
+		}
+
 		isc_buffer_init(&buf, newname, sizeof(newname));
 		result = dst_key_buildfilename(key, DST_TYPE_PUBLIC, directory,
 					       &buf);
@@ -629,14 +638,12 @@ main(int argc, char **argv) {
 			      isc_result_totext(result));
 		}
 
-		result = dst_key_tofile(key, DST_TYPE_PUBLIC|DST_TYPE_PRIVATE,
-					directory);
+		result = dst_key_tofile(key, options, directory);
 		if (result != ISC_R_SUCCESS) {
 			dst_key_format(key, keystr, sizeof(keystr));
 			fatal("Failed to write key %s: %s", keystr,
 			      isc_result_totext(result));
 		}
-
 		printf("%s\n", newname);
 
 		isc_buffer_clear(&buf);
@@ -647,6 +654,17 @@ main(int argc, char **argv) {
 			      isc_result_totext(result));
 		}
 		printf("%s\n", newname);
+
+		if (state) {
+			isc_buffer_clear(&buf);
+			result = dst_key_buildfilename(key, DST_TYPE_STATE,
+						       directory, &buf);
+			if (result != ISC_R_SUCCESS) {
+				fatal("Failed to build key state filename: %s",
+				      isc_result_totext(result));
+			}
+			printf("%s\n", newname);
+		}
 	}
 
 	if (prevkey != NULL)

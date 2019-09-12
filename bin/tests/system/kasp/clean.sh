@@ -12,5 +12,5 @@
 set -e
 
 rm -f ./keygen.*
-rm -f ./K*.private ./K*.key ./K*.state
+rm -f ./K*.private ./K*.key ./K*.state ./K*.cmp
 rm -f ./keys/K*

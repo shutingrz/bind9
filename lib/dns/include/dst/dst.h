@@ -391,7 +391,7 @@ dst_key_read_public(const char *filename, int type,
  */
 
 isc_result_t
-dst_key_read_state(const char *filename, isc_mem_t *mctx, dst_key_t *keyp);
+dst_key_read_state(const char *filename, isc_mem_t *mctx, dst_key_t **keyp);
 /*%<
  * Reads a key state from permanent storage.
  *

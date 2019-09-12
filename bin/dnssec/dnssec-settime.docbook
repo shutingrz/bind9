@@ -59,6 +59,7 @@
       <arg choice="opt" rep="norepeat"><option>-D <replaceable class="parameter">date/offset</replaceable></option></arg>
       <arg choice="opt" rep="norepeat"><option>-D sync <replaceable class="parameter">date/offset</replaceable></option></arg>
       <arg choice="opt" rep="norepeat"><option>-S <replaceable class="parameter">key</replaceable></option></arg>
+      <arg choice="opt" rep="norepeat"><option>-s</option></arg>
       <arg choice="opt" rep="norepeat"><option>-i <replaceable class="parameter">interval</replaceable></option></arg>
       <arg choice="opt" rep="norepeat"><option>-h</option></arg>
       <arg choice="opt" rep="norepeat"><option>-V</option></arg>
@@ -88,6 +89,13 @@
       When key metadata fields are changed, both files of a key
       pair (<filename>Knnnn.+aaa+iiiii.key</filename> and
       <filename>Knnnn.+aaa+iiiii.private</filename>) are regenerated.
+      If <option>-s</option> is set, also the key state file
+      <filename>Knnnn.+aaa+iiiii.state</filename>) is regenerated.  However,
+      When using <option>dnssec-policy</option> to sign your zones it is
+      recommended NOT to use the dnssectools to manage your keys (since
+      <command>named</command> will do it for you).
+    </para>
+    <para>
       Metadata fields are stored in the private file.  A human-readable
       description of the metadata is also placed in comments in the key
       file.  The private file's permissions are always set to be
@@ -286,6 +294,15 @@
             to the inactivation date of the predecessor.  The publication
             date will be set to the activation date minus the prepublication
             interval, which defaults to 30 days.
+          </para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term>-s</term>
+        <listitem>
+          <para>
+	    When setting key timing data, also update the state file.
           </para>
         </listitem>
       </varlistentry>
