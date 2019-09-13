@@ -9,8 +9,6 @@
  * information regarding copyright ownership.
  */
 
-#include "config.h"
-
 #include <unistd.h>
 #include <uv.h>
 #include <ck_fifo.h>

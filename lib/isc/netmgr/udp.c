@@ -9,12 +9,8 @@
  * information regarding copyright ownership.
  */
 
-#include "config.h"
-
 #include <unistd.h>
 #include <uv.h>
-#include <ck_fifo.h>
-#include <ck_stack.h>
 
 #include <isc/atomic.h>
 #include <isc/buffer.h>
@@ -362,4 +358,3 @@ udp_send_direct(isc_nmsocket_t *socket,
 		return (ISC_R_FAILURE);
 	}
 }
-
