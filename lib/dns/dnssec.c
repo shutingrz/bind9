@@ -29,6 +29,7 @@
 #include <dns/diff.h>
 #include <dns/dnssec.h>
 #include <dns/fixedname.h>
+#include <dns/kasp.h>
 #include <dns/keyvalues.h>
 #include <dns/log.h>
 #include <dns/message.h>
@@ -742,7 +743,8 @@ dns_dnssec_findzonekeys(dns_db_t *db, dns_dbversion_t *ver,
 		result = dst_key_fromfile(dst_key_name(pubkey),
 					  dst_key_id(pubkey),
 					  dst_key_alg(pubkey),
-					  DST_TYPE_PUBLIC|DST_TYPE_PRIVATE,
+					  DST_TYPE_PUBLIC|DST_TYPE_PRIVATE|
+					  DST_TYPE_STATE,
 					  directory,
 					  mctx, &keys[count]);
 
@@ -761,7 +763,8 @@ dns_dnssec_findzonekeys(dns_db_t *db, dns_dbversion_t *ver,
 							  dst_key_id(pubkey),
 							  dst_key_alg(pubkey),
 							  DST_TYPE_PUBLIC|
-							  DST_TYPE_PRIVATE,
+							  DST_TYPE_PRIVATE|
+							  DST_TYPE_STATE,
 							  directory,
 							  mctx, &keys[count]);
 				if (result == ISC_R_SUCCESS &&
@@ -1227,7 +1230,14 @@ dns_dnsseckey_create(isc_mem_t *mctx, dst_key_t **dstkey,
 	dk->index = 0;
 
 	/* KSK or ZSK? */
-	dk->ksk = ((dst_key_flags(dk->key) & DNS_KEYFLAG_KSK) != 0);
+	result = dst_key_getbool(dk->key, DST_BOOL_KSK, &dk->ksk);
+	if (result != ISC_R_SUCCESS) {
+		dk->ksk = ((dst_key_flags(dk->key) & DNS_KEYFLAG_KSK) != 0);
+	}
+	result = dst_key_getbool(dk->key, DST_BOOL_ZSK, &dk->zsk);
+	if (result != ISC_R_SUCCESS) {
+		dk->zsk = ((dst_key_flags(dk->key) & DNS_KEYFLAG_KSK) == 0);
+	}
 
 	/* Is this an old-style key? */
 	result = dst_key_getprivateformat(dk->key, &major, &minor);
@@ -1347,7 +1357,7 @@ get_hints(dns_dnsseckey_t *key, isc_stdtime_t now) {
 }
 
 /*%
- * Get a list of DNSSEC keys from the key repository
+ * Get a list of DNSSEC keys from the key repository.
  */
 isc_result_t
 dns_dnssec_findmatchingkeys(const dns_name_t *origin, const char *directory,
@@ -1416,10 +1426,10 @@ dns_dnssec_findmatchingkeys(const dns_name_t *origin, const char *directory,
 				continue;
 
 		dstkey = NULL;
-		result = dst_key_fromnamedfile(dir.entry.name,
-					       directory,
+		result = dst_key_fromnamedfile(dir.entry.name, directory,
 					       DST_TYPE_PUBLIC |
-					       DST_TYPE_PRIVATE,
+					       DST_TYPE_PRIVATE |
+					       DST_TYPE_STATE,
 					       mctx, &dstkey);
 
 		switch (alg) {
@@ -1800,7 +1810,7 @@ delrdata(dns_rdata_t *rdata, dns_diff_t *diff, const dns_name_t *origin,
 
 static isc_result_t
 publish_key(dns_diff_t *diff, dns_dnsseckey_t *key, const dns_name_t *origin,
-	    dns_ttl_t ttl, isc_mem_t *mctx, bool allzsk,
+	    dns_ttl_t ttl, isc_mem_t *mctx,
 	    void (*report)(const char *, ...))
 {
 	isc_result_t result;
@@ -1813,7 +1823,7 @@ publish_key(dns_diff_t *diff, dns_dnsseckey_t *key, const dns_name_t *origin,
 	dst_key_format(key->key, keystr, sizeof(keystr));
 
 	report("Fetching %s (%s) from key %s.\n",
-	       keystr, key->ksk ? (allzsk ? "KSK/ZSK" : "KSK") : "ZSK",
+	       keystr, key->ksk ? (key->zsk ? "CSK" : "KSK") : "ZSK",
 	       key->source == dns_keysource_user ?  "file" : "repository");
 
 	if (key->prepublish && ttl > key->prepublish) {
@@ -2023,8 +2033,7 @@ dns_dnssec_syncupdate(dns_dnsseckeylist_t *keys, dns_dnsseckeylist_t *rmkeys,
 isc_result_t
 dns_dnssec_updatekeys(dns_dnsseckeylist_t *keys, dns_dnsseckeylist_t *newkeys,
 		      dns_dnsseckeylist_t *removed, const dns_name_t *origin,
-		      dns_ttl_t hint_ttl, dns_diff_t *diff,
-		      bool allzsk, isc_mem_t *mctx,
+		      dns_ttl_t hint_ttl, dns_diff_t *diff, isc_mem_t *mctx,
 		      void (*report)(const char *, ...))
 {
 	isc_result_t result;
@@ -2047,8 +2056,8 @@ dns_dnssec_updatekeys(dns_dnsseckeylist_t *keys, dns_dnsseckeylist_t *newkeys,
 		if (key->source == dns_keysource_user &&
 		    (key->hint_publish || key->force_publish))
 		{
-			RETERR(publish_key(diff, key, origin, ttl,
-					   mctx, allzsk, report));
+			RETERR(publish_key(diff, key, origin, ttl, mctx,
+					   report));
 		}
 		if (key->source == dns_keysource_zoneapex) {
 			ttl = dst_key_getttl(key->key);
@@ -2125,14 +2134,14 @@ dns_dnssec_updatekeys(dns_dnsseckeylist_t *keys, dns_dnsseckeylist_t *newkeys,
 			    (key1->hint_publish || key1->force_publish))
 			{
 				RETERR(publish_key(diff, key1, origin, ttl,
-						   mctx, allzsk, report));
+						   mctx, report));
 				isc_log_write(dns_lctx,
 					      DNS_LOGCATEGORY_DNSSEC,
 					      DNS_LOGMODULE_DNSSEC,
 					      ISC_LOG_INFO,
 					      "DNSKEY %s (%s) is now published",
 					      keystr1, key1->ksk ?
-					      (allzsk ? "KSK/ZSK" : "KSK") :
+					      (key1->zsk ? "CSK" : "KSK") :
 					      "ZSK");
 				if (key1->hint_sign || key1->force_sign) {
 					key1->first_sign = true;
@@ -2143,7 +2152,7 @@ dns_dnssec_updatekeys(dns_dnsseckeylist_t *keys, dns_dnsseckeylist_t *newkeys,
 						      "DNSKEY %s (%s) is now "
 						      "active",
 						      keystr1, key1->ksk ?
-						      (allzsk ? "KSK/ZSK" :
+						      (key1->zsk ? "CSK" :
 						       "KSK") : "ZSK");
 				}
 			}
@@ -2167,8 +2176,8 @@ dns_dnssec_updatekeys(dns_dnsseckeylist_t *keys, dns_dnsseckeylist_t *newkeys,
 					      DNS_LOGMODULE_DNSSEC,
 					      ISC_LOG_INFO,
 					      "DNSKEY %s (%s) is now deleted",
-					      keystr2, key2->ksk ? (allzsk ?
-					      "KSK/ZSK" : "KSK") : "ZSK");
+					      keystr2, key2->ksk ? (key2->zsk ?
+					      "CSK" : "KSK") : "ZSK");
 			} else {
 				dns_dnsseckey_destroy(mctx, &key2);
 			}
@@ -2192,15 +2201,15 @@ dns_dnssec_updatekeys(dns_dnsseckeylist_t *keys, dns_dnsseckeylist_t *newkeys,
 					      ISC_LOG_INFO,
 					      "DNSKEY %s (%s) is now revoked; "
 					      "new ID is %05d",
-					      keystr2, key2->ksk ? (allzsk ?
-					      "KSK/ZSK" : "KSK") : "ZSK",
+					      keystr2, key2->ksk ? (key2->zsk ?
+					      "CSK" : "KSK") : "ZSK",
 					      dst_key_id(key1->key));
 			} else {
 				dns_dnsseckey_destroy(mctx, &key2);
 			}
 
-			RETERR(publish_key(diff, key1, origin, ttl,
-					   mctx, allzsk, report));
+			RETERR(publish_key(diff, key1, origin, ttl, mctx,
+					   report));
 			ISC_LIST_UNLINK(*newkeys, key1, link);
 			ISC_LIST_APPEND(*keys, key1, link);
 
@@ -2224,8 +2233,8 @@ dns_dnssec_updatekeys(dns_dnsseckeylist_t *keys, dns_dnsseckeylist_t *newkeys,
 					      DNS_LOGMODULE_DNSSEC,
 					      ISC_LOG_INFO,
 					      "DNSKEY %s (%s) is now active",
-					      keystr1, key1->ksk ? (allzsk ?
-					      "KSK/ZSK" : "KSK") : "ZSK");
+					      keystr1, key1->ksk ? (key1->zsk ?
+					      "CSK" : "KSK") : "ZSK");
 			} else if (key2->is_active &&
 				   !key1->hint_sign && !key1->force_sign)
 			{
@@ -2234,8 +2243,8 @@ dns_dnssec_updatekeys(dns_dnsseckeylist_t *keys, dns_dnsseckeylist_t *newkeys,
 					      DNS_LOGMODULE_DNSSEC,
 					      ISC_LOG_INFO,
 					      "DNSKEY %s (%s) is now inactive",
-					      keystr1, key1->ksk ? (allzsk ?
-					      "KSK/ZSK" : "KSK") : "ZSK");
+					      keystr1, key1->ksk ? (key1->zsk ?
+					      "CSK" : "KSK") : "ZSK");
 			}
 
 			key2->hint_sign = key1->hint_sign;
@@ -2253,5 +2262,158 @@ dns_dnssec_updatekeys(dns_dnsseckeylist_t *keys, dns_dnsseckeylist_t *newkeys,
 	result = ISC_R_SUCCESS;
 
  failure:
+	return (result);
+}
+
+static isc_result_t
+keymgr_createkey(dns_kasp_key_t *kkey, const dns_name_t *origin,
+		 dns_rdataclass_t rdclass, isc_mem_t *mctx,
+		 dns_dnsseckeylist_t *keylist, dst_key_t **dst_key)
+{
+	bool conflict;
+	int keyflags = DNS_KEYOWNER_ZONE;
+	isc_result_t result = ISC_R_SUCCESS;
+	dst_key_t* newkey = NULL;
+
+	do {
+		uint16_t id;
+		uint32_t rid;
+		uint32_t algo = dns_kasp_key_algorithm(kkey);
+		int size = dns_kasp_key_size(kkey);
+
+		conflict = false;
+
+		if (dns_kasp_key_ksk(kkey)) {
+			keyflags |= DNS_KEYFLAG_KSK;
+		}
+		RETERR(dst_key_generate(origin, algo, size, 0, keyflags,
+					DNS_KEYPROTO_DNSSEC, rdclass, mctx,
+					&newkey, NULL));
+
+		/* Key collision? */
+		id = dst_key_id(newkey);
+		rid = dst_key_rid(newkey);
+		for (dns_dnsseckey_t *dkey = ISC_LIST_HEAD(*keylist);
+		     dkey != NULL; dkey = ISC_LIST_NEXT(dkey, link))
+		{
+			if (dst_key_alg(dkey->key) != algo) {
+				continue;
+			}
+			if (dst_key_id(dkey->key) == id ||
+			    dst_key_rid(dkey->key) == id ||
+			    dst_key_id(dkey->key) == rid ||
+			    dst_key_rid(dkey->key) == rid)
+			{
+				/* Try again. */
+				conflict = true;
+				dst_key_free(&newkey);
+			}
+		}
+	} while (conflict == true);
+
+	INSIST(!conflict);
+	dst_key_setnum(newkey, DST_NUM_LIFETIME, dns_kasp_key_lifetime(kkey));
+	dst_key_setbool(newkey, DST_BOOL_KSK, dns_kasp_key_ksk(kkey));
+	dst_key_setbool(newkey, DST_BOOL_ZSK, dns_kasp_key_zsk(kkey));
+	*dst_key = newkey;
+	return (ISC_R_SUCCESS);
+
+failure:
+	return (result);
+}
+
+/*
+ * Examine 'keys' and match 'kasp' policy.
+ *
+ */
+isc_result_t
+dns_dnssec_keymgr(const dns_name_t *origin, dns_rdataclass_t rdclass,
+		  const char *directory, isc_stdtime_t now, isc_mem_t *mctx,
+		  dns_dnsseckeylist_t *keylist, dns_kasp_t* kasp)
+{
+	isc_result_t result = ISC_R_SUCCESS;
+	dns_dnsseckeylist_t newkeys;
+	dns_kasp_key_t *kkey;
+	dns_dnsseckey_t *newkey = NULL;
+	dst_key_t *dst_key = NULL;
+	isc_dir_t dir;
+	bool dir_open = false;
+	int options = (DST_TYPE_PRIVATE | DST_TYPE_PUBLIC | DST_TYPE_STATE);
+	char keystr[DST_KEY_FORMATSIZE];
+
+	REQUIRE(DNS_KASP_VALID(kasp));
+	REQUIRE(keylist != NULL);
+
+	ISC_LIST_INIT(newkeys);
+	isc_dir_init(&dir);
+	if (directory == NULL) {
+		directory = ".";
+	}
+
+	RETERR(isc_dir_open(&dir, directory));
+	dir_open = true;
+
+	if (ISC_LIST_EMPTY(*keylist)) {
+		/* Create keys according to the policy. */
+		for (kkey = ISC_LIST_HEAD(kasp->keys); kkey != NULL;
+		     kkey = ISC_LIST_NEXT(kkey, link))
+		{
+			bool csk = false;
+			bool ksk = false;
+			bool zsk = false;
+
+			RETERR(keymgr_createkey(kkey, origin, rdclass, mctx,
+						keylist, &dst_key));
+			dst_key_setttl(dst_key, dns_kasp_dnskeyttl(kasp));
+			dst_key_settime(dst_key, DST_TIME_CREATED, now);
+			dst_key_settime(dst_key, DST_TIME_PUBLISH, now);
+			dst_key_settime(dst_key, DST_TIME_ACTIVATE, now);
+
+			ksk = dns_kasp_key_ksk(kkey);
+			zsk = dns_kasp_key_zsk(kkey);
+			csk = ksk && zsk;
+
+			RETERR(dst_key_tofile(dst_key, options, directory));
+			RETERR(dns_dnsseckey_create(mctx, &dst_key, &newkey));
+			newkey->source = dns_keysource_repository;
+			get_hints(newkey, now);
+			INSIST(!newkey->legacy);
+
+			ISC_LIST_APPEND(newkeys, newkey, link);
+
+			dst_key_format(newkey->key, keystr, sizeof(keystr));
+			isc_log_write(dns_lctx, DNS_LOGCATEGORY_DNSSEC,
+				      DNS_LOGMODULE_DNSSEC, ISC_LOG_INFO,
+				      "DNSKEY %s (%s) created for policy %s",
+				      keystr,
+				      csk ? "CSK" : (ksk ? "KSK" : "ZSK"),
+				      dns_kasp_getname(kasp));
+
+			newkey = NULL;
+		}
+	}
+
+	/* Do we have enough keys now? And are they according to policy? */
+
+	/* Append new keys. */
+	if (!ISC_LIST_EMPTY(newkeys)) {
+		ISC_LIST_APPENDLIST(*keylist, newkeys, link);
+	}
+	result = ISC_R_SUCCESS;
+
+failure:
+	if (dir_open) {
+		isc_dir_close(&dir);
+	}
+
+	INSIST(newkey == NULL);
+	if (result != ISC_R_SUCCESS) {
+		while ((newkey = ISC_LIST_HEAD(newkeys)) != NULL) {
+			ISC_LIST_UNLINK(newkeys, newkey, link);
+			INSIST(newkey->key != NULL);
+			dst_key_free(&newkey->key);
+			dns_dnsseckey_destroy(mctx, &newkey);
+		}
+	}
 	return (result);
 }
