@@ -104,7 +104,7 @@ parser_complain(cfg_parser_t *pctx, bool is_warning,
 		unsigned int flags, const char *format, va_list args);
 
 static isc_result_t
-glob_include(const char * restrict pattern, glob_t * restrict pglob); 
+glob_include(const char * restrict pattern, glob_t * restrict pglob);
 
 #if defined(HAVE_GEOIP2)
 static isc_result_t
@@ -1973,7 +1973,7 @@ cfg_parse_mapbody(cfg_parser_t *pctx, const cfg_type_t *type, cfg_obj_t **ret)
 			CHECK(glob_include(includename->value.string.base, &glob_obj));
 			cfg_obj_destroy(pctx, &includename);
 
-			for (int i = 0; i < glob_obj.gl_matchc; ++i) {
+			for (size_t i = 0; i < glob_obj.gl_pathc; ++i) {
 				CHECK(parser_openfile(pctx, glob_obj.gl_pathv[i]));
 			}
 
@@ -3673,4 +3673,3 @@ glob_include(const char * restrict pattern, glob_t * restrict pglob)
 	}
 
 }
-
