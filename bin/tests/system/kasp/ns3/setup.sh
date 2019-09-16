@@ -14,14 +14,12 @@
 
 set -e
 
-$SHELL clean.sh
+echo_i "ns3/setup.sh"
 
-mkdir keys
+infile="template.db.in"
 
-copy_setports ns3/named.conf.in ns3/named.conf
-
-# ns3: Setup zones
-(
-	cd ns3
-	$SHELL setup.sh
-)
+for zone in default configured
+do
+	zonefile="${zone}.kasp.db"
+	cp $infile $zonefile
+done

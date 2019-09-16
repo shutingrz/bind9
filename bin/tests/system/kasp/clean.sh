@@ -14,3 +14,7 @@ set -e
 rm -f ./keygen.*
 rm -f ./K*.private ./K*.key ./K*.state ./K*.cmp
 rm -f ./keys/K*
+rm -f ns*/named.conf ns*/named.memstats ns*/named.run* ns*/*.jnl
+rm -f ns*/K*.private ns*/K*.key ns*/K*.state
+rm -f ns*/dsset-* ns*/*.db ns*/*.db.signed
+rm -f dig.out*

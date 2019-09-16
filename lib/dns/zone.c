@@ -6260,22 +6260,31 @@ delsig_ok(dns_rdata_rrsig_t *rrsig_ptr, dst_key_t **keys, unsigned int nkeys,
 	  bool *warn)
 {
 	unsigned int i = 0;
+	isc_result_t ret;
 	bool have_ksk = false, have_zsk = false;
 	bool have_pksk = false, have_pzsk = false;
 
 	for (i = 0; i < nkeys; i++) {
 		if (rrsig_ptr->algorithm != dst_key_alg(keys[i]))
 			continue;
-		if (dst_key_isprivate(keys[i])) {
-			if (KSK(keys[i]))
-				have_ksk = have_pksk = true;
-			else
-				have_zsk = have_pzsk = true;
-		} else {
-			if (KSK(keys[i]))
+
+		ret = dst_key_getbool(keys[i], DST_BOOL_KSK, &have_ksk);
+		if (ret != ISC_R_SUCCESS) {
+			if (KSK(keys[i])) {
 				have_ksk = true;
-			else
+			}
+		}
+
+		ret = dst_key_getbool(keys[i], DST_BOOL_ZSK, &have_zsk);
+		if (ret != ISC_R_SUCCESS) {
+			if (!KSK(keys[i])) {
 				have_zsk = true;
+			}
+		}
+
+		if (dst_key_isprivate(keys[i])) {
+			have_pksk = have_ksk;
+			have_pzsk = have_zsk;
 		}
 	}
 
@@ -6494,6 +6503,7 @@ add_sigs(dns_db_t *db, dns_dbversion_t *ver, dns_name_t *name,
 {
 	isc_result_t result;
 	dns_dbnode_t *node = NULL;
+	dns_kasp_t *kasp = dns_zone_getkasp(zone);
 	dns_stats_t* dnssecsignstats;
 	dns_stats_t* dnssecrefreshstats;
 	dns_rdataset_t rdataset;
@@ -6501,6 +6511,11 @@ add_sigs(dns_db_t *db, dns_dbversion_t *ver, dns_name_t *name,
 	unsigned char data[1024]; /* XXX */
 	isc_buffer_t buffer;
 	unsigned int i, j;
+
+	if (kasp != NULL) {
+		check_ksk = false;
+		keyset_kskonly = true;
+	}
 
 	dns_rdataset_init(&rdataset);
 	isc_buffer_init(&buffer, data, sizeof(data));
@@ -6575,7 +6590,54 @@ add_sigs(dns_db_t *db, dns_dbversion_t *ver, dns_name_t *name,
 			}
 		}
 
-		if (both) {
+		if (kasp != NULL) {
+			/*
+			 * A dnssec-policy is found. Check what RRsets this
+			 * key should sign.
+			 */
+			isc_result_t kresult;
+			bool ksk = false;
+			bool zsk = false;
+
+			kresult = dst_key_getbool(keys[i], DST_BOOL_KSK, &ksk);
+			if (kresult != ISC_R_SUCCESS) {
+				if (KSK(keys[i])) {
+					ksk = true;
+				}
+			}
+			kresult = dst_key_getbool(keys[i], DST_BOOL_ZSK, &zsk);
+			if (kresult != ISC_R_SUCCESS) {
+				if (!KSK(keys[i])) {
+					zsk = true;
+				}
+			}
+
+			if (type == dns_rdatatype_dnskey ||
+			    type == dns_rdatatype_cdnskey ||
+			    type == dns_rdatatype_cds)
+			{
+				/*
+				 * DNSKEY RRset is signed with KSK.
+				 * CDS and CDNSKEY RRsets too (RFC 7344, 4.1).
+				 */
+				if (!ksk) {
+					continue;
+				}
+			} else if (!zsk) {
+				/*
+				 * Other RRsets are signed with ZSK.
+				 */
+				continue;
+			}
+
+			/*
+			 * If this key is revoked, it may only sign the
+			 * DNSKEY RRset.
+			 */
+			if (REVOKE(keys[i]) && type != dns_rdatatype_dnskey) {
+				continue;
+			}
+		} else if (both) {
 			/*
 			 * CDS and CDNSKEY are signed with KSK (RFC 7344, 4.1).
 			 */
@@ -6995,7 +7057,7 @@ sign_a_node(dns_db_t *db, dns_zone_t *zone, dns_name_t *name,
 	    dns_dbnode_t *node, dns_dbversion_t *version,
 	    bool build_nsec3, bool build_nsec, dst_key_t *key,
 	    isc_stdtime_t inception, isc_stdtime_t expire,
-	    unsigned int minimum, bool is_ksk,
+	    unsigned int minimum, bool is_ksk, bool is_zsk,
 	    bool keyset_kskonly, bool is_bottom_of_zone,
 	    dns_diff_t *diff, int32_t *signatures, isc_mem_t *mctx)
 {
@@ -7086,7 +7148,7 @@ sign_a_node(dns_db_t *db, dns_zone_t *zone, dns_name_t *name,
 			if (!is_ksk && keyset_kskonly) {
 				goto next_rdataset;
 			}
-		} else if (is_ksk) {
+		} else if (!is_zsk) {
 			goto next_rdataset;
 		}
 		if (seen_ns && !seen_soa &&
@@ -8681,13 +8743,14 @@ zone_sign(dns_zone_t *zone) {
 	dns__zonediff_t zonediff;
 	dns_fixedname_t fixed;
 	dns_fixedname_t nextfixed;
+	dns_kasp_t *kasp;
 	dns_name_t *name, *nextname;
 	dns_rdataset_t rdataset;
 	dns_signing_t *signing, *nextsigning;
 	dns_signinglist_t cleanup;
 	dst_key_t *zone_keys[DNS_MAXZONEKEYS];
 	int32_t signatures;
-	bool check_ksk, keyset_kskonly, is_ksk;
+	bool check_ksk, keyset_kskonly, is_ksk, is_zsk;
 	bool with_ksk, with_zsk;
 	bool commit = false;
 	bool is_bottom_of_zone;
@@ -8748,6 +8811,8 @@ zone_sign(dns_zone_t *zone) {
 		goto cleanup;
 	}
 
+	kasp = dns_zone_getkasp(zone);
+
 	sigvalidityinterval = dns_zone_getsigvalidityinterval(zone);
 	inception = now - 3600;	/* Allow for clock skew. */
 	soaexpire = now + sigvalidityinterval;
@@ -8784,8 +8849,10 @@ zone_sign(dns_zone_t *zone) {
 	signing = ISC_LIST_HEAD(zone->signing);
 	first = true;
 
-	check_ksk = DNS_ZONE_OPTION(zone, DNS_ZONEOPT_UPDATECHECKKSK);
-	keyset_kskonly = DNS_ZONE_OPTION(zone, DNS_ZONEOPT_DNSKEYKSKONLY);
+	check_ksk = (kasp != NULL) ? false :
+		    DNS_ZONE_OPTION(zone, DNS_ZONEOPT_UPDATECHECKKSK);
+	keyset_kskonly = (kasp != NULL) ? true :
+		    DNS_ZONE_OPTION(zone, DNS_ZONEOPT_DNSKEYKSKONLY);
 
 	/* Determine which type of chain to build */
 	CHECK(dns_private_chains(db, version, zone->privatetype,
@@ -8831,8 +8898,15 @@ zone_sign(dns_zone_t *zone) {
 				if (ALG(zone_keys[i]) == signing->algorithm &&
 				    dst_key_id(zone_keys[i]) == signing->keyid)
 				{
-					if (KSK(zone_keys[i]))
+					bool ksk = false;
+					isc_result_t ret = dst_key_getbool(
+					      zone_keys[i], DST_BOOL_KSK, &ksk);
+					if (ret != ISC_R_SUCCESS) {
+						ksk = KSK(zone_keys[i]);
+					}
+					if (ksk) {
 						dst_key_free(&zone_keys[i]);
+					}
 					continue;
 				}
 				zone_keys[j] = zone_keys[i];
@@ -8963,10 +9037,39 @@ zone_sign(dns_zone_t *zone) {
 					}
 				}
 			}
-			if (both || REVOKE(zone_keys[i])) {
+			if (kasp != NULL) {
+				/*
+				 * A dnssec-policy is found. Check what
+				 * RRsets this key can sign.
+				 */
+				isc_result_t kresult;
+				is_ksk = false;
+				kresult = dst_key_getbool(zone_keys[i],
+							  DST_BOOL_KSK,
+							  &is_ksk);
+				if (kresult != ISC_R_SUCCESS) {
+					if (KSK(zone_keys[i])) {
+						is_ksk = true;
+					}
+				}
+
+				is_zsk = false;
+				kresult = dst_key_getbool(zone_keys[i],
+							  DST_BOOL_ZSK,
+							  &is_zsk);
+				if (kresult != ISC_R_SUCCESS) {
+					if (!KSK(zone_keys[i])) {
+						is_zsk = true;
+					}
+				}
+				/* Treat as if we have both KSK and ZSK. */
+				both = true;
+			} else if (both || REVOKE(zone_keys[i])) {
 				is_ksk = KSK(zone_keys[i]);
+				is_zsk = !KSK(zone_keys[i]);
 			} else {
 				is_ksk = false;
+				is_zsk = true;
 			}
 
 			/*
@@ -8974,7 +9077,7 @@ zone_sign(dns_zone_t *zone) {
 			 * the RRset is still signed at least once by a
 			 * KSK and a ZSK.
 			 */
-			if (signing->deleteit && !is_ksk && with_zsk) {
+			if (signing->deleteit && is_zsk && with_zsk) {
 				continue;
 			}
 
@@ -8985,7 +9088,7 @@ zone_sign(dns_zone_t *zone) {
 			CHECK(sign_a_node(db, zone, name, node, version,
 					  build_nsec3, build_nsec,
 					  zone_keys[i], inception, expire,
-					  zone->minimum, is_ksk,
+					  zone->minimum, is_ksk, is_zsk,
 					  (both && keyset_kskonly),
 					  is_bottom_of_zone, zonediff.diff,
 					  &signatures, zone->mctx));
@@ -8996,10 +9099,10 @@ zone_sign(dns_zone_t *zone) {
 			if (!signing->deleteit) {
 				break;
 			}
-			if (!is_ksk) {
+			if (is_zsk) {
 				with_zsk = true;
 			}
-			if (KSK(zone_keys[i])) {
+			if (is_ksk) {
 				with_ksk = true;
 			}
 		}
@@ -18378,6 +18481,7 @@ zone_rekey(dns_zone_t *zone) {
 	dns_dnsseckeylist_t dnskeys, keys, rmkeys;
 	dns_dnsseckey_t *key = NULL;
 	dns_diff_t diff, _sig_diff;
+	dns_kasp_t *kasp;
 	dns__zonediff_t zonediff;
 	bool commit = false, newactive = false;
 	bool newalg = false;
@@ -18454,13 +18558,23 @@ zone_rekey(dns_zone_t *zone) {
 	 * True when called from "rndc sign".  Indicates the zone should be
 	 * fully signed now.
 	 */
+	kasp = dns_zone_getkasp(zone);
 	fullsign = DNS_ZONEKEY_OPTION(zone, DNS_ZONEKEY_FULLSIGN);
 
 	result = dns_dnssec_findmatchingkeys(&zone->origin, dir, now, mctx,
 					     &keys);
+	if (kasp && (result == ISC_R_SUCCESS || result == ISC_R_NOTFOUND)) {
+		result = dns_dnssec_keymgr(&zone->origin, zone->rdclass, dir,
+					   now, mctx, &keys, kasp);
+		if (result != ISC_R_SUCCESS) {
+			dnssec_log(zone, ISC_LOG_ERROR,
+				   "zone_rekey:keymgr failed: %s",
+				   isc_result_totext(result));
+			goto failure;
+		}
+	}
+
 	if (result == ISC_R_SUCCESS) {
-		bool check_ksk;
-		check_ksk = DNS_ZONE_OPTION(zone, DNS_ZONEOPT_UPDATECHECKKSK);
 		result = dns_dnssec_updatekeys(&dnskeys, &keys, &rmkeys,
 					       &zone->origin, ttl, &diff,
 					       mctx, dnssec_report);

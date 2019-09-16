@@ -1560,12 +1560,20 @@ named_zone_configure(const cfg_obj_t *config, const cfg_obj_t *vconfig,
 		INSIST(result == ISC_R_SUCCESS && obj != NULL);
 		dns_zone_setoption(zone, DNS_ZONEOPT_UPDATECHECKKSK,
 				   cfg_obj_asboolean(obj));
+		/*
+		 * This setting will be ignored if dnssec-policy is used.
+		 * named-checkconf will catch if both are configured.
+		 */
 
 		obj = NULL;
 		result = named_config_get(maps, "dnssec-dnskey-kskonly", &obj);
 		INSIST(result == ISC_R_SUCCESS && obj != NULL);
 		dns_zone_setoption(zone, DNS_ZONEOPT_DNSKEYKSKONLY,
 				   cfg_obj_asboolean(obj));
+		/*
+		 * This setting will be ignored if dnssec-policy is used.
+		 * named-checkconf will catch if both are configured.
+		 */
 
 		obj = NULL;
 		result = named_config_get(maps, "dnssec-loadkeys-interval",
@@ -1576,7 +1584,11 @@ named_zone_configure(const cfg_obj_t *config, const cfg_obj_t *vconfig,
 
 		obj = NULL;
 		result = cfg_map_get(zoptions, "auto-dnssec", &obj);
-		if (result == ISC_R_SUCCESS) {
+		if (dns_zone_getkasp(zone) != NULL) {
+			dns_zone_setkeyopt(zone, DNS_ZONEKEY_ALLOW, true);
+			dns_zone_setkeyopt(zone, DNS_ZONEKEY_CREATE, true);
+			dns_zone_setkeyopt(zone, DNS_ZONEKEY_MAINTAIN, true);
+		} else if (result == ISC_R_SUCCESS) {
 			const char *arg = cfg_obj_asstring(obj);
 			if (strcasecmp(arg, "allow") == 0) {
 				allow = true;
@@ -1589,6 +1601,7 @@ named_zone_configure(const cfg_obj_t *config, const cfg_obj_t *vconfig,
 				ISC_UNREACHABLE();
 			}
 			dns_zone_setkeyopt(zone, DNS_ZONEKEY_ALLOW, allow);
+			dns_zone_setkeyopt(zone, DNS_ZONEKEY_CREATE, false);
 			dns_zone_setkeyopt(zone, DNS_ZONEKEY_MAINTAIN, maint);
 		}
 	}
