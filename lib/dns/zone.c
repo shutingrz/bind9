@@ -10219,7 +10219,7 @@ zone_refreshkeys(dns_zone_t *zone) {
 
 		zone->refreshkeycount++;
 		kfetch->zone = zone;
-		isc_refcount_increment(&zone->irefs);
+		isc_refcount_increment0(&zone->irefs);
 		kname = dns_fixedname_initname(&kfetch->name);
 		dns_name_dup(name, zone->mctx, kname);
 		dns_rdataset_init(&kfetch->dnskeyset);
@@ -15994,7 +15994,7 @@ queue_xfrin(dns_zone_t *zone) {
 
 	RWLOCK(&zmgr->rwlock, isc_rwlocktype_write);
 	ISC_LIST_APPEND(zmgr->waiting_for_xfrin, zone, statelink);
-	isc_refcount_increment(&zone->irefs);
+	isc_refcount_increment0(&zone->irefs);
 	zone->statelist = &zmgr->waiting_for_xfrin;
 	result = zmgr_start_xfrin_ifquota(zmgr, zone);
 	RWUNLOCK(&zmgr->rwlock, isc_rwlocktype_write);
@@ -16622,7 +16622,7 @@ dns_zonemgr_managezone(dns_zonemgr_t *zmgr, dns_zone_t *zone) {
 	/*
 	 * The timer "holds" a iref.
 	 */
-	isc_refcount_increment(&zone->irefs);
+	isc_refcount_increment0(&zone->irefs);
 
 	ISC_LIST_APPEND(zmgr->zones, zone, link);
 	zone->zmgr = zmgr;
