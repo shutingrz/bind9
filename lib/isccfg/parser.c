@@ -14,6 +14,7 @@
 #include <inttypes.h>
 #include <stdbool.h>
 #include <stdlib.h>
+#include <string.h>
 #include <errno.h>
 #include <glob.h>
 
@@ -3663,7 +3664,7 @@ glob_include(const char * restrict pattern, glob_t * restrict pglob)
 			/* if a magic char (*?[]) was in pattern
 			 * and no path matched we report error early,
 			 * otherwise proceed as normal */
-			return (pglob->gl_flags & GLOB_MAGCHAR) ?
+			return (strpbrk(pattern, "[]*?")) ?
 					(ISC_R_FILENOTFOUND) : (ISC_R_SUCCESS);
 
 		case GLOB_NOSPACE:
