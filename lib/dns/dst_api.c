@@ -120,11 +120,30 @@ static const char *timingtags[TIMING_NTAGS] = {
 	"DSPublish:",
 	"SyncPublish:",
 	"SyncDelete:"
+
+	"DNSKEYChange:",
+	"ZRRSIGChange:",
+	"KRRSIGChange:",
+	"DSChange:",
+};
+
+#define KEYSTATES_NTAGS (DST_MAX_KEYSTATES + 1)
+static const char *keystatestags[KEYSTATES_NTAGS] = {
+	"DNSKEYState:",
+	"ZRRSIGState:",
+	"KRRSIGState:",
+	"DSState:"
+};
+
+#define KEYSTATES_NVALUES 4
+static const char *keystates[KEYSTATES_NVALUES] = {
+	"hidden", "rumoured", "omnipresent", "unretentive",
 };
 
 #define STATE_ALGORITHM_STR "Algorithm:"
 #define STATE_LENGTH_STR "Length:"
-#define MAX_NTAGS (DST_MAX_NUMERIC + DST_MAX_BOOLEAN + DST_MAX_TIMES)
+#define MAX_NTAGS (DST_MAX_NUMERIC + DST_MAX_BOOLEAN + \
+		   DST_MAX_TIMES + DST_MAX_KEYSTATES)
 
 static dst_func_t *dst_t_func[DST_MAX_ALGS];
 
@@ -1071,6 +1090,35 @@ dst_key_unsettime(dst_key_t *key, int type) {
 }
 
 isc_result_t
+dst_key_getstate(const dst_key_t *key, int type, dst_key_state_t *statep)
+{
+	REQUIRE(VALID_KEY(key));
+	REQUIRE(statep != NULL);
+	REQUIRE(type <= DST_MAX_KEYSTATES);
+	if (!key->keystateset[type])
+		return (ISC_R_NOTFOUND);
+	*statep = key->keystates[type];
+	return (ISC_R_SUCCESS);
+}
+
+void
+dst_key_setstate(dst_key_t *key, int type, dst_key_state_t state)
+{
+	REQUIRE(VALID_KEY(key));
+	REQUIRE(type <= DST_MAX_KEYSTATES);
+	key->keystates[type] = state;
+	key->keystateset[type] = true;
+}
+
+void
+dst_key_unsetstate(dst_key_t *key, int type)
+{
+	REQUIRE(VALID_KEY(key));
+	REQUIRE(type <= DST_MAX_KEYSTATES);
+	key->keystateset[type] = false;
+}
+
+isc_result_t
 dst_key_getprivateformat(const dst_key_t *key, int *majorp, int *minorp) {
 	REQUIRE(VALID_KEY(key));
 	REQUIRE(majorp != NULL);
@@ -1590,6 +1638,22 @@ find_timingdata(const char *s) {
 	return (find_metadata(s, timingtags, TIMING_NTAGS));
 }
 
+static int
+find_keystatedata(const char *s) {
+	return (find_metadata(s, keystatestags, KEYSTATES_NTAGS));
+}
+
+static isc_result_t
+keystate_fromtext(const char *s, dst_key_state_t *state) {
+	for (int i = 0; i < KEYSTATES_NVALUES; i++) {
+		if (keystates[i] != NULL && strcasecmp(s, keystates[i]) == 0) {
+			*state = (dst_key_state_t) i;
+			return (ISC_R_SUCCESS);
+		}
+	}
+	return (ISC_R_NOTFOUND);
+}
+
 
 /*%
  * Reads a key state from disk.
@@ -1725,6 +1789,27 @@ dst_key_read_state(const char *filename, isc_mem_t *mctx, dst_key_t **keyp)
 			goto next;
 		}
 
+		/* Keystate metadata */
+		tag = find_keystatedata(DST_AS_STR(token));
+		if (tag >= 0) {
+			dst_key_state_t state;
+
+			INSIST(tag < KEYSTATES_NTAGS);
+
+			NEXTTOKEN(lex, opt, &token);
+			if (token.type != isc_tokentype_string) {
+				BADTOKEN();
+			}
+
+			ret = keystate_fromtext(DST_AS_STR(token), &state);
+			if (ret != ISC_R_SUCCESS) {
+				goto cleanup;
+			}
+
+			dst_key_setstate(*keyp, tag, state);
+			goto next;
+		}
+
 next:
 		READLINE(lex, opt, &token);
 
@@ -1842,6 +1927,21 @@ printtime(const dst_key_t *key, int type, const char *tag, FILE *stream) {
 }
 
 /*%
+ * Write key state metadata to a file pointer, preceded by 'tag'
+ */
+static void
+printstate(const dst_key_t *key, int type, const char *tag, FILE *stream) {
+	isc_result_t result;
+	dst_key_state_t value = 0;
+
+	result = dst_key_getstate(key, type, &value);
+	if (result != ISC_R_SUCCESS) {
+		return;
+	}
+	fprintf(stream, "%s: %s\n", tag, keystates[value]);
+}
+
+/*%
  * Writes a key state to disk.
  */
 static isc_result_t
@@ -1901,6 +2001,16 @@ write_key_state(const dst_key_t *key, int type, const char *directory) {
 		printtime(key, DST_TIME_INACTIVE, "Retired", fp);
 		printtime(key, DST_TIME_REVOKE, "Revoked", fp);
 		printtime(key, DST_TIME_DELETE, "Removed", fp);
+
+		printtime(key, DST_TIME_DNSKEY, "DNSKEYChange", fp);
+		printtime(key, DST_TIME_ZRRSIG, "ZRRSIGChange", fp);
+		printtime(key, DST_TIME_KRRSIG, "KRRSIGChange", fp);
+		printtime(key, DST_TIME_DS, "DSChange", fp);
+
+		printstate(key, DST_KEY_DNSKEY, "DNSKEYState", fp);
+		printstate(key, DST_KEY_ZRRSIG, "ZRRSIGState", fp);
+		printstate(key, DST_KEY_KRRSIG, "KRRSIGState", fp);
+		printstate(key, DST_KEY_DS, "DSState", fp);
 	}
 
 	fflush(fp);

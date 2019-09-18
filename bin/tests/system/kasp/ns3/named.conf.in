@@ -25,14 +25,50 @@ options {
 
 include "policies/configured.conf";
 
+/* The default case: No keys created, using default policy. */
 zone "default.kasp" {
 	type master;
 	file "default.kasp.db";
 	dnssec-policy "_default";
 };
 
+/* A configured dnssec-policy, no keys created. */
 zone "configured.kasp" {
 	type master;
 	file "configured.kasp.db";
+	dnssec-policy "configured";
+};
+
+/* A configured dnssec-policy but keys already created. */
+zone "configured-with-keys.kasp" {
+	type master;
+	file "configured-with-keys.kasp.db";
+	dnssec-policy "configured";
+};
+
+/*
+ * A configured dnssec-policy but some keys already created.
+ */
+zone "configured-with-some-keys.kasp" {
+	type master;
+	file "configured-with-some-keys.kasp.db";
+	dnssec-policy "configured";
+};
+
+/*
+ * A configured dnssec-policy but some keys already in use.
+ */
+zone "configured-with-used-keys.kasp" {
+	type master;
+	file "configured-with-used-keys.kasp.db";
+	dnssec-policy "configured";
+};
+
+/*
+ * A configured dnssec-policy with (too) many keys pregenerated.
+ */
+zone "configured-with-pregenerated.kasp" {
+	type master;
+	file "configured-with-pregenerated.kasp.db";
 	dnssec-policy "configured";
 };

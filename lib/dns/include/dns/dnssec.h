@@ -53,6 +53,7 @@ struct dns_dnsseckey {
 	bool force_publish; 	  /*% publish regardless of metadata */
 	bool hint_sign;     	  /*% metadata says to sign with this key */
 	bool force_sign;    	  /*% sign with key regardless of metadata */
+	bool hint_retire;   	  /*% metadata says to stop sign with key */
 	bool hint_remove;   	  /*% metadata says *don't* publish */
 	bool is_active;     	  /*% key is already active */
 	bool first_sign;    	  /*% key is newly becoming active */
@@ -268,6 +269,16 @@ dns_dnsseckey_destroy(isc_mem_t *mctx, dns_dnsseckey_t **dkp);
  *\li		'*dkp' is NULL.
  */
 
+void
+dns_dnssec_get_hints(dns_dnsseckey_t *key, isc_stdtime_t now);
+/*%<
+ * Get hints on DNSSEC key whether this key can be published
+ * and/or is active.  Timing metadata is compared to 'now'.
+ *
+ *	Requires:
+ *\li		'key' is a pointer to a DNSSEC key and is not NULL.
+ */
+
 isc_result_t
 dns_dnssec_findmatchingkeys(const dns_name_t *origin, const char *directory,
 			    isc_stdtime_t now, isc_mem_t *mctx,
@@ -348,31 +359,6 @@ dns_dnssec_syncupdate(dns_dnsseckeylist_t *keys, dns_dnsseckeylist_t *rmkeys,
 /*%<
  * Update the CDS and CDNSKEY RRsets, adding and removing keys as needed.
  */
-
-isc_result_t
-dns_dnssec_keymgr(const dns_name_t *origin, dns_rdataclass_t rdclass,
-		  const char *directory, isc_stdtime_t now, isc_mem_t *mctx,
-		  dns_dnsseckeylist_t *keylist, dns_kasp_t* kasp);
-/*%<
- * Manage keys in 'keylist' and update timing data according to 'kasp' policy.
- * Create new keys for 'origin' if necessary in 'directory'.  Append all such
- * keys, along with use hints gleaned from their metadata, onto 'keylist'.
- *
- *	Requires:
- *\li		'origin' is a valid FQDN.
- *\li		'mctx' is a valid memory context.
- *\li		'keylist' is not NULL.
- *\li		'kasp' is not NULL.
- *
- *	Returns:
- *\li		#ISC_R_SUCCESS
- *\li		any error returned by dst_key_generate(), isc_dir_open(),
- *              dst_key_to_file(), or dns_dnsseckey_create().
- *
- *	Ensures:
- *\li		On error, keylist is unchanged
- */
-
 
 ISC_LANG_ENDDECLS
 

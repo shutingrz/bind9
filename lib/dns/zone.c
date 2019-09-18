@@ -47,6 +47,7 @@
 #include <dns/journal.h>
 #include <dns/kasp.h>
 #include <dns/keydata.h>
+#include <dns/keymgr.h>
 #include <dns/keytable.h>
 #include <dns/keyvalues.h>
 #include <dns/log.h>
@@ -18563,12 +18564,18 @@ zone_rekey(dns_zone_t *zone) {
 
 	result = dns_dnssec_findmatchingkeys(&zone->origin, dir, now, mctx,
 					     &keys);
+	if (result != ISC_R_SUCCESS) {
+		dnssec_log(zone, ISC_LOG_DEBUG(1),
+			   "zone_rekey:dns_dnssec_findmatchingkeys failed: %s",
+			   isc_result_totext(result));
+	}
+
 	if (kasp && (result == ISC_R_SUCCESS || result == ISC_R_NOTFOUND)) {
-		result = dns_dnssec_keymgr(&zone->origin, zone->rdclass, dir,
-					   now, mctx, &keys, kasp);
+		result = dns_keymgr_run(&zone->origin, zone->rdclass, dir,
+					now, mctx, &keys, kasp);
 		if (result != ISC_R_SUCCESS) {
 			dnssec_log(zone, ISC_LOG_ERROR,
-				   "zone_rekey:keymgr failed: %s",
+				   "zone_rekey:dns_dnssec_keymgr failed: %s",
 				   isc_result_totext(result));
 			goto failure;
 		}
@@ -18628,7 +18635,7 @@ zone_rekey(dns_zone_t *zone) {
 				/*
 				 * This isn't a new algorithm; clear
 				 * first_sign so we won't sign the
-				 * whole zone with this key later
+				 * whole zone with this key later.
 				 */
 				key->first_sign = false;
 			} else {

@@ -275,7 +275,7 @@ dns_kasp_key_algorithm(dns_kasp_key_t *key);
  *\li  Key algorithm.
  */
 
-int
+unsigned int
 dns_kasp_key_size(dns_kasp_key_t *key);
 /*%<
  * Get the key size.

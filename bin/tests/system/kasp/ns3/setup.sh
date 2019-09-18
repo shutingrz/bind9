@@ -12,14 +12,29 @@
 # shellcheck source=conf.sh
 . "$SYSTEMTESTTOP/conf.sh"
 
-set -e
-
 echo_i "ns3/setup.sh"
 
 infile="template.db.in"
 
-for zone in default configured
+for zone in default configured configured-with-keys \
+	    configured-with-some-keys configured-with-used-keys \
+	    configured-with-pregenerated
 do
 	zonefile="${zone}.kasp.db"
 	cp $infile $zonefile
 done
+
+zone="configured-with-keys.kasp"
+$KEYGEN -k configured -l policies/configured.conf $zone > keygen.out.$zone.1 2>&1
+
+zone="configured-with-some-keys.kasp"
+$KEYGEN -P none -A none -a RSASHA512 -b 2000 -L 1234 $zone > keygen.out.$zone.1 2>&1
+$KEYGEN -P none -A none -a RSASHA512 -f KSK  -L 1234 $zone > keygen.out.$zone.2 2>&1
+
+zone="configured-with-used-keys.kasp"
+$KEYGEN -a RSASHA512 -b 2000 -L 1234 $zone > keygen.out.$zone.1 2>&1
+$KEYGEN -a RSASHA512 -f KSK  -L 1234 $zone > keygen.out.$zone.2 2>&1
+
+zone="configured-with-pregenerated.kasp"
+$KEYGEN -k configured -l policies/configured.conf $zone > keygen.out.$zone.1 2>&1
+$KEYGEN -k configured -l policies/configured.conf $zone > keygen.out.$zone.2 2>&1
