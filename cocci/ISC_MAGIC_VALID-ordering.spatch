@@ -1,0 +1,10 @@
+@@
+identifier destroy_func, v;
+@@
+
+  destroy_func(...) {
++ 	v->magic = 0;
+  	...
+- 	v->magic = 0;
+  	...
+  }
