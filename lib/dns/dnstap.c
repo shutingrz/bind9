@@ -535,11 +535,11 @@ dns_dt_getstats(dns_dtenv_t *env, isc_stats_t **statsp) {
 
 static void
 destroy(dns_dtenv_t *env) {
+	env->magic = 0;
 
 	isc_log_write(dns_lctx, DNS_LOGCATEGORY_DNSTAP,
 		      DNS_LOGMODULE_DNSTAP, ISC_LOG_INFO,
 		      "closing dnstap");
-	env->magic = 0;
 
 	generation++;
 

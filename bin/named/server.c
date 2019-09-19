@@ -9752,6 +9752,8 @@ named_server_destroy(named_server_t **serverp) {
 	named_server_t *server = *serverp;
 	REQUIRE(NAMED_SERVER_VALID(server));
 
+	server->magic = 0;
+
 #ifdef HAVE_DNSTAP
 	if (server->dtenv != NULL)
 		dns_dt_detach(&server->dtenv);
@@ -9793,7 +9795,6 @@ named_server_destroy(named_server_t **serverp) {
 	INSIST(ISC_LIST_EMPTY(server->viewlist));
 	INSIST(ISC_LIST_EMPTY(server->cachelist));
 
-	server->magic = 0;
 	isc_mem_put(server->mctx, server, sizeof(*server));
 	*serverp = NULL;
 }

@@ -88,6 +88,7 @@ dns_dbtable_create(isc_mem_t *mctx, dns_rdataclass_t rdclass,
 
 static inline void
 dbtable_free(dns_dbtable_t *dbtable) {
+	dbtable->magic = 0;
 	/*
 	 * Caller must ensure that it is safe to call.
 	 */
@@ -102,8 +103,6 @@ dbtable_free(dns_dbtable_t *dbtable) {
 	RWUNLOCK(&dbtable->tree_lock, isc_rwlocktype_write);
 
 	isc_rwlock_destroy(&dbtable->tree_lock);
-
-	dbtable->magic = 0;
 
 	isc_mem_putanddetach(&dbtable->mctx, dbtable, sizeof(*dbtable));
 }

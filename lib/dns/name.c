@@ -191,11 +191,10 @@ dns_name_reset(dns_name_t *name) {
 
 void
 dns_name_invalidate(dns_name_t *name) {
+	REQUIRE(VALID_NAME(name));
 	/*
 	 * Make 'name' invalid.
 	 */
-
-	REQUIRE(VALID_NAME(name));
 
 	name->magic = 0;
 	name->ndata = NULL;

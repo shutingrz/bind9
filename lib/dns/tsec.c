@@ -105,11 +105,10 @@ dns_tsec_create(isc_mem_t *mctx, dns_tsectype_t type, dst_key_t *key,
 
 void
 dns_tsec_destroy(dns_tsec_t **tsecp) {
-	dns_tsec_t *tsec;
-
-	REQUIRE(tsecp != NULL && *tsecp != NULL);
-	tsec = *tsecp;
-	REQUIRE(DNS_TSEC_VALID(tsec));
+	REQUIRE(tsecp != NULL && DNS_TSEC_VALID(*tsecp));
+	dns_tsec_t *tsec = *tsecp;
+	*tsecp = NULL;
+	tsec->magic = 0;
 
 	switch (tsec->type) {
 	case dns_tsectype_tsig:
@@ -123,10 +122,7 @@ dns_tsec_destroy(dns_tsec_t **tsecp) {
 		ISC_UNREACHABLE();
 	}
 
-	tsec->magic = 0;
 	isc_mem_put(tsec->mctx, tsec, sizeof(*tsec));
-
-	*tsecp = NULL;
 }
 
 dns_tsectype_t

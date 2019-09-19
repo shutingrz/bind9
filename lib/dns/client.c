@@ -595,6 +595,7 @@ dns_client_createx(isc_mem_t *mctx, isc_appctx_t *actx,
 
 static void
 destroyclient(dns_client_t *client) {
+	client->magic = 0;
 	dns_view_t *view;
 
 	isc_refcount_destroy(&client->references);
@@ -627,7 +628,6 @@ destroyclient(dns_client_t *client) {
 	}
 
 	isc_mutex_destroy(&client->lock);
-	client->magic = 0;
 
 	isc_mem_putanddetach(&client->mctx, client, sizeof(*client));
 }
@@ -1451,22 +1451,27 @@ dns_client_freeresanswer(dns_client_t *client, dns_namelist_t *namelist) {
 	}
 }
 
-void
-dns_client_destroyrestrans(dns_clientrestrans_t **transp) {
-	resctx_t *rctx;
-	isc_mem_t *mctx;
+static void
+client_unlinkrestrans(resctx_t *rctx, dns_client_t *client) {
+	LOCK(&client->lock);
+
+	INSIST(ISC_LINK_LINKED(rctx, link));
+	ISC_LIST_UNLINK(client->resctxs, rctx, link);
+
+	UNLOCK(&client->lock);
+}
+
+static void
+client_destroyrestrans(resctx_t *rctx) {
 	dns_client_t *client;
 
-	REQUIRE(transp != NULL);
-	rctx = (resctx_t *)*transp;
-	*transp = NULL;
-	REQUIRE(RCTX_VALID(rctx));
+	rctx->magic = 0;
+
 	REQUIRE(rctx->fetch == NULL);
 	REQUIRE(rctx->event == NULL);
 	client = rctx->client;
 	REQUIRE(DNS_CLIENT_VALID(client));
 
-	mctx = client->mctx;
 	dns_view_detach(&rctx->view);
 
 	/*
@@ -1476,22 +1481,29 @@ dns_client_destroyrestrans(dns_clientrestrans_t **transp) {
 	LOCK(&rctx->lock);
 	UNLOCK(&rctx->lock);
 
-	LOCK(&client->lock);
-
-	INSIST(ISC_LINK_LINKED(rctx, link));
-	ISC_LIST_UNLINK(client->resctxs, rctx, link);
-
-	UNLOCK(&client->lock);
+	client_unlinkrestrans(rctx, client);
 
 	INSIST(ISC_LIST_EMPTY(rctx->namelist));
 
 	isc_mutex_destroy(&rctx->lock);
-	rctx->magic = 0;
 
-	isc_mem_put(mctx, rctx, sizeof(*rctx));
+	isc_mem_put(client->mctx, rctx, sizeof(*rctx));
 
 	dns_client_destroy(&client);
+}
 
+void
+dns_client_destroyrestrans(dns_clientrestrans_t **transp) {
+	resctx_t *rctx;
+
+	REQUIRE(transp != NULL);
+	rctx = (resctx_t *)*transp;
+	*transp = NULL;
+	REQUIRE(RCTX_VALID(rctx));
+
+	client_destroyrestrans(rctx);
+
+	client_destroyrestrans(rctx);
 }
 
 isc_result_t
@@ -1813,6 +1825,9 @@ dns_client_destroyreqtrans(dns_clientreqtrans_t **transp) {
 	ctx = (reqctx_t *)*transp;
 	*transp = NULL;
 	REQUIRE(REQCTX_VALID(ctx));
+
+	ctx->magic = 0;
+
 	client = ctx->client;
 	REQUIRE(DNS_CLIENT_VALID(client));
 	REQUIRE(ctx->event == NULL);
@@ -1829,7 +1844,6 @@ dns_client_destroyreqtrans(dns_clientreqtrans_t **transp) {
 	UNLOCK(&client->lock);
 
 	isc_mutex_destroy(&ctx->lock);
-	ctx->magic = 0;
 
 	isc_mem_put(mctx, ctx, sizeof(*ctx));
 
@@ -2804,6 +2818,8 @@ dns_client_startupdate(dns_client_t *client, dns_rdataclass_t rdclass,
 
 	uctx = isc_mem_get(client->mctx, sizeof(*uctx));
 
+	uctx->magic = 0;
+
 	isc_mutex_init(&uctx->lock);
 
 	tclone = NULL;
@@ -2939,7 +2955,6 @@ dns_client_startupdate(dns_client_t *client, dns_rdataclass_t rdclass,
 		dns_tsigkey_detach(&uctx->tsigkey);
 	isc_task_detach(&tclone);
 	isc_mutex_destroy(&uctx->lock);
-	uctx->magic = 0;
 	isc_mem_put(client->mctx, uctx, sizeof(*uctx));
 	dns_view_detach(&view);
 
@@ -2982,6 +2997,8 @@ dns_client_destroyupdatetrans(dns_clientupdatetrans_t **transp) {
 	uctx = (updatectx_t *)*transp;
 	*transp = NULL;
 	REQUIRE(UCTX_VALID(uctx));
+	uctx->magic = 0;
+
 	client = uctx->client;
 	REQUIRE(DNS_CLIENT_VALID(client));
 	REQUIRE(uctx->updatereq == NULL && uctx->updatemsg == NULL &&
@@ -3004,7 +3021,6 @@ dns_client_destroyupdatetrans(dns_clientupdatetrans_t **transp) {
 	UNLOCK(&client->lock);
 
 	isc_mutex_destroy(&uctx->lock);
-	uctx->magic = 0;
 
 	isc_mem_put(mctx, uctx, sizeof(*uctx));
 

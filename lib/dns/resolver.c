@@ -1112,14 +1112,16 @@ fctx_startidletimer(fetchctx_t *fctx, isc_interval_t *interval) {
 
 static inline void
 resquery_destroy(resquery_t **queryp) {
+	REQUIRE(queryp != NULL && VALID_QUERY(*queryp));
+	resquery_t *query = *queryp;
+	*queryp = NULL;
+	query->magic = 0;
+
 	dns_resolver_t *res;
 	bool empty;
-	resquery_t *query;
 	fetchctx_t *fctx;
 	unsigned int bucket;
 
-	REQUIRE(queryp != NULL);
-	query = *queryp;
 	REQUIRE(!ISC_LINK_LINKED(query, link));
 
 	INSIST(query->tcpsocket == NULL);
@@ -1134,7 +1136,6 @@ resquery_destroy(resquery_t **queryp) {
 	empty = fctx_decreference(query->fctx);
 	UNLOCK(&res->buckets[bucket].lock);
 
-	query->magic = 0;
 	isc_mem_put(query->mctx, query, sizeof(*query));
 	*queryp = NULL;
 
@@ -9768,6 +9769,7 @@ rctx_delonly_zone(respctx_t *rctx) {
  ***/
 static void
 destroy(dns_resolver_t *res) {
+	res->magic = 0;
 	unsigned int i;
 	alternate_t *a;
 
@@ -9818,7 +9820,6 @@ destroy(dns_resolver_t *res) {
 	isc_rwlock_destroy(&res->mbslock);
 #endif
 	isc_timer_detach(&res->spillattimer);
-	res->magic = 0;
 	isc_mem_put(res->mctx, res, sizeof(*res));
 }
 

@@ -290,7 +290,7 @@ ns_interfacemgr_create(isc_mem_t *mctx,
 
 static void
 ns_interfacemgr_destroy(ns_interfacemgr_t *mgr) {
-	REQUIRE(NS_INTERFACEMGR_VALID(mgr));
+	mgr->magic = 0;
 
 #ifdef USE_ROUTE_SOCKET
 	if (mgr->route != NULL)
@@ -307,7 +307,6 @@ ns_interfacemgr_destroy(ns_interfacemgr_t *mgr) {
 		ns_server_detach(&mgr->sctx);
 	if (mgr->excl != NULL)
 		isc_task_detach(&mgr->excl);
-	mgr->magic = 0;
 	isc_mem_putanddetach(&mgr->mctx, mgr, sizeof(*mgr));
 }
 
@@ -623,6 +622,7 @@ ns_interface_shutdown(ns_interface_t *ifp) {
 
 static void
 ns_interface_destroy(ns_interface_t *ifp) {
+	ifp->magic = 0;
 	isc_mem_t *mctx = ifp->mgr->mctx;
 	int disp;
 
@@ -647,7 +647,6 @@ ns_interface_destroy(ns_interface_t *ifp) {
 	isc_refcount_destroy(&ifp->ntcpactive);
 	isc_refcount_destroy(&ifp->ntcpaccepting);
 
-	ifp->magic = 0;
 	isc_mem_put(mctx, ifp, sizeof(*ifp));
 }
 

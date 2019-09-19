@@ -990,15 +990,16 @@ dns_rbt_destroy(dns_rbt_t **rbtp) {
 
 isc_result_t
 dns_rbt_destroy2(dns_rbt_t **rbtp, unsigned int quantum) {
-	dns_rbt_t *rbt;
-
 	REQUIRE(rbtp != NULL && VALID_RBT(*rbtp));
-
-	rbt = *rbtp;
+	dns_rbt_t *rbt = *rbtp;
 
 	deletetreeflat(rbt, quantum, false, &rbt->root);
-	if (rbt->root != NULL)
+	if (rbt->root != NULL) {
 		return (ISC_R_QUOTA);
+	}
+
+	*rbtp = NULL;
+	rbt->magic = 0;
 
 	INSIST(rbt->nodecount == 0);
 
@@ -1008,10 +1009,8 @@ dns_rbt_destroy2(dns_rbt_t **rbtp, unsigned int quantum) {
 		isc_mem_put(rbt->mctx, rbt->hashtable,
 			    rbt->hashsize * sizeof(dns_rbtnode_t *));
 
-	rbt->magic = 0;
-
 	isc_mem_putanddetach(&rbt->mctx, rbt, sizeof(*rbt));
-	*rbtp = NULL;
+
 	return (ISC_R_SUCCESS);
 }
 
@@ -3602,12 +3601,8 @@ dns_rbtnodechain_last(dns_rbtnodechain_t *chain, dns_rbt_t *rbt,
 	return (result);
 }
 
-
-void
-dns_rbtnodechain_reset(dns_rbtnodechain_t *chain) {
-
-	REQUIRE(VALID_CHAIN(chain));
-
+static void
+rbtnodechain_reset(dns_rbtnodechain_t *chain) {
 	/*
 	 * Free any dynamic storage associated with 'chain', and then
 	 * reinitialize 'chain'.
@@ -3616,17 +3611,22 @@ dns_rbtnodechain_reset(dns_rbtnodechain_t *chain) {
 	chain->level_count = 0;
 	chain->level_matches = 0;
 }
+void
+dns_rbtnodechain_reset(dns_rbtnodechain_t *chain) {
+
+	REQUIRE(VALID_CHAIN(chain));
+	rbtnodechain_reset(chain);
+}
 
 void
 dns_rbtnodechain_invalidate(dns_rbtnodechain_t *chain) {
 	/*
-	 * Free any dynamic storage associated with 'chain', and then
-	 * invalidate 'chain'.
+	 * Invalidate the chain and then free any dynamic storage associated
+	 * with it
 	 */
-
-	dns_rbtnodechain_reset(chain);
-
 	chain->magic = 0;
+
+	rbtnodechain_reset(chain);
 }
 
 /* XXXMUKS:

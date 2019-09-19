@@ -224,12 +224,12 @@ flush(dns_zone_t *zone, void *uap) {
 
 static void
 zt_destroy(dns_zt_t *zt) {
+	zt->magic = 0;
 	if (atomic_load_acquire(&zt->flush)) {
 		(void)dns_zt_apply(zt, false, NULL, flush, NULL);
 	}
 	dns_rbt_destroy(&zt->table);
 	isc_rwlock_destroy(&zt->rwlock);
-	zt->magic = 0;
 	isc_mem_putanddetach(&zt->mctx, zt, sizeof(*zt));
 }
 

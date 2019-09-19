@@ -434,8 +434,8 @@ loadctx_destroy(dns_loadctx_t *lctx) {
 	isc_result_t result;
 
 	REQUIRE(DNS_LCTX_VALID(lctx));
-
 	lctx->magic = 0;
+
 	if (lctx->inc != NULL)
 		incctx_destroy(lctx->mctx, lctx->inc);
 

@@ -283,11 +283,10 @@ irs_context_create(irs_context_t **contextp) {
 
 void
 irs_context_destroy(irs_context_t **contextp) {
-	irs_context_t *context;
-
-	REQUIRE(contextp != NULL);
-	context = *contextp;
-	REQUIRE(IRS_CONTEXT_VALID(context));
+	REQUIRE(contextp != NULL && IRS_CONTEXT_VALID(*contextp));
+	irs_context_t *context = *contextp;
+	*contextp = NULL;
+	context->magic = 0;
 
 	isc_task_detach(&context->task);
 	irs_dnsconf_destroy(&context->dnsconf);
@@ -297,11 +296,7 @@ irs_context_destroy(irs_context_t **contextp) {
 	ctxs_destroy(NULL, &context->actx, &context->taskmgr,
 		     &context->socketmgr, &context->timermgr);
 
-	context->magic = 0;
-
 	isc_mem_putanddetach(&context->mctx, context, sizeof(*context));
-
-	*contextp = NULL;
 
 	(void)isc_thread_key_setspecific(irs_context_key, NULL);
 }

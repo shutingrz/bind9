@@ -81,15 +81,15 @@ dns_rdataset_init(dns_rdataset_t *rdataset) {
 
 void
 dns_rdataset_invalidate(dns_rdataset_t *rdataset) {
-
 	/*
 	 * Invalidate 'rdataset'.
 	 */
 
 	REQUIRE(DNS_RDATASET_VALID(rdataset));
+	rdataset->magic = 0;
+
 	REQUIRE(rdataset->methods == NULL);
 
-	rdataset->magic = 0;
 	ISC_LINK_INIT(rdataset, link);
 	rdataset->rdclass = 0;
 	rdataset->type = 0;

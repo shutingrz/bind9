@@ -77,8 +77,7 @@ dns_ssutable_create(isc_mem_t *mctx, dns_ssutable_t **tablep) {
 static inline void
 destroy(dns_ssutable_t *table) {
 	isc_mem_t *mctx;
-
-	REQUIRE(VALID_SSUTABLE(table));
+	table->magic = 0;
 
 	mctx = table->mctx;
 	while (!ISC_LIST_EMPTY(table->rules)) {
@@ -99,7 +98,6 @@ destroy(dns_ssutable_t *table) {
 		isc_mem_put(mctx, rule, sizeof(dns_ssurule_t));
 	}
 	isc_refcount_destroy(&table->references);
-	table->magic = 0;
 	isc_mem_putanddetach(&table->mctx, table, sizeof(dns_ssutable_t));
 }
 

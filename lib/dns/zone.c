@@ -1094,6 +1094,7 @@ dns_zone_create(dns_zone_t **zonep, isc_mem_t *mctx) {
  */
 static void
 zone_free(dns_zone_t *zone) {
+	zone->magic = 0;
 	dns_signing_t *signing;
 	dns_nsec3chain_t *nsec3chain;
 	isc_event_t *setnsec3param_event;
@@ -1253,7 +1254,6 @@ zone_free(dns_zone_t *zone) {
 	/* last stuff */
 	ZONEDB_DESTROYLOCK(&zone->dblock);
 	isc_mutex_destroy(&zone->lock);
-	zone->magic = 0;
 	isc_mem_putanddetach(&zone->mctx, zone, sizeof(*zone));
 }
 
@@ -16193,8 +16193,8 @@ got_transfer_quota(isc_task_t *task, isc_event_t *event) {
 
 static void
 forward_destroy(dns_forward_t *forward) {
-
 	forward->magic = 0;
+
 	if (forward->request != NULL)
 		dns_request_destroy(&forward->request);
 	if (forward->msgbuf != NULL)
@@ -16869,12 +16869,11 @@ dns_zonemgr_setsize(dns_zonemgr_t *zmgr, int num_zones) {
 
 static void
 zonemgr_free(dns_zonemgr_t *zmgr) {
+	zmgr->magic = 0;
 	isc_mem_t *mctx;
 
 	INSIST(zmgr->refs == 0);
 	INSIST(ISC_LIST_EMPTY(zmgr->zones));
-
-	zmgr->magic = 0;
 
 	isc_mutex_destroy(&zmgr->iolock);
 	isc_ratelimiter_detach(&zmgr->notifyrl);
@@ -17129,22 +17128,20 @@ zonemgr_getio(dns_zonemgr_t *zmgr, bool high,
 
 static void
 zonemgr_putio(dns_io_t **iop) {
-	dns_io_t *io;
+	REQUIRE(iop != NULL && DNS_IO_VALID(*iop));
+	dns_io_t *io = *iop;
+	*iop = NULL;
+	io->magic = 0;
+
 	dns_io_t *next;
 	dns_zonemgr_t *zmgr;
 
-	REQUIRE(iop != NULL);
-	io = *iop;
-	REQUIRE(DNS_IO_VALID(io));
-
-	*iop = NULL;
 
 	INSIST(!ISC_LINK_LINKED(io, link));
 	INSIST(io->event == NULL);
 
 	zmgr = io->zmgr;
 	isc_task_detach(&io->task);
-	io->magic = 0;
 	isc_mem_put(zmgr->mctx, io, sizeof(*io));
 
 	LOCK(&zmgr->iolock);

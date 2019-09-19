@@ -216,6 +216,7 @@ attachnode(dns_db_t *db, dns_dbnode_t *source, dns_dbnode_t **targetp) {
 
 static void
 destroynode(dns_ecdbnode_t *node) {
+	node->magic = 0;
 	isc_mem_t *mctx;
 	dns_ecdb_t *ecdb = node->ecdb;
 	rdatasetheader_t *header;
@@ -240,7 +241,6 @@ destroynode(dns_ecdbnode_t *node) {
 	isc_mutex_destroy(&node->lock);
 	isc_refcount_destroy(&node->references);
 
-	node->magic = 0;
 	isc_mem_put(mctx, node, sizeof(*node));
 
 	destroy_ecdb(ecdb);
@@ -760,10 +760,10 @@ rdatasetiter_destroy(dns_rdatasetiter_t **iteratorp) {
 
 static isc_result_t
 rdatasetiter_first(dns_rdatasetiter_t *iterator) {
+	REQUIRE(DNS_RDATASETITER_VALID(iterator));
 	ecdb_rdatasetiter_t *ecdbiterator = (ecdb_rdatasetiter_t *)iterator;
 	dns_ecdbnode_t *ecdbnode = (dns_ecdbnode_t *)iterator->node;
 
-	REQUIRE(DNS_RDATASETITER_VALID(iterator));
 
 	if (ISC_LIST_EMPTY(ecdbnode->rdatasets))
 		return (ISC_R_NOMORE);
@@ -773,9 +773,8 @@ rdatasetiter_first(dns_rdatasetiter_t *iterator) {
 
 static isc_result_t
 rdatasetiter_next(dns_rdatasetiter_t *iterator) {
-	ecdb_rdatasetiter_t *ecdbiterator = (ecdb_rdatasetiter_t *)iterator;
-
 	REQUIRE(DNS_RDATASETITER_VALID(iterator));
+	ecdb_rdatasetiter_t *ecdbiterator = (ecdb_rdatasetiter_t *)iterator;
 
 	ecdbiterator->current = ISC_LIST_NEXT(ecdbiterator->current, link);
 	if (ecdbiterator->current == NULL)

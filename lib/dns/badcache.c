@@ -85,20 +85,25 @@ dns_badcache_init(isc_mem_t *mctx, unsigned int size, dns_badcache_t **bcp) {
 	return (ISC_R_SUCCESS);
 }
 
-void
-dns_badcache_destroy(dns_badcache_t **bcp) {
-	dns_badcache_t *bc;
-
-	REQUIRE(bcp != NULL && *bcp != NULL);
-	bc = *bcp;
-
-	dns_badcache_flush(bc);
-
+static void
+badcache_destroy(dns_badcache_t *bc) {
 	bc->magic = 0;
 	isc_mutex_destroy(&bc->lock);
 	isc_mem_put(bc->mctx, bc->table, sizeof(dns_bcentry_t *) * bc->size);
 	isc_mem_putanddetach(&bc->mctx, bc, sizeof(dns_badcache_t));
+}
+
+void
+dns_badcache_destroy(dns_badcache_t **bcp) {
+	REQUIRE(bcp != NULL && VALID_BADCACHE(*bcp));
+	dns_badcache_t *bc;
+
+	bc = *bcp;
 	*bcp = NULL;
+
+	dns_badcache_flush(bc);
+	badcache_destroy(bc);
+
 }
 
 static isc_result_t

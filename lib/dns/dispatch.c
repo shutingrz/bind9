@@ -786,10 +786,12 @@ destroy_dispsocket(dns_dispatch_t *disp, dispsocket_t **dispsockp) {
 
 	REQUIRE(dispsockp != NULL && *dispsockp != NULL);
 	dispsock = *dispsockp;
+
+	dispsock->magic = 0;
+
 	REQUIRE(!ISC_LINK_LINKED(dispsock, link));
 
 	disp->nsockets--;
-	dispsock->magic = 0;
 	if (dispsock->portentry != NULL)
 		deref_portentry(disp, &dispsock->portentry);
 	if (dispsock->socket != NULL)
@@ -1616,6 +1618,7 @@ destroy_mgr(dns_dispatchmgr_t **mgrp) {
 	*mgrp = NULL;
 
 	mgr->magic = 0;
+
 	isc_mutex_destroy(&mgr->lock);
 	mgr->state = 0;
 
@@ -2249,15 +2252,11 @@ qid_allocate(dns_dispatchmgr_t *mgr, unsigned int buckets,
 
 static void
 qid_destroy(isc_mem_t *mctx, dns_qid_t **qidp) {
-	dns_qid_t *qid;
-
-	REQUIRE(qidp != NULL);
-	qid = *qidp;
-
-	REQUIRE(VALID_QID(qid));
-
+	REQUIRE(qidp != NULL && VALID_QID(*qidp));
+	dns_qid_t *qid = *qidp;
 	*qidp = NULL;
 	qid->magic = 0;
+
 	isc_mem_put(mctx, qid->qid_table,
 		    qid->qid_nbuckets * sizeof(dns_displist_t));
 	if (qid->sock_table != NULL) {
@@ -2351,6 +2350,8 @@ dispatch_free(dns_dispatch_t **dispp) {
 	disp = *dispp;
 	*dispp = NULL;
 
+	disp->magic = 0;
+
 	mgr = disp->mgr;
 	REQUIRE(VALID_DISPATCHMGR(mgr));
 
@@ -2385,7 +2386,6 @@ dispatch_free(dns_dispatch_t **dispp) {
 
 	disp->mgr = NULL;
 	isc_mutex_destroy(&disp->lock);
-	disp->magic = 0;
 	isc_mempool_put(mgr->dpool, disp);
 }
 
@@ -3276,6 +3276,8 @@ dns_dispatch_removeresponse(dns_dispentry_t **resp,
 	res = *resp;
 	*resp = NULL;
 
+	res->magic = 0;
+
 	disp = res->disp;
 	REQUIRE(VALID_DISPATCH(disp));
 	mgr = disp->mgr;
@@ -3362,7 +3364,6 @@ dns_dispatch_removeresponse(dns_dispentry_t **resp,
 		free_devent(disp, ev);
 		ev = ISC_LIST_HEAD(res->items);
 	}
-	res->magic = 0;
 	isc_mempool_put(disp->mgr->rpool, res);
 	if (disp->shutting_down == 1)
 		do_cancel(disp);

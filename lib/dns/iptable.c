@@ -156,14 +156,14 @@ dns_iptable_detach(dns_iptable_t **tabp) {
 
 static void
 destroy_iptable(dns_iptable_t *dtab) {
-
 	REQUIRE(DNS_IPTABLE_VALID(dtab));
+
+	dtab->magic = 0;
 
 	if (dtab->radix != NULL) {
 		isc_radix_destroy(dtab->radix, NULL);
 		dtab->radix = NULL;
 	}
 
-	dtab->magic = 0;
 	isc_mem_putanddetach(&dtab->mctx, dtab, sizeof(*dtab));
 }

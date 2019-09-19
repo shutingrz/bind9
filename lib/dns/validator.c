@@ -3170,6 +3170,8 @@ static void
 destroy(dns_validator_t *val) {
 	isc_mem_t *mctx;
 
+	val->magic = 0;
+
 	REQUIRE(SHUTDOWN(val));
 	REQUIRE(val->event == NULL);
 	REQUIRE(val->fetch == NULL);
@@ -3191,7 +3193,6 @@ destroy(dns_validator_t *val) {
 		isc_mem_put(mctx, val->siginfo, sizeof(*val->siginfo));
 	isc_mutex_destroy(&val->lock);
 	dns_view_weakdetach(&val->view);
-	val->magic = 0;
 	isc_mem_put(mctx, val, sizeof(*val));
 }
 

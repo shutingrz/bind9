@@ -446,11 +446,11 @@ dns_lookup_cancel(dns_lookup_t *lookup) {
 
 void
 dns_lookup_destroy(dns_lookup_t **lookupp) {
-	dns_lookup_t *lookup;
+	REQUIRE(lookupp != NULL && VALID_LOOKUP(*lookupp));
+	dns_lookup_t *lookup = *lookupp;
+	*lookupp = NULL;
+	lookup->magic = 0;
 
-	REQUIRE(lookupp != NULL);
-	lookup = *lookupp;
-	REQUIRE(VALID_LOOKUP(lookup));
 	REQUIRE(lookup->event == NULL);
 	REQUIRE(lookup->task == NULL);
 	REQUIRE(lookup->view == NULL);
@@ -460,8 +460,5 @@ dns_lookup_destroy(dns_lookup_t **lookupp) {
 		dns_rdataset_disassociate(&lookup->sigrdataset);
 
 	isc_mutex_destroy(&lookup->lock);
-	lookup->magic = 0;
 	isc_mem_putanddetach(&lookup->mctx, lookup, sizeof(*lookup));
-
-	*lookupp = NULL;
 }

@@ -647,6 +647,7 @@ destroynode(dns_sdbnode_t *node) {
 	dns_sdb_t *sdb;
 	isc_mem_t *mctx;
 
+	node->magic = 0;
 	sdb = node->sdb;
 	mctx = sdb->common.mctx;
 
@@ -672,7 +673,6 @@ destroynode(dns_sdbnode_t *node) {
 		isc_mem_put(mctx, node->name, sizeof(dns_name_t));
 	}
 
-	node->magic = 0;
 	isc_mem_put(mctx, node, sizeof(dns_sdbnode_t));
 	detach((dns_db_t **) (void *)&sdb);
 }

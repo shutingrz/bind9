@@ -62,6 +62,9 @@ struct isc_lex {
 	LIST(struct inputsource)	sources;
 };
 
+static isc_result_t
+lex_close(isc_lex_t *lex);
+
 static inline isc_result_t
 grow_data(isc_lex_t *lex, size_t *remainingp, char **currp, char **prevp) {
 	char *tmp;
@@ -111,24 +114,23 @@ isc_lex_create(isc_mem_t *mctx, size_t max_token, isc_lex_t **lexp) {
 
 void
 isc_lex_destroy(isc_lex_t **lexp) {
-	isc_lex_t *lex;
+	REQUIRE(lexp != NULL && VALID_LEX(*lexp));
+	isc_lex_t *lex = *lexp;
+	*lexp = NULL;
+	lex->magic = 0;
 
 	/*
 	 * Destroy the lexer.
 	 */
 
-	REQUIRE(lexp != NULL);
-	lex = *lexp;
-	REQUIRE(VALID_LEX(lex));
+	while (!EMPTY(lex->sources)) {
+		RUNTIME_CHECK(lex_close(lex) == ISC_R_SUCCESS);
+	}
 
-	while (!EMPTY(lex->sources))
-		RUNTIME_CHECK(isc_lex_close(lex) == ISC_R_SUCCESS);
-	if (lex->data != NULL)
+	if (lex->data != NULL) {
 		isc_mem_put(lex->mctx, lex->data, lex->max_token + 1);
-	lex->magic = 0;
+	}
 	isc_mem_put(lex->mctx, lex, sizeof(*lex));
-
-	*lexp = NULL;
 }
 
 unsigned int
@@ -257,15 +259,13 @@ isc_lex_openbuffer(isc_lex_t *lex, isc_buffer_t *buffer) {
 	return (new_source(lex, false, false, buffer, name));
 }
 
-isc_result_t
-isc_lex_close(isc_lex_t *lex) {
+static isc_result_t
+lex_close(isc_lex_t *lex) {
 	inputsource *source;
 
 	/*
 	 * Close the most recently opened object (i.e. file or buffer).
 	 */
-
-	REQUIRE(VALID_LEX(lex));
 
 	source = HEAD(lex->sources);
 	if (source == NULL)
@@ -282,6 +282,12 @@ isc_lex_close(isc_lex_t *lex) {
 	isc_mem_put(lex->mctx, source, sizeof(*source));
 
 	return (ISC_R_SUCCESS);
+}
+
+isc_result_t
+isc_lex_close(isc_lex_t *lex) {
+	REQUIRE(VALID_LEX(lex));
+	return (lex_close(lex));
 }
 
 typedef enum {

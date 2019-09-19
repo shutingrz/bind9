@@ -1340,9 +1340,9 @@ allocate_socket(isc_socketmgr_t *manager, isc_sockettype_t type,
 
 	sock = isc_mem_get(manager->mctx, sizeof(*sock));
 
-	sock->magic = 0;
 	isc_refcount_init(&sock->references, 0);
 
+	sock->magic = 0;
 	sock->manager = manager;
 	sock->type = type;
 	sock->fd = INVALID_SOCKET;
@@ -1476,6 +1476,7 @@ maybe_free_socket(isc_socket_t **socketp, int lineno) {
 
 void
 free_socket(isc_socket_t **sockp, int lineno) {
+	sock->magic = 0;
 	isc_socketmgr_t *manager;
 	isc_socket_t *sock = *sockp;
 	*sockp = NULL;
@@ -1488,7 +1489,6 @@ free_socket(isc_socket_t **sockp, int lineno) {
 		   "freeing socket line %d fd %d lock %p semaphore %p",
 		   lineno, sock->fd, &sock->lock, sock->lock.LockSemaphore);
 
-	sock->magic = 0;
 	isc_mutex_destroy(&sock->lock);
 
 	if (sock->recvbuf.base != NULL)
@@ -2557,6 +2557,7 @@ isc_socketmgr_setstats(isc_socketmgr_t *manager, isc_stats_t *stats) {
 
 void
 isc_socketmgr_destroy(isc_socketmgr_t **managerp) {
+	manager->magic = 0;
 	isc_socketmgr_t *manager;
 
 	/*
@@ -2604,7 +2605,6 @@ isc_socketmgr_destroy(isc_socketmgr_t **managerp) {
 	if (manager->stats != NULL) {
 		isc_stats_detach(&manager->stats);
 	}
-	manager->magic = 0;
 	isc_mem_putanddetach(&manager->mctx, manager, sizeof(*manager));
 
 	*managerp = NULL;

@@ -3597,6 +3597,7 @@ clientmgr_destroy(ns_clientmgr_t *manager) {
 #if NMCTXS > 0
 	int i;
 #endif
+	manager->magic = 0;
 
 	REQUIRE(ISC_LIST_EMPTY(manager->clients));
 
@@ -3620,7 +3621,6 @@ clientmgr_destroy(ns_clientmgr_t *manager) {
 
 	ns_server_detach(&manager->sctx);
 
-	manager->magic = 0;
 	isc_mem_put(manager->mctx, manager, sizeof(*manager));
 }
 

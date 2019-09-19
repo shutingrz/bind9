@@ -104,15 +104,13 @@ free_elt(isccc_symtab_t *symtab, unsigned int bucket, elt_t *elt) {
 
 void
 isccc_symtab_destroy(isccc_symtab_t **symtabp) {
-	isccc_symtab_t *symtab;
-	unsigned int i;
-	elt_t *elt, *nelt;
+	REQUIRE(symtabp != NULL && VALID_SYMTAB(*symtabp));
+	isccc_symtab_t *symtab = *symtabp;
+	*symtabp = NULL;
+	symtab->magic = 0;
 
-	REQUIRE(symtabp != NULL);
-	symtab = *symtabp;
-	REQUIRE(VALID_SYMTAB(symtab));
-
-	for (i = 0; i < symtab->size; i++) {
+	for (size_t i = 0; i < symtab->size; i++) {
+		elt_t *elt, *nelt;
 		for (elt = ISC_LIST_HEAD(symtab->table[i]);
 		     elt != NULL;
 		     elt = nelt) {
@@ -121,7 +119,6 @@ isccc_symtab_destroy(isccc_symtab_t **symtabp) {
 		}
 	}
 	free(symtab->table);
-	symtab->magic = 0;
 	free(symtab);
 
 	*symtabp = NULL;
@@ -132,7 +129,6 @@ hash(const char *key, bool case_sensitive) {
 	const char *s;
 	unsigned int h = 0;
 	unsigned int g;
-	int c;
 
 	/*
 	 * P. J. Weinberger's hash function, adapted from p. 436 of
@@ -150,8 +146,7 @@ hash(const char *key, bool case_sensitive) {
 		}
 	} else {
 		for (s = key; *s != '\0'; s++) {
-			c = *s;
-			c = tolower((unsigned char)c);
+			int c = tolower((unsigned char)*s);
 			h = ( h << 4 ) + c;
 			if ((g = ( h & 0xf0000000 )) != 0) {
 				h = h ^ (g >> 24);

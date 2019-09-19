@@ -1,8 +1,9 @@
 @@
 identifier destroy_func, v;
+type T;
 @@
 
-  destroy_func(...) {
+  destroy_func(T *v) {
 + 	v->magic = 0;
   	...
 - 	v->magic = 0;

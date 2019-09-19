@@ -196,19 +196,16 @@ dns_fwdtable_find(dns_fwdtable_t *fwdtable, const dns_name_t *name,
 
 void
 dns_fwdtable_destroy(dns_fwdtable_t **fwdtablep) {
-	dns_fwdtable_t *fwdtable;
-
 	REQUIRE(fwdtablep != NULL && VALID_FWDTABLE(*fwdtablep));
 
-	fwdtable = *fwdtablep;
+	dns_fwdtable_t *fwdtable = *fwdtablep;
+	*fwdtablep = NULL;
+	fwdtable->magic = 0;
 
 	dns_rbt_destroy(&fwdtable->table);
 	isc_rwlock_destroy(&fwdtable->rwlock);
-	fwdtable->magic = 0;
 
 	isc_mem_putanddetach(&fwdtable->mctx, fwdtable, sizeof(dns_fwdtable_t));
-
-	*fwdtablep = NULL;
 }
 
 /***

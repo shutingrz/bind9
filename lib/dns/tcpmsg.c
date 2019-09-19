@@ -225,7 +225,6 @@ dns_tcpmsg_freebuffer(dns_tcpmsg_t *tcpmsg) {
 void
 dns_tcpmsg_invalidate(dns_tcpmsg_t *tcpmsg) {
 	REQUIRE(VALID_TCPMSG(tcpmsg));
-
 	tcpmsg->magic = 0;
 
 	if (tcpmsg->buffer.base != NULL) {

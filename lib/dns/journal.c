@@ -1232,8 +1232,10 @@ dns_journal_write_transaction(dns_journal_t *j, dns_diff_t *diff) {
 
 void
 dns_journal_destroy(dns_journal_t **journalp) {
+	REQUIRE(journalp != NULL && DNS_JOURNAL_VALID(*journalp));
 	dns_journal_t *j = *journalp;
-	REQUIRE(DNS_JOURNAL_VALID(j));
+	*journalp = NULL;
+	j->magic = 0;
 
 	j->it.result = ISC_R_FAILURE;
 	dns_name_invalidate(&j->it.name);
@@ -1252,9 +1254,7 @@ dns_journal_destroy(dns_journal_t **journalp) {
 		isc_mem_free(j->mctx, j->filename);
 	if (j->fp != NULL)
 		(void)isc_stdio_close(j->fp);
-	j->magic = 0;
 	isc_mem_putanddetach(&j->mctx, j, sizeof(*j));
-	*journalp = NULL;
 }
 
 /*

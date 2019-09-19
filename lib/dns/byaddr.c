@@ -264,20 +264,24 @@ dns_byaddr_cancel(dns_byaddr_t *byaddr) {
 	UNLOCK(&byaddr->lock);
 }
 
-void
-dns_byaddr_destroy(dns_byaddr_t **byaddrp) {
-	dns_byaddr_t *byaddr;
+static void
+byaddr_destroy(dns_byaddr_t *byaddr) {
+	byaddr->magic = 0;
 
-	REQUIRE(byaddrp != NULL);
-	byaddr = *byaddrp;
-	REQUIRE(VALID_BYADDR(byaddr));
 	REQUIRE(byaddr->event == NULL);
 	REQUIRE(byaddr->task == NULL);
+
 	dns_lookup_destroy(&byaddr->lookup);
-
 	isc_mutex_destroy(&byaddr->lock);
-	byaddr->magic = 0;
 	isc_mem_putanddetach(&byaddr->mctx, byaddr, sizeof(*byaddr));
+}
 
+void
+dns_byaddr_destroy(dns_byaddr_t **byaddrp) {
+	REQUIRE(byaddrp != NULL && VALID_BYADDR(*byaddrp));
+	dns_byaddr_t *byaddr = *byaddrp;
 	*byaddrp = NULL;
+
+	byaddr_destroy(byaddr);
+
 }

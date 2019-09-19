@@ -434,13 +434,9 @@ dns_dyndb_createctx(isc_mem_t *mctx, const void *hashinit, isc_log_t *lctx,
 
 void
 dns_dyndb_destroyctx(dns_dyndbctx_t **dctxp) {
-	dns_dyndbctx_t *dctx;
-
 	REQUIRE(dctxp != NULL && DNS_DYNDBCTX_VALID(*dctxp));
-
-	dctx = *dctxp;
+	dns_dyndbctx_t *dctx = *dctxp;
 	*dctxp = NULL;
-
 	dctx->magic = 0;
 
 	if (dctx->view != NULL)

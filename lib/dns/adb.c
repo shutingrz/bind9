@@ -1710,11 +1710,11 @@ new_adbname(dns_adb_t *adb, const dns_name_t *dnsname) {
 
 static inline void
 free_adbname(dns_adb_t *adb, dns_adbname_t **name) {
-	dns_adbname_t *n;
-
-	INSIST(name != NULL && DNS_ADBNAME_VALID(*name));
-	n = *name;
+	REQUIRE(name != NULL && DNS_ADBNAME_VALID(*name));
+	dns_adbname_t *n = *name;
 	*name = NULL;
+
+	n->magic = 0;
 
 	INSIST(!NAME_HAS_V4(n));
 	INSIST(!NAME_HAS_V6(n));
@@ -1724,7 +1724,6 @@ free_adbname(dns_adb_t *adb, dns_adbname_t **name) {
 	INSIST(n->lock_bucket == DNS_ADB_INVALIDBUCKET);
 	INSIST(n->adb == adb);
 
-	n->magic = 0;
 	dns_name_free(&n->name, adb->mctx);
 
 	isc_mempool_put(adb->nmp, n);
@@ -1751,16 +1750,15 @@ new_adbnamehook(dns_adb_t *adb, dns_adbentry_t *entry) {
 
 static inline void
 free_adbnamehook(dns_adb_t *adb, dns_adbnamehook_t **namehook) {
-	dns_adbnamehook_t *nh;
-
 	INSIST(namehook != NULL && DNS_ADBNAMEHOOK_VALID(*namehook));
-	nh = *namehook;
+	dns_adbnamehook_t *nh = *namehook;
 	*namehook = NULL;
+
+	nh->magic = 0;
 
 	INSIST(nh->entry == NULL);
 	INSIST(!ISC_LINK_LINKED(nh, plink));
 
-	nh->magic = 0;
 	isc_mempool_put(adb->nhmp, nh);
 }
 
@@ -1789,17 +1787,15 @@ new_adblameinfo(dns_adb_t *adb, const dns_name_t *qname,
 
 static inline void
 free_adblameinfo(dns_adb_t *adb, dns_adblameinfo_t **lameinfo) {
-	dns_adblameinfo_t *li;
-
 	INSIST(lameinfo != NULL && DNS_ADBLAMEINFO_VALID(*lameinfo));
-	li = *lameinfo;
+	dns_adblameinfo_t *li = *lameinfo;
 	*lameinfo = NULL;
+
+	li->magic = 0;
 
 	INSIST(!ISC_LINK_LINKED(li, plink));
 
 	dns_name_free(&li->qname, adb->mctx);
-
-	li->magic = 0;
 
 	isc_mempool_put(adb->limp, li);
 }
@@ -1856,18 +1852,16 @@ new_adbentry(dns_adb_t *adb) {
 
 static inline void
 free_adbentry(dns_adb_t *adb, dns_adbentry_t **entry) {
-	dns_adbentry_t *e;
-	dns_adblameinfo_t *li;
-
 	INSIST(entry != NULL && DNS_ADBENTRY_VALID(*entry));
-	e = *entry;
+	dns_adbentry_t *e = *entry;
+	dns_adblameinfo_t *li;
 	*entry = NULL;
+
+	e->magic = 0;
 
 	INSIST(e->lock_bucket == DNS_ADB_INVALIDBUCKET);
 	INSIST(e->refcnt == 0);
 	INSIST(!ISC_LINK_LINKED(e, plink));
-
-	e->magic = 0;
 
 	if (e->cookie != NULL)
 		isc_mem_put(adb->mctx, e->cookie, e->cookielen);
@@ -1891,8 +1885,9 @@ new_adbfind(dns_adb_t *adb) {
 	dns_adbfind_t *h;
 
 	h = isc_mempool_get(adb->ahmp);
-	if (h == NULL)
+	if (h == NULL) {
 		return (NULL);
+	}
 
 	/*
 	 * Public members.
@@ -1943,35 +1938,32 @@ new_adbfetch(dns_adb_t *adb) {
 
 static inline void
 free_adbfetch(dns_adb_t *adb, dns_adbfetch_t **fetch) {
-	dns_adbfetch_t *f;
-
 	INSIST(fetch != NULL && DNS_ADBFETCH_VALID(*fetch));
-	f = *fetch;
+	dns_adbfetch_t *f = *fetch;
 	*fetch = NULL;
 
 	f->magic = 0;
 
-	if (dns_rdataset_isassociated(&f->rdataset))
+	if (dns_rdataset_isassociated(&f->rdataset)) {
 		dns_rdataset_disassociate(&f->rdataset);
+	}
 
 	isc_mempool_put(adb->afmp, f);
 }
 
 static inline bool
 free_adbfind(dns_adb_t *adb, dns_adbfind_t **findp) {
-	dns_adbfind_t *find;
-
 	INSIST(findp != NULL && DNS_ADBFIND_VALID(*findp));
-	find = *findp;
+	dns_adbfind_t *find = *findp;
 	*findp = NULL;
+
+	find->magic = 0;
 
 	INSIST(!FIND_HAS_ADDRS(find));
 	INSIST(!ISC_LINK_LINKED(find, publink));
 	INSIST(!ISC_LINK_LINKED(find, plink));
 	INSIST(find->name_bucket == DNS_ADB_INVALIDBUCKET);
 	INSIST(find->adbname == NULL);
-
-	find->magic = 0;
 
 	isc_mutex_destroy(&find->lock);
 	isc_mempool_put(adb->ahmp, find);
@@ -2005,16 +1997,14 @@ new_adbaddrinfo(dns_adb_t *adb, dns_adbentry_t *entry, in_port_t port) {
 
 static inline void
 free_adbaddrinfo(dns_adb_t *adb, dns_adbaddrinfo_t **ainfo) {
-	dns_adbaddrinfo_t *ai;
-
 	INSIST(ainfo != NULL && DNS_ADBADDRINFO_VALID(*ainfo));
-	ai = *ainfo;
+	dns_adbaddrinfo_t *ai = *ainfo;
 	*ainfo = NULL;
+
+	ai->magic = 0;
 
 	INSIST(ai->entry == NULL);
 	INSIST(!ISC_LINK_LINKED(ai, publink));
-
-	ai->magic = 0;
 
 	isc_mempool_put(adb->aimp, ai);
 }

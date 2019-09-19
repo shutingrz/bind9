@@ -513,17 +513,15 @@ isc_interfaceiter_next(isc_interfaceiter_t *iter) {
 
 void
 isc_interfaceiter_destroy(isc_interfaceiter_t **iterp) {
-	isc_interfaceiter_t *iter;
-	REQUIRE(iterp != NULL);
-	iter = *iterp;
-	REQUIRE(VALID_IFITER(iter));
+	REQUIRE(iterp != NULL && VALID_IFITER(*iterp));
+	isc_interfaceiter_t *iter = *iterp;
+	*iterp = NULL;
+	iter->magic = 0;
 
 	if (iter->buf4 != NULL)
 		isc_mem_put(iter->mctx, iter->buf4, iter->buf4size);
 	if (iter->buf6 != NULL)
 		isc_mem_put(iter->mctx, iter->buf6, iter->buf6size);
 
-	iter->magic = 0;
 	isc_mem_put(iter->mctx, iter, sizeof(*iter));
-	*iterp = NULL;
 }

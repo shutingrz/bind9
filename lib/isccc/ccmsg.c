@@ -216,7 +216,6 @@ isccc_ccmsg_freebuffer(isccc_ccmsg_t *ccmsg) {
 void
 isccc_ccmsg_invalidate(isccc_ccmsg_t *ccmsg) {
 	REQUIRE(VALID_CCMSG(ccmsg));
-
 	ccmsg->magic = 0;
 
 	if (ccmsg->buffer.base != NULL) {

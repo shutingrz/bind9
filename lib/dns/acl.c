@@ -444,6 +444,8 @@ static void
 destroy(dns_acl_t *dacl) {
 	unsigned int i;
 
+	dacl->magic = 0;
+
 	INSIST(!ISC_LINK_LINKED(dacl, nextincache));
 
 	for (i = 0; i < dacl->length; i++) {
@@ -462,7 +464,6 @@ destroy(dns_acl_t *dacl) {
 	if (dacl->iptable != NULL)
 		dns_iptable_detach(&dacl->iptable);
 	isc_refcount_destroy(&dacl->refcount);
-	dacl->magic = 0;
 	isc_mem_putanddetach(&dacl->mctx, dacl, sizeof(*dacl));
 }
 

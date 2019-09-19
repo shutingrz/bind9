@@ -164,6 +164,8 @@ dns_compress_invalidate(dns_compress_t *cctx) {
 
 	REQUIRE(VALID_CCTX(cctx));
 
+	cctx->magic = 0;
+
 	for (i = 0; i < DNS_COMPRESS_TABLESIZE; i++) {
 		while (cctx->table[i] != NULL) {
 			node = cctx->table[i];
@@ -177,7 +179,6 @@ dns_compress_invalidate(dns_compress_t *cctx) {
 		}
 	}
 
-	cctx->magic = 0;
 	cctx->allowed = 0;
 	cctx->edns = -1;
 }
@@ -516,9 +517,7 @@ dns_decompress_init(dns_decompress_t *dctx, int edns,
 
 void
 dns_decompress_invalidate(dns_decompress_t *dctx) {
-
 	REQUIRE(VALID_DCTX(dctx));
-
 	dctx->magic = 0;
 }
 

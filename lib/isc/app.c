@@ -555,13 +555,9 @@ isc_appctx_create(isc_mem_t *mctx, isc_appctx_t **ctxp) {
 
 void
 isc_appctx_destroy(isc_appctx_t **ctxp) {
-	isc_appctx_t *ctx;
-
-	REQUIRE(ctxp != NULL);
-	ctx = *ctxp;
+	REQUIRE(ctxp != NULL && VALID_APPCTX(*ctxp));
+	isc_appctx_t *ctx = *ctxp;
 	*ctxp = NULL;
-	REQUIRE(VALID_APPCTX(ctx));
-
 	ctx->magic = 0;
 
 	isc_mem_putanddetach(&ctx->mctx, ctx, sizeof(*ctx));

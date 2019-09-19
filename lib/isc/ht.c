@@ -80,19 +80,12 @@ isc_ht_init(isc_ht_t **htp, isc_mem_t *mctx, uint8_t bits) {
 
 void
 isc_ht_destroy(isc_ht_t **htp) {
-	isc_ht_t *ht;
-	size_t i;
-
-	REQUIRE(htp != NULL);
-
-	ht = *htp;
+	REQUIRE(htp != NULL && ISC_HT_VALID(*htp));
+	isc_ht_t *ht = *htp;
 	*htp = NULL;
-
-	REQUIRE(ISC_HT_VALID(ht));
-
 	ht->magic = 0;
 
-	for (i = 0; i < ht->size; i++) {
+	for (size_t i = 0; i < ht->size; i++) {
 		isc_ht_node_t *node = ht->table[i];
 		while (node != NULL) {
 			isc_ht_node_t *next = node->next;

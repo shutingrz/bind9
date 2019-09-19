@@ -480,6 +480,8 @@ destroynode(dns_sdlznode_t *node) {
 	dns_db_t *db;
 	isc_mem_t *mctx;
 
+	node->magic = 0;
+
 	sdlz = node->sdlz;
 	mctx = sdlz->common.mctx;
 
@@ -506,7 +508,6 @@ destroynode(dns_sdlznode_t *node) {
 	}
 	isc_refcount_destroy(&node->references);
 
-	node->magic = 0;
 	isc_mem_put(mctx, node, sizeof(dns_sdlznode_t));
 	db = &sdlz->common;
 	detach(&db);

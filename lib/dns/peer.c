@@ -104,13 +104,12 @@ dns_peerlist_detach(dns_peerlist_t **list) {
 
 static void
 peerlist_delete(dns_peerlist_t **list) {
-	dns_peerlist_t *l;
+	REQUIRE(list != NULL && DNS_PEERLIST_VALID(*list));
+	dns_peerlist_t *l = *list;
+	*list = NULL;
+	l->magic = 0;
+
 	dns_peer_t *server, *stmp;
-
-	REQUIRE(list != NULL);
-	REQUIRE(DNS_PEERLIST_VALID(*list));
-
-	l = *list;
 
 	REQUIRE(l->refs == 0);
 
@@ -122,10 +121,7 @@ peerlist_delete(dns_peerlist_t **list) {
 		server = stmp;
 	}
 
-	l->magic = 0;
 	isc_mem_put(l->mem, l, sizeof(*l));
-
-	*list = NULL;
 }
 
 void
@@ -280,38 +276,31 @@ dns_peer_detach(dns_peer_t **peer) {
 
 static void
 peer_delete(dns_peer_t **peer) {
-	dns_peer_t *p;
-	isc_mem_t *mem;
-
-	REQUIRE(peer != NULL);
-	REQUIRE(DNS_PEER_VALID(*peer));
-
-	p = *peer;
+	REQUIRE(peer != NULL && DNS_PEER_VALID(*peer));
+	dns_peer_t *p = *peer;
+	*peer = NULL;
+	p->magic = 0;
 
 	REQUIRE(p->refs == 0);
 
-	mem = p->mem;
-	p->mem = NULL;
-	p->magic = 0;
-
 	if (p->key != NULL) {
-		dns_name_free(p->key, mem);
-		isc_mem_put(mem, p->key, sizeof(dns_name_t));
+		dns_name_free(p->key, p->mem);
+		isc_mem_put(p->mem, p->key, sizeof(dns_name_t));
 	}
 
 	if (p->query_source != NULL)
-		isc_mem_put(mem, p->query_source, sizeof(*p->query_source));
+		isc_mem_put(p->mem, p->query_source, sizeof(*p->query_source));
 
-	if (p->notify_source != NULL)
-		isc_mem_put(mem, p->notify_source, sizeof(*p->notify_source));
+	if (p->notify_source != NULL) {
+		isc_mem_put(p->mem, p->notify_source, sizeof(*p->notify_source));
+	}
 
-	if (p->transfer_source != NULL)
-		isc_mem_put(mem, p->transfer_source,
+	if (p->transfer_source != NULL) {
+		isc_mem_put(p->mem, p->transfer_source,
 			    sizeof(*p->transfer_source));
+	}
 
-	isc_mem_put(mem, p, sizeof(*p));
-
-	*peer = NULL;
+	isc_mem_put(p->mem, p, sizeof(*p));
 }
 
 isc_result_t

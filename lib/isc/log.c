@@ -436,15 +436,15 @@ isc_logconfig_use(isc_log_t *lctx, isc_logconfig_t *lcfg) {
 
 void
 isc_log_destroy(isc_log_t **lctxp) {
-	isc_log_t *lctx;
-	isc_logconfig_t *lcfg;
-	isc_mem_t *mctx;
-	isc_logmessage_t *message;
-
 	REQUIRE(lctxp != NULL && VALID_CONTEXT(*lctxp));
 
-	lctx = *lctxp;
-	mctx = lctx->mctx;
+	isc_log_t *lctx = *lctxp;
+	*lctxp = NULL;
+	lctx->magic = 0;
+
+	isc_logconfig_t *lcfg;
+	isc_mem_t *mctx = lctx->mctx;
+	isc_logmessage_t *message;
 
 	if (lctx->logconfig != NULL) {
 		lcfg = lctx->logconfig;
@@ -468,25 +468,22 @@ isc_log_destroy(isc_log_t **lctxp) {
 	lctx->modules = NULL;
 	lctx->module_count = 0;
 	lctx->mctx = NULL;
-	lctx->magic = 0;
 
 	isc_mem_putanddetach(&mctx, lctx, sizeof(*lctx));
-
-	*lctxp = NULL;
 }
 
 void
 isc_logconfig_destroy(isc_logconfig_t **lcfgp) {
-	isc_logconfig_t *lcfg;
+	REQUIRE(lcfgp != NULL && VALID_CONFIG(*lcfgp));
+	isc_logconfig_t *lcfg = *lcfgp;
+	*lcfgp = NULL;
+	lcfg->magic = 0;
+
 	isc_mem_t *mctx;
 	isc_logchannel_t *channel;
 	isc_logchannellist_t *item;
 	char *filename;
 	unsigned int i;
-
-	REQUIRE(lcfgp != NULL && VALID_CONFIG(*lcfgp));
-
-	lcfg = *lcfgp;
 
 	/*
 	 * This function cannot be called with a logconfig that is in
@@ -534,7 +531,6 @@ isc_logconfig_destroy(isc_logconfig_t **lcfgp) {
 	lcfg->tag = NULL;
 	lcfg->highest_level = 0;
 	lcfg->duplicate_interval = 0;
-	lcfg->magic = 0;
 
 	isc_mem_put(mctx, lcfg, sizeof(*lcfg));
 

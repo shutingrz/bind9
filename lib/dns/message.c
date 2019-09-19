@@ -798,18 +798,14 @@ dns_message_reset(dns_message_t *msg, unsigned int intent) {
 
 void
 dns_message_destroy(dns_message_t **msgp) {
-	dns_message_t *msg;
-
-	REQUIRE(msgp != NULL);
-	REQUIRE(DNS_MESSAGE_VALID(*msgp));
-
-	msg = *msgp;
+	REQUIRE(msgp != NULL && DNS_MESSAGE_VALID(*msgp));
+	dns_message_t *msg = *msgp;;
 	*msgp = NULL;
+	msg->magic = 0;
 
 	msgreset(msg, true);
 	isc_mempool_destroy(&msg->namepool);
 	isc_mempool_destroy(&msg->rdspool);
-	msg->magic = 0;
 	isc_mem_putanddetach(&msg->mctx, msg, sizeof(dns_message_t));
 }
 

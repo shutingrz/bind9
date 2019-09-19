@@ -373,7 +373,7 @@ send_shutdown_events(dns_requestmgr_t *requestmgr) {
 
 static void
 mgr_destroy(dns_requestmgr_t *requestmgr) {
-	int i;
+	requestmgr->magic = 0;
 
 	req_log(ISC_LOG_DEBUG(3), "mgr_destroy");
 
@@ -381,13 +381,12 @@ mgr_destroy(dns_requestmgr_t *requestmgr) {
 	REQUIRE(requestmgr->iref == 0);
 
 	isc_mutex_destroy(&requestmgr->lock);
-	for (i = 0; i < DNS_REQUEST_NLOCKS; i++)
+	for (int i = 0; i < DNS_REQUEST_NLOCKS; i++)
 		isc_mutex_destroy(&requestmgr->locks[i]);
 	if (requestmgr->dispatchv4 != NULL)
 		dns_dispatch_detach(&requestmgr->dispatchv4);
 	if (requestmgr->dispatchv6 != NULL)
 		dns_dispatch_detach(&requestmgr->dispatchv6);
-	requestmgr->magic = 0;
 	isc_mem_putanddetach(&requestmgr->mctx, requestmgr, sizeof(*requestmgr));
 }
 
@@ -1416,11 +1415,11 @@ req_sendevent(dns_request_t *request, isc_result_t result) {
 
 static void
 req_destroy(dns_request_t *request) {
+	request->magic = 0;
 	REQUIRE(VALID_REQUEST(request));
 
 	req_log(ISC_LOG_DEBUG(3), "req_destroy: request %p", request);
 
-	request->magic = 0;
 	if (request->query != NULL)
 		isc_buffer_free(&request->query);
 	if (request->answer != NULL)
