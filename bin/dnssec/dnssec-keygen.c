@@ -122,7 +122,7 @@ struct keygen_ctx {
 	bool             quiet;
 	bool             oldstyle;
 	/* state */
-        time_t           lifetime;
+	time_t           lifetime;
 	bool             ksk;
 	bool             zsk;
 };
@@ -139,7 +139,7 @@ usage(void) {
 	fprintf(stderr, "    -K <directory>: write keys into directory\n");
 	fprintf(stderr, "    -k <policy>: generate keys for dnssec-policy\n");
 	fprintf(stderr, "    -l <file>: configuration file with dnssec-policy "
-			               "statement\n");
+				       "statement\n");
 	fprintf(stderr, "    -a <algorithm>:\n");
 	fprintf(stderr, "        RSASHA1 | NSEC3RSASHA1 |\n");
 	fprintf(stderr, "        RSASHA256 | RSASHA512 |\n");
@@ -244,7 +244,7 @@ progress(int p)
 
 static void
 kasp_from_conf(cfg_obj_t* config, isc_mem_t* mctx, const char* name,
-               dns_kasp_t** kaspp)
+	       dns_kasp_t** kaspp)
 {
 	const cfg_listelt_t *element;
 	const cfg_obj_t *kasps = NULL;
@@ -653,7 +653,7 @@ keygen(keygen_ctx_t *ctx, isc_mem_t *mctx, int argc, char **argv)
 
 			if (ctx->setpub)
 				dst_key_settime(key, DST_TIME_PUBLISH,
-					        ctx->publish);
+						ctx->publish);
 			else if (ctx->setact && !ctx->unsetpub)
 				dst_key_settime(key, DST_TIME_PUBLISH,
 						ctx->activate - ctx->prepub);
@@ -983,7 +983,7 @@ main(int argc, char **argv) {
 				fatal("-P specified more than once");
 
 			ctx.publish = strtotime(isc_commandline_argument,
-					        ctx.now, ctx.now, &ctx.setpub);
+						ctx.now, ctx.now, &ctx.setpub);
 			ctx.unsetpub = !ctx.setpub;
 			break;
 		case 'A':
@@ -991,7 +991,7 @@ main(int argc, char **argv) {
 				fatal("-A specified more than once");
 
 			ctx.activate = strtotime(isc_commandline_argument,
-					         ctx.now, ctx.now, &ctx.setact);
+						 ctx.now, ctx.now, &ctx.setact);
 			ctx.unsetact = !ctx.setact;
 			break;
 		case 'R':
@@ -1028,7 +1028,7 @@ main(int argc, char **argv) {
 				fatal("-D specified more than once");
 
 			ctx.deltime = strtotime(isc_commandline_argument,
-					        ctx.now, ctx.now, &ctx.setdel);
+						ctx.now, ctx.now, &ctx.setdel);
 			ctx.unsetdel = !ctx.setdel;
 			break;
 		case 'S':

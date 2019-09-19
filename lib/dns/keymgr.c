@@ -707,7 +707,7 @@ keymgr_have_dnskey(dns_dnsseckeylist_t *keyring, dns_dnsseckey_t *key,
 		 * Equation (3c):
 		 * There are two or more keys with an OMNIPRESENT DNSKEY and
 		 * the DS records get swapped.  These keys must be in a
-	         * successor relation.
+		 * successor relation.
 		 */
 		keymgr_key_exists_with_state(keyring, key, type,
 					     next_state, states[1], states[2],

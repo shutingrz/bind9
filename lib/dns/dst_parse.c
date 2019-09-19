@@ -759,7 +759,7 @@ dst__privstruct_writefile(const dst_key_t *key, const dst_private_t *priv,
 
 			if (timetags[i] != NULL) {
 				fprintf(fp, "%s %.*s\n", timetags[i],
-				        (int)r.length, r.base);
+					(int)r.length, r.base);
 			}
 		}
 	}

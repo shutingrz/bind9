@@ -6266,26 +6266,36 @@ delsig_ok(dns_rdata_rrsig_t *rrsig_ptr, dst_key_t **keys, unsigned int nkeys,
 	bool have_pksk = false, have_pzsk = false;
 
 	for (i = 0; i < nkeys; i++) {
-		if (rrsig_ptr->algorithm != dst_key_alg(keys[i]))
+		bool ksk, zsk;
+
+		if (have_pksk && have_ksk && have_pzsk && have_zsk) {
+			break;
+		}
+
+		if (rrsig_ptr->algorithm != dst_key_alg(keys[i])) {
 			continue;
-
-		ret = dst_key_getbool(keys[i], DST_BOOL_KSK, &have_ksk);
-		if (ret != ISC_R_SUCCESS) {
-			if (KSK(keys[i])) {
-				have_ksk = true;
-			}
 		}
 
-		ret = dst_key_getbool(keys[i], DST_BOOL_ZSK, &have_zsk);
+		ret = dst_key_getbool(keys[i], DST_BOOL_KSK, &ksk);
 		if (ret != ISC_R_SUCCESS) {
-			if (!KSK(keys[i])) {
-				have_zsk = true;
-			}
+			ksk = KSK(keys[i]);
+		}
+		ret = dst_key_getbool(keys[i], DST_BOOL_ZSK, &zsk);
+		if (ret != ISC_R_SUCCESS) {
+			zsk = !KSK(keys[i]);
 		}
 
-		if (dst_key_isprivate(keys[i])) {
-			have_pksk = have_ksk;
-			have_pzsk = have_zsk;
+		if (ksk) {
+			have_ksk = true;
+			if (dst_key_isprivate(keys[i])) {
+				have_pksk = true;
+			}
+		}
+		if (zsk) {
+			have_zsk = true;
+			if (dst_key_isprivate(keys[i])) {
+				have_pzsk = true;
+			}
 		}
 	}
 

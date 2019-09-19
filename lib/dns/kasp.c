@@ -192,7 +192,7 @@ dns_kasp_key_algorithm(dns_kasp_key_t *key) {
 unsigned int
 dns_kasp_key_size(dns_kasp_key_t *key) {
 	unsigned int size = 0;
-        unsigned int min = 0;
+	unsigned int min = 0;
 
 	REQUIRE(key != NULL);
 

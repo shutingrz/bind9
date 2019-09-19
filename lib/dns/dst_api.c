@@ -104,8 +104,8 @@ static const char *numerictags[NUMERIC_NTAGS] = {
 
 #define BOOLEAN_NTAGS (DST_MAX_BOOLEAN + 1)
 static const char *booleantags[BOOLEAN_NTAGS] = {
-        "KSK:",
-        "ZSK:"
+	"KSK:",
+	"ZSK:"
 };
 
 #define TIMING_NTAGS (DST_MAX_TIMES + 1)
@@ -115,7 +115,7 @@ static const char *timingtags[TIMING_NTAGS] = {
 	"Active:",
 	"Retired:",
 	"Revoked:",
-        "Removed:",
+	"Removed:",
 
 	"DSPublish:",
 	"SyncPublish:",
