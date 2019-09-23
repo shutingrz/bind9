@@ -351,6 +351,14 @@ rndc_reconfig() {
     done
 }
 
+rndc_refresh() {
+    $RNDC -c ../common/rndc.conf -s "$2" -p "${CONTROLPORT}" refresh "$3" 2>&1 | sed "s/^/$1 /" | cat_i
+}
+
+rndc_notify() {
+    $RNDC -c ../common/rndc.conf -s "$2" -p "${CONTROLPORT}" notify "$3" 2>&1 | sed "s/^/$1 /" | cat_i
+}
+
 # rndc_dumpdb: call "rndc dumpdb [...]" and wait until it completes
 #
 # The first argument is the name server instance to send the command to, in the
