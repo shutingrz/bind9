@@ -94,7 +94,7 @@ EOF
 
 sleep 1
 
-$RNDCCMD 10.53.0.1 refresh nil
+rndc_refresh ns1 10.53.0.1 nil
 
 sleep 2
 
@@ -129,7 +129,7 @@ EOF
 
 sleep 1
 
-$RNDCCMD 10.53.0.1 refresh nil
+rndc_refresh ns1 10.53.0.1 nil
 
 sleep 2
 
@@ -162,7 +162,7 @@ done
 
 # modify the master
 cp ns3/mytest1.db ns3/mytest.db
-$RNDCCMD 10.53.0.3 reload | sed 's/^/ns3 /' | cat_i
+rndc_reload ns3 10.53.03
 
 #wait for master to reload load
 for i in 0 1 2 3 4 5 6 7 8 9
@@ -180,7 +180,7 @@ do
 
 	# re-notify if we've been waiting a long time
 	if [ $i -ge 5 ]; then
-	    $RNDCCMD 10.53.0.3 notify test | set 's/^/ns3 /' | cat_i
+	    rndc_notify ns3 10.53.0.3 test
 	fi
 	sleep 1
 done
@@ -208,7 +208,7 @@ echo_i "testing request-ixfr option in view vs zone ($n)"
 
 echo_i " this result should be AXFR"
 cp ns3/subtest1.db ns3/subtest.db # change to sub.test zone, should be AXFR
-$RNDCCMD 10.53.0.3 reload | sed 's/^/ns3 /' | cat_i
+rndc_reload ns3 10.53.0.3
 
 #wait for master to reload zone
 for i in 0 1 2 3 4 5 6 7 8 9
@@ -226,7 +226,7 @@ do
 
 	# re-notify if we've been waiting a long time
 	if [ $i -ge 5 ]; then
-	    $RNDCCMD 10.53.0.3 notify sub.test | set 's/^/ns3 /' | cat_i
+	    rndc_notify ns3 10.53.0.3 sub.test
 	fi
 	sleep 1
 done
@@ -248,7 +248,7 @@ fi
 
 echo_i " this result should be IXFR"
 cp ns3/mytest2.db ns3/mytest.db # change to test zone, should be IXFR
-$RNDCCMD 10.53.0.3 reload | sed 's/^/ns3 /' | cat_i
+rndc_reload ns3 10.53.0.3
 
 # wait for master to reload zone
 for i in 0 1 2 3 4 5 6 7 8 9
@@ -266,7 +266,7 @@ do
 
 	# re-notify if we've been waiting a long time
 	if [ $i -ge 5 ]; then
-	    $RNDCCMD 10.53.0.3 notify test | set 's/^/ns3 /' | cat_i
+	    rndc_notify ns3 10.53.0.3 test
 	fi
 	sleep 1
 done
@@ -323,7 +323,7 @@ do
 
 	# re-notify if we've been waiting a long time
 	if [ $i -ge 5 ]; then
-	    $RNDCCMD 10.53.0.3 notify test | set 's/^/ns3 /' | cat_i
+	    rndc_notify ns3 10.53.0.3 test
 	fi
 	sleep 1
 done
