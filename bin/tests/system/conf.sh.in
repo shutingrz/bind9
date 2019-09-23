@@ -85,8 +85,8 @@ SUBDIRS="$SEQUENTIALDIRS $PARALLELDIRS"
 
 
 # Things that are different on Windows
-KILL=kill
-DIFF=diff
+KILL="kill"
+DIFF="diff"
 DOS2UNIX=true
 # There's no trailing period on Windows
 TP=.
