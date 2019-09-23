@@ -14,27 +14,31 @@
 
 echo_i "ns3/setup.sh"
 
-infile="template.db.in"
+setup () {
+	zone="$1"
+	echo_i "setting up zone: $zone"
+	zonefile="${zone}.db"
+}
 
-for zone in default configured configured-with-keys \
-	    configured-with-some-keys configured-with-used-keys \
-	    configured-with-pregenerated
+
+for zn in default rsasha1 dnssec-keygen some-keys legacy-keys pregenerated \
+	  rsasha1-nsec3 rsasha256 rsasha512 ecdsa256 ecdsa384
 do
-	zonefile="${zone}.kasp.db"
-	cp $infile $zonefile
+	setup "${zn}.kasp"
+	cp template.db.in $zonefile
 done
 
-zone="configured-with-keys.kasp"
-$KEYGEN -k configured -l policies/configured.conf $zone > keygen.out.$zone.1 2>&1
+zone="dnssec-keygen.kasp"
+$KEYGEN -k rsasha1 -l policies/kasp.conf $zone > keygen.out.$zone.1 2>&1
 
-zone="configured-with-some-keys.kasp"
-$KEYGEN -P none -A none -a RSASHA512 -b 2000 -L 1234 $zone > keygen.out.$zone.1 2>&1
-$KEYGEN -P none -A none -a RSASHA512 -f KSK  -L 1234 $zone > keygen.out.$zone.2 2>&1
+zone="some-keys.kasp"
+$KEYGEN -P none -A none -a RSASHA1 -b 2000 -L 1234 $zone > keygen.out.$zone.1 2>&1
+$KEYGEN -P none -A none -a RSASHA1 -f KSK  -L 1234 $zone > keygen.out.$zone.2 2>&1
 
-zone="configured-with-used-keys.kasp"
-$KEYGEN -a RSASHA512 -b 2000 -L 1234 $zone > keygen.out.$zone.1 2>&1
-$KEYGEN -a RSASHA512 -f KSK  -L 1234 $zone > keygen.out.$zone.2 2>&1
+zone="legacy.kasp"
+$KEYGEN -a RSASHA1 -b 2000 -L 1234 $zone > keygen.out.$zone.1 2>&1
+$KEYGEN -a RSASHA1 -f KSK  -L 1234 $zone > keygen.out.$zone.2 2>&1
 
-zone="configured-with-pregenerated.kasp"
-$KEYGEN -k configured -l policies/configured.conf $zone > keygen.out.$zone.1 2>&1
-$KEYGEN -k configured -l policies/configured.conf $zone > keygen.out.$zone.2 2>&1
+zone="pregenerated.kasp"
+$KEYGEN -k rsasha1 -l policies/kasp.conf $zone > keygen.out.$zone.1 2>&1
+$KEYGEN -k rsasha1 -l policies/kasp.conf $zone > keygen.out.$zone.2 2>&1

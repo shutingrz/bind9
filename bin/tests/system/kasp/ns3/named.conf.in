@@ -23,7 +23,9 @@ options {
 	recursion no;
 };
 
-include "policies/configured.conf";
+include "policies/kasp.conf";
+
+/* Zones that are getting initially signed */
 
 /* The default case: No keys created, using default policy. */
 zone "default.kasp" {
@@ -33,42 +35,71 @@ zone "default.kasp" {
 };
 
 /* A configured dnssec-policy, no keys created. */
-zone "configured.kasp" {
+zone "rsasha1.kasp" {
 	type master;
-	file "configured.kasp.db";
-	dnssec-policy "configured";
+	file "rsasha1.kasp.db";
+	dnssec-policy "rsasha1";
 };
 
 /* A configured dnssec-policy but keys already created. */
-zone "configured-with-keys.kasp" {
+zone "dnssec-keygen.kasp" {
 	type master;
-	file "configured-with-keys.kasp.db";
-	dnssec-policy "configured";
+	file "dnssec-keygen.kasp.db";
+	dnssec-policy "rsasha1";
 };
 
 /*
  * A configured dnssec-policy but some keys already created.
  */
-zone "configured-with-some-keys.kasp" {
+zone "some-keys.kasp" {
 	type master;
-	file "configured-with-some-keys.kasp.db";
-	dnssec-policy "configured";
+	file "some-keys.kasp.db";
+	dnssec-policy "rsasha1";
 };
 
 /*
  * A configured dnssec-policy but some keys already in use.
  */
-zone "configured-with-used-keys.kasp" {
+zone "legacy-keys.kasp" {
 	type master;
-	file "configured-with-used-keys.kasp.db";
-	dnssec-policy "configured";
+	file "legacy-keys.kasp.db";
+	dnssec-policy "rsasha1";
 };
 
 /*
  * A configured dnssec-policy with (too) many keys pregenerated.
  */
-zone "configured-with-pregenerated.kasp" {
+zone "pregenerated.kasp" {
 	type master;
-	file "configured-with-pregenerated.kasp.db";
-	dnssec-policy "configured";
+	file "pregenerated.kasp.db";
+	dnssec-policy "rsasha1";
+};
+
+/*
+ * Different algorithms.
+ */
+zone "rsasha1-nsec3.kasp" {
+	type master;
+	file "rsasha1-nsec3.kasp.db";
+	dnssec-policy "rsasha1-nsec3";
+};
+zone "rsasha256.kasp" {
+	type master;
+	file "rsasha256.kasp.db";
+	dnssec-policy "rsasha256";
+};
+zone "rsasha512.kasp" {
+	type master;
+	file "rsasha512.kasp.db";
+	dnssec-policy "rsasha512";
+};
+zone "ecdsa256.kasp" {
+	type master;
+	file "ecdsa256.kasp.db";
+	dnssec-policy "ecdsa256";
+};
+zone "ecdsa384.kasp" {
+	type master;
+	file "ecdsa384.kasp.db";
+	dnssec-policy "ecdsa384";
 };
