@@ -153,6 +153,7 @@ typedef enum dst_key_state {
 #define DST_KEY_ZRRSIG		1
 #define DST_KEY_KRRSIG		2
 #define DST_KEY_DS		3
+#define	DST_KEY_GOAL		4
 #define	DST_MAX_KEYSTATES	4
 
 /*
@@ -1092,9 +1093,67 @@ dst_key_setinactive(dst_key_t *key, bool inactive);
 
 void
 dst_key_setexternal(dst_key_t *key, bool value);
+/*%<
+ * Set key external state.
+ *
+ * Requires:
+ *	'key' to be valid.
+ */
 
 bool
 dst_key_isexternal(dst_key_t *key);
+/*%<
+ * Check if this is an external key.
+ *
+ * Requires:
+ *	'key' to be valid.
+ */
+
+bool
+dst_key_is_unused(dst_key_t *key);
+/*%<
+ * Check if this key is unused.
+ *
+ * Requires:
+ *	'key' to be valid.
+ */
+
+bool
+dst_key_is_published(dst_key_t *key, isc_stdtime_t now, isc_stdtime_t *publish);
+/*%<
+ * Check if it is safe to publish this key (e.g. put the DNSKEY in the zone).
+ *
+ * Requires:
+ *	'key' to be valid.
+ */
+
+bool
+dst_key_is_active(dst_key_t *key, isc_stdtime_t now, isc_stdtime_t *active);
+/*%<
+ * Check if it is safe to use this key for signing.
+ *
+ * Requires:
+ *	'key' to be valid.
+ */
+
+bool
+dst_key_is_revoked(dst_key_t *key, isc_stdtime_t now, isc_stdtime_t *revoke);
+/*%<
+ * Check if this key is revoked.
+ *
+ * Requires:
+ *	'key' to be valid.
+ */
+
+bool
+dst_key_is_removed(dst_key_t *key, isc_stdtime_t now, isc_stdtime_t *remove);
+/*%<
+ * Check if this key is removed from the zone (e.g. the DNSKEY record should
+ * no longer be in the zone).
+ *
+ * Requires:
+ *	'key' to be valid.
+ */
 
 ISC_LANG_ENDDECLS
 

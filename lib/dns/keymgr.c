@@ -62,7 +62,7 @@
 #define NA          DST_KEY_STATE_NA
 
 /* Quickly get key state timing metadata. */
-#define NUM_KEYSTATES (DST_MAX_KEYSTATES + 1)
+#define NUM_KEYSTATES (DST_MAX_KEYSTATES)
 static int keystatetimes[NUM_KEYSTATES] = {
 	DST_TIME_DNSKEY, DST_TIME_ZRRSIG, DST_TIME_KRRSIG, DST_TIME_DS
 };
@@ -167,7 +167,10 @@ keymgr_key_retire(dns_dnsseckey_t *key, isc_stdtime_t now)
 	REQUIRE(key != NULL);
 	REQUIRE(key->key != NULL);
 
+	/* This key wants to retire and hide in a corner. */
 	dst_key_settime(key->key, DST_TIME_INACTIVE, now);
+	dst_key_setstate(key->key, DST_KEY_GOAL, HIDDEN);
+
 	/* This key may not have key states set yet. Pretend as if they are
 	 * in the OMNIPRESENT state.
 	 */
@@ -205,10 +208,9 @@ keymgr_key_retire(dns_dnsseckey_t *key, isc_stdtime_t now)
 	dns_dnssec_get_hints(key, now);
 
 	dst_key_format(key->key,keystr, sizeof(keystr));
-	isc_log_write(dns_lctx,
-	     DNS_LOGCATEGORY_DNSSEC,
-	     DNS_LOGMODULE_DNSSEC, ISC_LOG_INFO,
-	     "DNSKEY %s (%s) is now inactive", keystr, keymgr_keyrole(key->key));
+	isc_log_write(dns_lctx, DNS_LOGCATEGORY_DNSSEC, DNS_LOGMODULE_DNSSEC,
+	     ISC_LOG_INFO, "keymgr: retire DNSKEY %s (%s)", keystr,
+	     keymgr_keyrole(key->key));
 }
 
 /*
@@ -248,30 +250,6 @@ keymgr_dnsseckey_kaspkey_match(dns_dnsseckey_t *dkey, dns_kasp_key_t *kkey)
 	}
 
 	/* Found a match. */
-	return true;
-}
-
-/*
- * A dnsseckey is considered unused if it does not have any timing metadata
- * set other than "Created".
- *
- */
-static bool
-keymgr_dnsseckey_unused(dns_dnsseckey_t *dkey)
-{
-	dst_key_t *key;
-	isc_stdtime_t val;
-
-	REQUIRE(dkey != NULL);
-
-	key = dkey->key;
-
-	/* None of the key timing metadata, except Created, may be set. */
-	for (int i = 1; i < DST_MAX_TIMES+1; i++) {
-		if (dst_key_gettime(key, i, &val) != ISC_R_NOTFOUND) {
-			return false;
-		}
-	}
 	return true;
 }
 
@@ -370,7 +348,14 @@ failure:
 static dst_key_state_t
 keymgr_desiredstate(dns_dnsseckey_t *key, dst_key_state_t state)
 {
-	if (key->hint_retire) {
+	dst_key_state_t goal;
+
+	if (dst_key_getstate(key->key, DST_KEY_GOAL, &goal) != ISC_R_SUCCESS) {
+		/* No goal? No movement. */
+		return state;
+	}
+
+	if (goal == HIDDEN) {
 		switch (state) {
 		case RUMOURED:
 		case OMNIPRESENT:
@@ -381,7 +366,7 @@ keymgr_desiredstate(dns_dnsseckey_t *key, dst_key_state_t state)
 		default:
 			return state;
 		}
-	} else if (key->hint_sign || key->hint_publish) {
+	} else if (goal == OMNIPRESENT) {
 		switch (state) {
 		case RUMOURED:
 		case OMNIPRESENT:
@@ -394,7 +379,8 @@ keymgr_desiredstate(dns_dnsseckey_t *key, dst_key_state_t state)
 			return state;
 		}
 	}
-	/* Unreachable. */
+
+	/* Unknown goal. */
 	return state;
 }
 
@@ -1021,7 +1007,7 @@ keymgr_update(dns_dnsseckeylist_t *keyring, isc_stdtime_t now)
 {
 	bool changed;
 
-	/* Repeat until nothing changed */
+	/* Repeat until nothing changed. */
 transition:
 	changed = false;
 
@@ -1060,7 +1046,16 @@ transition:
 				/*
 				 * This record is in a stable state.
 				 * No change needed, continue with the next
-				 * record type. */
+				 * record type.
+				 */
+				isc_log_write(dns_lctx, DNS_LOGCATEGORY_DNSSEC,
+					      DNS_LOGMODULE_DNSSEC,
+					      ISC_LOG_DEBUG(1),
+					      "keymgr: %s %s type %s in "
+					      "stable state %s",
+					      keymgr_keyrole(dkey->key), keystr,
+					      keystatetags[i],
+					      keystatestrings[state]);
 				continue;
 			}
 
@@ -1304,7 +1299,7 @@ dns_keymgr_run(const dns_name_t *origin, dns_rdataclass_t rdclass,
 		     candidate = ISC_LIST_NEXT(candidate, link))
 		{
 			if (keymgr_dnsseckey_kaspkey_match(candidate, kkey) &&
-			    keymgr_dnsseckey_unused(candidate))
+			    dst_key_is_unused(candidate->key))
 			{
 				/* Found a candidate in keyring. */
 				break;
@@ -1347,6 +1342,9 @@ dns_keymgr_run(const dns_name_t *origin, dns_rdataclass_t rdclass,
 			active = retire;
 		}
 
+		/* This key wants to be present. */
+		dst_key_setstate(newkey->key, DST_KEY_GOAL, OMNIPRESENT);
+
 		/* Do we need to set retire time? */
 		(void)dst_key_getnum(newkey->key, DST_NUM_LIFETIME, &lifetime);
 		if (lifetime > 0) {
@@ -1366,7 +1364,7 @@ dns_keymgr_run(const dns_name_t *origin, dns_rdataclass_t rdclass,
 		dst_key_format(newkey->key, keystr, sizeof(keystr));
 		isc_log_write(dns_lctx, DNS_LOGCATEGORY_DNSSEC,
 			      DNS_LOGMODULE_DNSSEC, ISC_LOG_INFO,
-			      "DNSKEY %s (%s) %s for policy %s",
+			      "keymgr: DNSKEY %s (%s) %s for policy %s",
 			      keystr, keymgr_keyrole(newkey->key),
 			      (candidate != NULL) ? "selected" : "created",
 			      dns_kasp_getname(kasp));
@@ -1405,10 +1403,11 @@ dns_keymgr_run(const dns_name_t *origin, dns_rdataclass_t rdclass,
 	/* Read to update key states. */
 	keymgr_update(keyring, now);
 
-	/* Store key states. */
+	/* Store key states and update hints. */
 	for (dns_dnsseckey_t *dkey = ISC_LIST_HEAD(*keyring);
 	     dkey != NULL; dkey = ISC_LIST_NEXT(dkey, link))
 	{
+		dns_dnssec_get_hints(dkey, now);
 		RETERR(dst_key_tofile(dkey->key, options, directory));
 	}
 
