@@ -1887,7 +1887,7 @@ zone_load(dns_zone_t *zone, unsigned int flags, bool locked) {
 	isc_time_t now;
 	isc_time_t loadtime;
 	dns_db_t *db = NULL;
-	bool rbt, hasraw;
+	bool rbt, hasraw, is_dynamic;
 
 	REQUIRE(DNS_ZONE_VALID(zone));
 
@@ -1952,11 +1952,13 @@ zone_load(dns_zone_t *zone, unsigned int flags, bool locked) {
 		goto cleanup;
 	}
 
-	if (zone->db != NULL && dns_zone_isdynamic(zone, false)) {
+	is_dynamic = dns_zone_isdynamic(zone, false) ||
+		     dns_zone_getkasp(zone) != NULL;
+	if (zone->db != NULL && is_dynamic) {
 		/*
-		 * This is a slave, stub, or dynamically updated
-		 * zone being reloaded.  Do nothing - the database
-		 * we already have is guaranteed to be up-to-date.
+		 * This is a slave, stub, dynamically updated, or kasp enabled
+		 * zone being reloaded.  Do nothing - the database we already
+		 * have is guaranteed to be up-to-date.
 		 */
 		if (zone->type == dns_zone_master && !hasraw)
 			result = DNS_R_DYNAMIC;
@@ -3652,10 +3654,15 @@ set_resigntime(dns_zone_t *zone) {
 	isc_result_t result;
 	uint32_t nanosecs;
 	dns_db_t *db = NULL;
+	dns_kasp_t *kasp = dns_zone_getkasp(zone);
 
-	/* We only re-sign zones that can be dynamically updated */
-	if (zone->update_disabled)
+	/*
+	 * We only re-sign zones that can be dynamically updated, or that
+	 * are maintained by a policy.
+	 */
+	if (zone->update_disabled && kasp == NULL) {
 		return;
+	}
 
 	if (!inline_secure(zone) && (zone->type != dns_zone_master ||
 	    (zone->ssutable == NULL &&
@@ -3681,10 +3688,11 @@ set_resigntime(dns_zone_t *zone) {
 		goto cleanup;
 	}
 
-	resign = rdataset.resign - zone->sigresigninginterval;
+	resign = rdataset.resign - dns_zone_getsigresigninginterval(zone);
 	dns_rdataset_disassociate(&rdataset);
 	nanosecs = isc_random_uniform(1000000000);
 	isc_time_set(&zone->resigntime, resign, nanosecs);
+
  cleanup:
 	dns_db_detach(&db);
 	return;
@@ -3701,6 +3709,7 @@ check_nsec3param(dns_zone_t *zone, dns_db_t *db) {
 	dns_rdata_t rdata = DNS_RDATA_INIT;
 	bool dynamic = (zone->type == dns_zone_master)
 			? dns_zone_isdynamic(zone, false) : false;
+	dynamic = dynamic || dns_zone_getkasp(zone);
 
 	dns_rdataset_init(&rdataset);
 	result = dns_db_findnode(db, &zone->origin, false, &node);
@@ -4507,6 +4516,7 @@ zone_postload(dns_zone_t *zone, dns_db_t *db, isc_time_t loadtime,
 	bool had_db = false;
 	unsigned int options;
 	dns_include_t *inc;
+	bool is_dynamic = false;
 
 	INSIST(LOCKED_ZONE(zone));
 	if (inline_raw(zone)) {
@@ -4647,7 +4657,9 @@ zone_postload(dns_zone_t *zone, dns_db_t *db, isc_time_t loadtime,
 	 * journal file if it isn't, as we wouldn't be able to apply
 	 * updates otherwise.
 	 */
-	if (zone->journal != NULL && dns_zone_isdynamic(zone, true) &&
+	is_dynamic = dns_zone_isdynamic(zone, true) ||
+		     dns_zone_getkasp(zone) != NULL;
+	if (zone->journal != NULL && is_dynamic &&
 	    ! DNS_ZONE_OPTION(zone, DNS_ZONEOPT_IXFRFROMDIFFS))
 	{
 		uint32_t jserial;
@@ -4819,7 +4831,7 @@ zone_postload(dns_zone_t *zone, dns_db_t *db, isc_time_t loadtime,
 
 		if (zone->type == dns_zone_master &&
 		    (zone->update_acl != NULL || zone->ssutable != NULL) &&
-		    zone->sigresigninginterval < (3 * refresh) &&
+		    dns_zone_getsigresigninginterval(zone) < (3 * refresh) &&
 		    dns_db_issecure(db))
 		{
 			dns_zone_logc(zone, DNS_LOGCATEGORY_ZONELOAD,
@@ -4951,10 +4963,11 @@ zone_postload(dns_zone_t *zone, dns_db_t *db, isc_time_t loadtime,
 			resume_addnsec3chain(zone);
 		}
 
+		is_dynamic = dns_zone_isdynamic(zone, false) ||
+			     dns_zone_getkasp(zone) != NULL;
 		if (zone->type == dns_zone_master &&
 		    !DNS_ZONEKEY_OPTION(zone, DNS_ZONEKEY_NORESIGN) &&
-		    dns_zone_isdynamic(zone, false) &&
-		    dns_db_issecure(db))
+		    is_dynamic && dns_db_issecure(db))
 		{
 			dns_name_t *name;
 			dns_fixedname_t fixed;
@@ -4977,7 +4990,7 @@ zone_postload(dns_zone_t *zone, dns_db_t *db, isc_time_t loadtime,
 					   "next resign: %s/%s "
 					   "in %d seconds", namebuf, typebuf,
 					   next.resign - timenow -
-					    zone->sigresigninginterval);
+					dns_zone_getsigresigninginterval(zone));
 				dns_rdataset_disassociate(&next);
 			} else {
 				dnssec_log(zone, ISC_LOG_WARNING,
@@ -5014,7 +5027,7 @@ zone_postload(dns_zone_t *zone, dns_db_t *db, isc_time_t loadtime,
 		zone->nincludes++;
 	}
 
-	if (! dns_db_ispersistent(db)) {
+	if (!dns_db_ispersistent(db)) {
 		dns_zone_logc(zone, DNS_LOGCATEGORY_ZONELOAD,
 			      ISC_LOG_INFO, "loaded serial %u%s", serial,
 			      dns_db_issecure(db) ? " (DNSSEC signed)" : "");
@@ -5070,7 +5083,7 @@ zone_postload(dns_zone_t *zone, dns_db_t *db, isc_time_t loadtime,
 	} else if (zone->type == dns_zone_master ||
 		   zone->type == dns_zone_redirect)
 	{
-		if (! (inline_secure(zone) && result == ISC_R_FILENOTFOUND)) {
+		if (!(inline_secure(zone) && result == ISC_R_FILENOTFOUND)) {
 			dns_zone_logc(zone, DNS_LOGCATEGORY_ZONELOAD,
 				      ISC_LOG_ERROR,
 				      "not loaded due to errors.");
@@ -6794,7 +6807,8 @@ zone_resigninc(dns_zone_t *zone) {
 
 	i = 0;
 	while (result == ISC_R_SUCCESS) {
-		resign = rdataset.resign - zone->sigresigninginterval;
+		resign = rdataset.resign -
+			 dns_zone_getsigresigninginterval(zone);
 		covers = rdataset.covers;
 		dns_rdataset_disassociate(&rdataset);
 
@@ -20003,7 +20017,8 @@ dns_zone_setserial(dns_zone_t *zone, uint32_t serial) {
 	LOCK_ZONE(zone);
 
 	if (!inline_secure(zone)) {
-		if (!dns_zone_isdynamic(zone, true)) {
+		if (!dns_zone_isdynamic(zone, true) &&
+		    dns_zone_getkasp(zone) == NULL) {
 			result = DNS_R_NOTDYNAMIC;
 			goto failure;
 		}

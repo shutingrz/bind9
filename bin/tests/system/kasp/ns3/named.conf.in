@@ -24,6 +24,7 @@ options {
 };
 
 include "policies/kasp.conf";
+include "policies/autosign.conf";
 
 /* Zones that are getting initially signed */
 
@@ -102,4 +103,26 @@ zone "ecdsa384.kasp" {
 	type master;
 	file "ecdsa384.kasp.db";
 	dnssec-policy "ecdsa384";
+};
+
+/*
+ * Zones in different signing states.
+ */
+
+/*
+ * Zone that has expired signatures.
+ */
+zone "expired-sigs.autosign" {
+	type master;
+	file "expired-sigs.autosign.db";
+	dnssec-policy "autosign";
+};
+
+/*
+ * Zone that has unfresh signatures.
+ */
+zone "unfresh-sigs.autosign" {
+	type master;
+	file "unfresh-sigs.autosign.db";
+	dnssec-policy "autosign";
 };
