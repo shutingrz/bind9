@@ -53,7 +53,7 @@ struct dns_dnsseckey {
 	bool force_publish; 	  /*% publish regardless of metadata */
 	bool hint_sign;     	  /*% metadata says to sign with this key */
 	bool force_sign;    	  /*% sign with key regardless of metadata */
-	bool hint_retire;   	  /*% metadata says to stop sign with key */
+	bool hint_revoke;   	  /*% metadata says revoke key */
 	bool hint_remove;   	  /*% metadata says *don't* publish */
 	bool is_active;     	  /*% key is already active */
 	bool first_sign;    	  /*% key is newly becoming active */

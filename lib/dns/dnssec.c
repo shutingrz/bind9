@@ -583,10 +583,8 @@ cleanup_struct:
 bool
 dns_dnssec_keyactive(dst_key_t *key, isc_stdtime_t now) {
 	isc_result_t result;
-	isc_stdtime_t publish, active, revoke, inactive, deltime;
-	bool pubset = false, actset = false;
-	bool revset = false, inactset = false;
-	bool delset = false;
+	isc_stdtime_t publish, active, revoke, remove;
+	bool hint_publish, hint_sign, hint_revoke, hint_remove;
 	int major, minor;
 
 	/* Is this an old-style key? */
@@ -595,40 +593,25 @@ dns_dnssec_keyactive(dst_key_t *key, isc_stdtime_t now) {
 
 	/*
 	 * Smart signing started with key format 1.3; prior to that, all
-	 * keys are assumed active
+	 * keys are assumed active.
 	 */
 	if (major == 1 && minor <= 2)
 		return (true);
 
-	result = dst_key_gettime(key, DST_TIME_PUBLISH, &publish);
-	if (result == ISC_R_SUCCESS)
-		pubset = true;
+	hint_publish = dst_key_is_published(key, now, &publish);
+	hint_sign = dst_key_is_active(key, now, &active);
+	hint_revoke = dst_key_is_revoked(key, now, &revoke);
+	hint_remove = dst_key_is_removed(key, now, &remove);
 
-	result = dst_key_gettime(key, DST_TIME_ACTIVATE, &active);
-	if (result == ISC_R_SUCCESS)
-		actset = true;
-
-	result = dst_key_gettime(key, DST_TIME_REVOKE, &revoke);
-	if (result == ISC_R_SUCCESS)
-		revset = true;
-
-	result = dst_key_gettime(key, DST_TIME_INACTIVE, &inactive);
-	if (result == ISC_R_SUCCESS)
-		inactset = true;
-
-	result = dst_key_gettime(key, DST_TIME_DELETE, &deltime);
-	if (result == ISC_R_SUCCESS)
-		delset = true;
-
-	if ((inactset && inactive <= now) || (delset && deltime <= now))
+	if (hint_remove) {
 		return (false);
-
-	if (revset && revoke <= now && pubset && publish <= now)
+	}
+	if (hint_publish && hint_revoke) {
 		return (true);
-
-	if (actset && active <= now)
+	}
+	if (hint_sign) {
 		return (true);
-
+	}
 	return (false);
 }
 
@@ -1223,7 +1206,7 @@ dns_dnsseckey_create(isc_mem_t *mctx, dst_key_t **dstkey,
 	dk->force_sign = false;
 	dk->hint_publish = false;
 	dk->hint_sign = false;
-	dk->hint_retire = false;
+	dk->hint_revoke = false;
 	dk->hint_remove = false;
 	dk->first_sign = false;
 	dk->is_active = false;
@@ -1267,79 +1250,45 @@ dns_dnsseckey_destroy(isc_mem_t *mctx, dns_dnsseckey_t **dkp) {
 
 void
 dns_dnssec_get_hints(dns_dnsseckey_t *key, isc_stdtime_t now) {
-	isc_result_t result;
-	isc_stdtime_t publish, active, revoke, inactive, deltime;
-	bool pubset = false, actset = false;
-	bool revset = false, inactset = false;
-	bool delset = false;
+	isc_stdtime_t publish = 0, active = 0, revoke = 0, remove = 0;
 
 	REQUIRE(key != NULL && key->key != NULL);
 
-	result = dst_key_gettime(key->key, DST_TIME_PUBLISH, &publish);
-	if (result == ISC_R_SUCCESS)
-		pubset = true;
-
-	result = dst_key_gettime(key->key, DST_TIME_ACTIVATE, &active);
-	if (result == ISC_R_SUCCESS)
-		actset = true;
-
-	result = dst_key_gettime(key->key, DST_TIME_REVOKE, &revoke);
-	if (result == ISC_R_SUCCESS)
-		revset = true;
-
-	result = dst_key_gettime(key->key, DST_TIME_INACTIVE, &inactive);
-	if (result == ISC_R_SUCCESS)
-		inactset = true;
-
-	result = dst_key_gettime(key->key, DST_TIME_DELETE, &deltime);
-	if (result == ISC_R_SUCCESS)
-		delset = true;
-
-	/* Metadata says publish (but possibly not activate) */
-	if (pubset && publish <= now)
-		key->hint_publish = true;
-
-	/* Metadata says activate (so we must also publish) */
-	if (actset && active <= now) {
-		key->hint_sign = true;
-
-		/* Only publish if publish time has already passed. */
-		if (pubset && publish <= now)
-			key->hint_publish = true;
-	}
+	key->hint_publish = dst_key_is_published(key->key, now, &publish);
+	key->hint_sign = dst_key_is_active(key->key, now, &active);
+	key->hint_revoke = dst_key_is_revoked(key->key, now, &revoke);
+	key->hint_remove = dst_key_is_removed(key->key, now, &remove);
 
 	/*
-	 * Activation date is set (maybe in the future), but
-	 * publication date isn't. Most likely the user wants to
-	 * publish now and activate later.
+	 * Activation date is set (maybe in the future), but publication date
+	 * isn't. Most likely the user wants to publish now and activate later.
+	 * Most likely because this is true for most rollovers, except for:
+	 * 1. The unpopular ZSK Double-RRSIG method.
+	 * 2. When introducing a new algorithm.
+	 * These two cases are rare enough that we will set hint_publish
+	 * anyway when hint_sign is set, because BIND 9 natively does not
+	 * support the ZSK Double-RRSIG method, and when introducing a new
+	 * algorihtm, we strive to publish its signatures and DNSKEY records
+	 * at the same time.
 	 */
-	if (actset && !pubset)
+	if (key->hint_sign && publish == 0) {
 		key->hint_publish = true;
+	}
 
 	/*
 	 * If activation date is in the future, make note of how far off.
 	 */
-	if (key->hint_publish && actset && active > now) {
+	if (key->hint_publish && active > now) {
 		key->prepublish = active - now;
 	}
 
 	/*
-	 * Key has been marked inactive: we can continue publishing,
-	 * but don't sign.
-	 */
-	if (key->hint_publish && inactset && inactive <= now) {
-		key->hint_sign = false;
-		key->hint_retire = true;
-	}
-
-	/*
-	 * Metadata says revoke.  If the key is published,
-	 * we *have to* sign with it per RFC5011--even if it was
-	 * not active before.
+	 * Metadata says revoke.  If the key is published, we *have to* sign
+	 * with it per RFC5011 -- even if it was not active before.
 	 *
 	 * If it hasn't already been done, we should also revoke it now.
 	 */
-	if (key->hint_publish && (revset && revoke <= now)) {
+	if (key->hint_publish && key->hint_revoke) {
 		uint32_t flags;
 		key->hint_sign = true;
 		flags = dst_key_flags(key->key);
@@ -1350,13 +1299,12 @@ dns_dnssec_get_hints(dns_dnsseckey_t *key, isc_stdtime_t now) {
 	}
 
 	/*
-	 * Metadata says delete, so don't publish this key or sign with it.
+	 * Metadata says delete, so don't publish this key or sign with it
+	 * (note that signatures of a removed key may still be reused).
 	 */
-	if (delset && deltime <= now) {
+	if (key->hint_remove) {
 		key->hint_publish = false;
 		key->hint_sign = false;
-		key->hint_retire = true;
-		key->hint_remove = true;
 	}
 }
 
