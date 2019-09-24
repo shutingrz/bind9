@@ -2348,7 +2348,6 @@ check_zoneconf(const cfg_obj_t *zconfig, const cfg_obj_t *voptions,
 		if (res1 == ISC_R_SUCCESS)
 			signing = cfg_obj_asboolean(obj);
 
-
 		if (signing && has_dnssecpolicy) {
 			cfg_obj_log(obj, logctx, ISC_LOG_ERROR,
 				    "inline-signing: cannot be configured if "

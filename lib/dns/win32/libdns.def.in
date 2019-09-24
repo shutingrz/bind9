@@ -427,6 +427,10 @@ dns_kasp_key_ksk
 dns_kasp_key_lifetime
 dns_kasp_key_size
 dns_kasp_key_zsk
+dns_kasp_sigrefresh
+dns_kasp_sigvalidity
+dns_kasp_sigvalidity_denial
+dns_kasp_sigvalidity_dnskey
 dns_kasp_thaw
 dns_kasplist_find
 dns_keydata_fromdnskey

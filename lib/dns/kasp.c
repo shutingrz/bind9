@@ -123,6 +123,34 @@ dns_kasp_thaw(dns_kasp_t *kasp) {
 	kasp->frozen = false;
 }
 
+time_t
+dns_kasp_sigrefresh(dns_kasp_t *kasp) {
+	REQUIRE(DNS_KASP_VALID(kasp));
+	REQUIRE(kasp->frozen);
+	return kasp->signatures_refresh;
+}
+
+time_t
+dns_kasp_sigvalidity(dns_kasp_t *kasp) {
+	REQUIRE(DNS_KASP_VALID(kasp));
+	REQUIRE(kasp->frozen);
+	return kasp->signatures_validity;
+}
+
+time_t
+dns_kasp_sigvalidity_dnskey(dns_kasp_t *kasp) {
+	REQUIRE(DNS_KASP_VALID(kasp));
+	REQUIRE(kasp->frozen);
+	return kasp->signatures_validity_dnskey;
+}
+
+time_t
+dns_kasp_sigvalidity_denial(dns_kasp_t *kasp) {
+	REQUIRE(DNS_KASP_VALID(kasp));
+	REQUIRE(kasp->frozen);
+	return kasp->signatures_validity_denial;
+}
+
 dns_ttl_t
 dns_kasp_dnskeyttl(dns_kasp_t *kasp) {
 	REQUIRE(DNS_KASP_VALID(kasp));

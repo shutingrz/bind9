@@ -1500,38 +1500,53 @@ named_zone_configure(const cfg_obj_t *config, const cfg_obj_t *vconfig,
 		bool allow = false, maint = false;
 		bool sigvalinsecs;
 
-		obj = NULL;
-		result = named_config_get(maps, "dnskey-sig-validity", &obj);
-		INSIST(result == ISC_R_SUCCESS && obj != NULL);
-		seconds = cfg_obj_asuint32(obj) * 86400;
+		if (kasp) {
+			seconds = (uint32_t) dns_kasp_sigvalidity_dnskey(kasp);
+		} else {
+			obj = NULL;
+			result = named_config_get(maps, "dnskey-sig-validity",
+						  &obj);
+			INSIST(result == ISC_R_SUCCESS && obj != NULL);
+			seconds = cfg_obj_asuint32(obj) * 86400;
+		}
 		dns_zone_setkeyvalidityinterval(zone, seconds);
 
-		obj = NULL;
-		result = named_config_get(maps, "sig-validity-interval", &obj);
-		INSIST(result == ISC_R_SUCCESS && obj != NULL);
-
-		sigvalinsecs = ns_server_getoption(named_g_server->sctx,
-						   NS_SERVER_SIGVALINSECS);
-		validity = cfg_tuple_get(obj, "validity");
-		seconds = cfg_obj_asuint32(validity);
-		if (!sigvalinsecs) {
-			seconds *= 86400;
-		}
-		dns_zone_setsigvalidityinterval(zone, seconds);
-
-		resign = cfg_tuple_get(obj, "re-sign");
-		if (cfg_obj_isvoid(resign)) {
-			seconds /= 4;
-		} else if (!sigvalinsecs) {
-			if (seconds > 7 * 86400) {
-				seconds = cfg_obj_asuint32(resign) * 86400;
-			} else {
-				seconds = cfg_obj_asuint32(resign) * 3600;
-			}
+		if (kasp) {
+			seconds = (uint32_t) dns_kasp_sigvalidity(kasp);
+			dns_zone_setsigvalidityinterval(zone, seconds);
+			seconds = (uint32_t) dns_kasp_sigrefresh(kasp);
+			dns_zone_setsigresigninginterval(zone, seconds);
 		} else {
-			seconds = cfg_obj_asuint32(resign);
+			obj = NULL;
+			result = named_config_get(maps, "sig-validity-interval",
+							&obj);
+			INSIST(result == ISC_R_SUCCESS && obj != NULL);
+
+			sigvalinsecs = ns_server_getoption(named_g_server->sctx,
+							NS_SERVER_SIGVALINSECS);
+			validity = cfg_tuple_get(obj, "validity");
+			seconds = cfg_obj_asuint32(validity);
+			if (!sigvalinsecs) {
+				seconds *= 86400;
+			}
+			dns_zone_setsigvalidityinterval(zone, seconds);
+
+			resign = cfg_tuple_get(obj, "re-sign");
+			if (cfg_obj_isvoid(resign)) {
+				seconds /= 4;
+			} else if (!sigvalinsecs) {
+				seconds = cfg_obj_asuint32(resign);
+				if (seconds > 7 * 86400) {
+					seconds *= 86400;
+				} else {
+					seconds *= 3600;
+				}
+			} else {
+				seconds = cfg_obj_asuint32(resign);
+			}
+			dns_zone_setsigresigninginterval(zone, seconds);
+
 		}
-		dns_zone_setsigresigninginterval(zone, seconds);
 
 		obj = NULL;
 		result = named_config_get(maps, "key-directory", &obj);

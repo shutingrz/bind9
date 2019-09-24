@@ -213,7 +213,39 @@ dns_kasp_dnskeyttl(dns_kasp_t *kasp);
  *
  * Returns:
  *
- *\li   name of 'kasp'.
+ *\li   DNSKEY TTL.
+ */
+
+time_t
+dns_kasp_sigrefresh(dns_kasp_t *kasp);
+/*%<
+ * Get signature refresh interval.
+ *
+ * Requires:
+ *
+ *\li   'kasp' is a valid, frozen kasp.
+ *
+ * Returns:
+ *
+ *\li   signature refresh interval.
+ */
+
+time_t
+dns_kasp_sigvalidity(dns_kasp_t *kasp);
+time_t
+dns_kasp_sigvalidity_dnskey(dns_kasp_t *kasp);
+time_t
+dns_kasp_sigvalidity_denial(dns_kasp_t *kasp);
+/*%<
+ * Get signature validity.
+ *
+ * Requires:
+ *
+ *\li   'kasp' is a valid, frozen kasp.
+ *
+ * Returns:
+ *
+ *\li   signature validity.
  */
 
 isc_result_t
