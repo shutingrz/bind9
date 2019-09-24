@@ -9,7 +9,8 @@
 # See the COPYRIGHT file distributed with this work for additional
 # information regarding copyright ownership.
 
-SYSTEMTESTTOP=..
+SYSTEMTESTTOP="$(cd -P -- "$(dirname -- "$0")/.." && pwd -P)"
+# shellcheck source=../conf.sh
 . $SYSTEMTESTTOP/conf.sh
 
 $SHELL clean.sh

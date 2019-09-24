@@ -9,24 +9,33 @@
 # See the COPYRIGHT file distributed with this work for additional
 # information regarding copyright ownership.
 
-SYSTEMTESTTOP=..
-. $SYSTEMTESTTOP/conf.sh
+CURDIR="$(cd -P -- "$(dirname -- "$0")" && pwd -P)"
+
+SYSTEMTESTTOP="$(cd -P -- "$CURDIR/.." && pwd -P)"
+# shellcheck source=../conf.sh
+. "$SYSTEMTESTTOP/conf.sh"
+
+test_description="GLUE tests."
+
+# shellcheck source=../sharness/lib/sharness/sharness.sh
+. "$SYSTEMTESTTOP/sharness/lib/sharness/sharness.sh"
 
 #
 # Do glue tests.
 #
 
-DIGOPTS="+norec -p ${PORT}"
+dig_with_opts() {
+    "$DIG" +norec -p "${PORT}" "$@"
+}
 
-status=0
+test_expect_success "testing that a ccTLD referral gets a full glue set from the root zone" "
+  dig_with_opts @10.53.0.1 foo.bar.fi. A >dig.out &&
+  digcomp --lc '$SHARNESS_TEST_DIRECTORY'/fi.good dig.out
+"
 
-echo_i "testing that a ccTLD referral gets a full glue set from the root zone"
-$DIG $DIGOPTS @10.53.0.1 foo.bar.fi. A >dig.out || status=1
-digcomp --lc fi.good dig.out || status=1
+test_expect_success "testing that we don't find out-of-zone glue" "
+  dig_with_opts @10.53.0.1 example.net. a > dig.out &&
+  digcomp '$SHARNESS_TEST_DIRECTORY'/noglue.good dig.out
+"
 
-echo_i "testing that we don't find out-of-zone glue"
-$DIG $DIGOPTS @10.53.0.1 example.net. a > dig.out || status=1
-digcomp noglue.good dig.out || status=1
-
-echo_i "exit status: $status"
-[ $status -eq 0 ] || exit 1
+test_done

@@ -9,6 +9,8 @@
 # See the COPYRIGHT file distributed with this work for additional
 # information regarding copyright ownership.
 
+: "${SHARNESS_TEST_SRCDIR:=$TOP/bin/tests/system/sharness/lib/sharness}"
+
 if test -n "$PERL"
 then
 	if $PERL -e "use IO::Socket::INET6;" 2> /dev/null

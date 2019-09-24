@@ -14,7 +14,8 @@
 #
 
 SYSTEMTESTTOP="$(cd -P -- "$(dirname -- "$0")" && pwd -P)"
-. $SYSTEMTESTTOP/conf.sh
+# shellcheck source=conf.sh
+. "$SYSTEMTESTTOP/conf.sh"
 
 export SYSTEMTESTTOP
 
@@ -109,6 +110,26 @@ export CONTROLPORT
 
 export LOWPORT
 export HIGHPORT
+
+SHARNESS=f
+if grep test_done "$systest/tests.sh" >/dev/null; then
+    SHARNESS=t
+fi
+
+if test "$SHARNESS" = "t"; then
+    unset echofail
+    unset echowarn
+    unset echopass
+    unset echoinfo
+    unset echostart
+    unset echoend
+    echofail() { :; }
+    echowarn() { :; }
+    echopass() { :; }
+    echoinfo() { :; }
+    echostart() { :; }
+    echoend() { :; }
+fi
 
 echostart "S:$systest:`date`"
 echoinfo  "T:$systest:1:A"

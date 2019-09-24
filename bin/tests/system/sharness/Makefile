@@ -16,7 +16,7 @@ export SHARNESS_TEST_SRCDIR=$(LIBDIR)/$(SHARNESSDIR)
 # BINS = bin/ipfs
 BINS =
 
-all: aggregate
+all: deps
 
 clean: clean-test-results
 	@echo "*** $@ ***"

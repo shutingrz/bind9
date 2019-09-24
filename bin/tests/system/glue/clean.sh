@@ -9,13 +9,12 @@
 # See the COPYRIGHT file distributed with this work for additional
 # information regarding copyright ownership.
 
-#
-# Clean up after glue tests.
-#
+REALPWD=$(realpath "$PWD")
 
-rm -f dig.out
-rm -f */named.conf
-rm -f */named.memstats
-rm -f */named.run
-rm -f ns*/named.lock
-rm -f ns*/managed-keys.bind*
+if [ -r "$REALPWD/.gitignore" ]; then
+    while read -r FILE; do
+	REALFILE=$(realpath -m "$REALPWD/$FILE")
+	# shellcheck disable=SC2086
+	rm -rf $REALFILE
+    done < "$REALPWD/.gitignore"
+fi

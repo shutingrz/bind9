@@ -1,0 +1,7 @@
+/test-results/
+/trash*directory.*.sh/
+/*/named.conf
+/*/named.memstats
+/*/named.run
+/*/named.lock
+/*/managed-keys.bind*
