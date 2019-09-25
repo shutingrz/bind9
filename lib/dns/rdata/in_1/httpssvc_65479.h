@@ -18,9 +18,7 @@
 typedef struct dns_rdata_in_httpssvc {
 	dns_rdatacommon_t common;
 	isc_mem_t *mctx;
-	uint8_t type;
 	uint16_t priority;
-	uint8_t svcdomainlen;
 	dns_name_t svcdomain;
 	uint16_t svclen;
 	unsigned char *svc;

@@ -9,12 +9,157 @@
  * information regarding copyright ownership.
  */
 
-/* draft-nygren-httpbis-httpssvc-03 */
+/* draft-nygren-dnsop-svcb-httpssvc-00 */
 
 #ifndef RDATA_IN_1_HTTPSSVC_65479_C
 #define RDATA_IN_1_HTTPSSVC_65479_C
 
 #define RRTYPE_HTTPSSVC_ATTRIBUTES (0)
+
+/*
+ * Service Binding Parameter Registry
+ */
+enum encoding { sbpr_text, sbpr_port, sbpr_ipv4s, sbpr_ipv6s, sbpr_base64 };
+static const struct {
+	const char *name;
+	unsigned int value;
+	enum encoding encoding;
+	bool initial;
+} sbpr[] = {
+	{ "key0=", 0, sbpr_text, true },
+	{ "alpn=", 1, sbpr_text, true },
+	{ "port=", 2, sbpr_port, true },
+	{ "esnikeys=", 3, sbpr_base64, true },
+	{ "ipv4hint=", 4, sbpr_ipv4s, true },
+	{ "ipv6hint=", 6, sbpr_ipv6s, true },
+};
+
+static isc_result_t
+svc_fromtext(isc_textregion_t *region, isc_buffer_t *target) {
+	char tbuf[sizeof("aaaa:aaaa:aaaa:aaaa:aaaa:aaaa:255.255.255.255,")];
+	char abuf[16];
+	isc_buffer_t sb;
+	unsigned int i;
+	unsigned long ul;
+	char *e;
+	size_t len;
+
+#define ARRAYSIZE(x) (sizeof(x) / sizeof(*x))
+
+	for (i = 0; i < ARRAYSIZE(sbpr); i++) {
+		len = strlen(sbpr[i].name);
+		if (strncasecmp(region->base, sbpr[i].name, len) != 0) {
+			continue;
+		}
+
+		RETERR(uint16_tobuffer(sbpr[i].value, target));
+		isc_textregion_consume(region, len);
+
+		sb = *target;
+		RETERR(uint16_tobuffer(0, target)); /* length */
+
+		switch (sbpr[i].encoding) {
+		case sbpr_text:
+			RETERR(multitxt_fromtext(region, target));
+			break;
+		case sbpr_port:
+			ul = strtoul(region->base, &e, 10);
+			if (*e != '\0') {
+				return (DNS_R_SYNTAX);
+			}
+			if (ul > 0xffff) {
+				return (ISC_R_RANGE);
+			}
+			RETERR(uint16_tobuffer(ul, target));
+			break;
+		case sbpr_ipv4s:
+			do {
+				snprintf(tbuf, sizeof(tbuf), "%*s",
+					 (int)(region->length), region->base);
+				e = strchr(tbuf, ',');
+				if (e != NULL) {
+					*e++ = 0;
+					isc_textregion_consume(region,
+							       e - tbuf);
+				}
+				if (inet_pton(AF_INET, tbuf, abuf) != 1) {
+					return (DNS_R_SYNTAX);
+				}
+				mem_tobuffer(target, abuf, 4);
+			} while (e != NULL);
+			break;
+		case sbpr_ipv6s:
+			do {
+				snprintf(tbuf, sizeof(tbuf), "%*s",
+					 (int)(region->length), region->base);
+				e = strchr(tbuf, ',');
+				if (e != NULL) {
+					*e++ = 0;
+					isc_textregion_consume(region,
+							       e - tbuf);
+				}
+				if (inet_pton(AF_INET6, tbuf, abuf) != 1) {
+					return (DNS_R_SYNTAX);
+				}
+				mem_tobuffer(target, abuf, 16);
+			} while (e != NULL);
+			break;
+		case sbpr_base64:
+			RETERR(isc_base64_decodestring(region->base, target));
+			break;
+		default:
+			INSIST(0);
+			ISC_UNREACHABLE();
+		}
+
+		len = isc_buffer_usedlength(target) -
+		      isc_buffer_usedlength(&sb) - 2;
+		RETERR(uint16_tobuffer(len, &sb)); /* length */
+		return (ISC_R_SUCCESS);
+	}
+
+	if (strncasecmp(region->base, "key", 3) != 0) {
+		return (DNS_R_SYNTAX);
+	}
+	isc_textregion_consume(region, 3);
+	/* No zero padding ('key0' handled above). */
+	if (*region->base == '0') {
+		return (DNS_R_SYNTAX);
+	}
+	ul = strtoul(region->base, &e, 10);
+	if (*e != '=') {
+		return (DNS_R_SYNTAX);
+	}
+	if (ul > 0xffff) {
+		return (ISC_R_RANGE);
+	}
+	RETERR(uint16_tobuffer(ul, target));
+	isc_textregion_consume(region, e - region->base + 1);
+	sb = *target;
+	RETERR(uint16_tobuffer(0, target)); /* length */
+	RETERR(multitxt_fromtext(region, target));
+	len = isc_buffer_usedlength(target) - isc_buffer_usedlength(&sb) - 2;
+	RETERR(uint16_tobuffer(len, &sb)); /* length */
+	return (ISC_R_SUCCESS);
+}
+
+static const char *
+svcparamkey(unsigned short value, enum encoding *encoding, char *buf,
+	    size_t len) {
+	size_t i;
+	int n;
+
+	for (i = 0; i < ARRAYSIZE(sbpr); i++) {
+		if (sbpr[i].value == value && sbpr[i].initial) {
+			*encoding = sbpr[i].encoding;
+			return (sbpr[i].name);
+		}
+	}
+	n = snprintf(buf, len, "key%u=", value);
+	INSIST(n > 0 && (unsigned)n < len);
+	*encoding = sbpr_text;
+	return (buf);
+}
 
 static inline isc_result_t
 fromtext_in_httpssvc(ARGS_FROMTEXT) {
@@ -33,21 +178,13 @@ fromtext_in_httpssvc(ARGS_FROMTEXT) {
 	UNUSED(callbacks);
 
 	/*
-	 * SvcRecordType.
-	 */
-	RETERR(isc_lex_getmastertoken(lexer, &token, isc_tokentype_number,
-				      false));
-	if (token.value.as_ulong > 0xffU)
-		RETTOK(ISC_R_RANGE);
-	RETERR(uint8_tobuffer(token.value.as_ulong, target));
-
-	/*
 	 * SvcFieldPriority.
 	 */
 	RETERR(isc_lex_getmastertoken(lexer, &token, isc_tokentype_number,
 				      false));
-	if (token.value.as_ulong > 0xffffU)
+	if (token.value.as_ulong > 0xffffU) {
 		RETTOK(ISC_R_RANGE);
+	}
 	RETERR(uint16_tobuffer(token.value.as_ulong, target));
 
 	/*
@@ -57,8 +194,9 @@ fromtext_in_httpssvc(ARGS_FROMTEXT) {
 				      false));
 	dns_name_init(&name, NULL);
 	buffer_fromregion(&buffer, &token.value.as_region);
-	if (origin == NULL)
+	if (origin == NULL) {
 		origin = dns_rootname;
+	}
 	RETTOK(dns_name_fromtext(&name, &buffer, origin, options, target));
 #if 0
 	ok = true;
@@ -73,12 +211,21 @@ fromtext_in_httpssvc(ARGS_FROMTEXT) {
 	/*
 	 * SvcFieldValue
 	 */
-	RETERR(isc_lex_getmastertoken(lexer, &token, isc_tokentype_qstring,
-				      false));
-	if (token.type != isc_tokentype_qstring &&
-	    token.type != isc_tokentype_string)
-		RETERR(DNS_R_SYNTAX);
-	return (multitxt_fromtext(&token.value.as_textregion, target));
+	while (1) {
+		RETERR(isc_lex_getmastertoken(lexer, &token,
+					      isc_tokentype_qvpair, true));
+		if (token.type == isc_tokentype_eol ||
+		    token.type == isc_tokentype_eof) {
+			isc_lex_ungettoken(lexer, &token);
+			return (ISC_R_SUCCESS);
+		}
+
+		if (token.type != isc_tokentype_qvpair &&
+		    token.type != isc_tokentype_vpair) {
+			RETERR(DNS_R_SYNTAX);
+		}
+		RETERR(svc_fromtext(&token.value.as_textregion, target));
+	}
 }
 
 static inline isc_result_t
@@ -87,8 +234,9 @@ totext_in_httpssvc(ARGS_TOTEXT) {
 	dns_name_t name;
 	dns_name_t prefix;
 	bool sub;
-	char buf[sizeof("64000 ")];
+	char buf[sizeof("xxxx:xxxx:xxxx:xxxx:xxxx:xxxx:255.255.255.255")];
 	unsigned short num;
+	int n;
 
 	REQUIRE(rdata->type == dns_rdatatype_httpssvc);
 	REQUIRE(rdata->rdclass == dns_rdataclass_in);
@@ -97,21 +245,15 @@ totext_in_httpssvc(ARGS_TOTEXT) {
 	dns_name_init(&name, NULL);
 	dns_name_init(&prefix, NULL);
 
-	/*
-	 * SvcRecordType.
-	 */
 	dns_rdata_toregion(rdata, &region);
-	num = uint8_fromregion(&region);
-	isc_region_consume(&region, 1);
-	snprintf(buf, sizeof(buf), "%u ", num);
-	RETERR(str_totext(buf, target));
 
 	/*
 	 * SvcFieldPriority.
 	 */
 	num = uint16_fromregion(&region);
 	isc_region_consume(&region, 2);
-	snprintf(buf, sizeof(buf), "%u ", num);
+	n = snprintf(buf, sizeof(buf), "%u ", num);
+	INSIST(n > 0 && (unsigned)n < sizeof(buf));
 	RETERR(str_totext(buf, target));
 
 	/*
@@ -121,18 +263,74 @@ totext_in_httpssvc(ARGS_TOTEXT) {
 	isc_region_consume(&region, name_length(&name));
 	sub = name_prefix(&name, tctx->origin, &prefix);
 	RETERR(dns_name_totext(&prefix, sub, target));
-	RETERR(str_totext(" ", target));
 
-	/*
-	 * SvcFieldValue.
-	 */
-	return (multitxt_totext(&region, target));
+	while (region.length > 0) {
+		isc_region_t r;
+		enum encoding encoding;
+
+		RETERR(str_totext(" ", target));
+
+		INSIST(region.length >= 2);
+		num = uint16_fromregion(&region);
+		isc_region_consume(&region, 2);
+		RETERR(str_totext(svcparamkey(num, &encoding, buf, sizeof(buf)),
+				  target));
+
+		INSIST(region.length >= 2);
+		num = uint16_fromregion(&region);
+		isc_region_consume(&region, 2);
+
+		INSIST(region.length >= num);
+		r = region;
+		r.length = num;
+		isc_region_consume(&region, num);
+		switch (encoding) {
+		case sbpr_text:
+			RETERR(multitxt_totext(&r, target));
+			break;
+		case sbpr_port:
+			num = uint16_fromregion(&r);
+			n = snprintf(buf, sizeof(buf), "%u", num);
+			INSIST(n > 0 && (unsigned)n < sizeof(buf));
+			RETERR(str_totext(buf, target));
+			break;
+		case sbpr_ipv4s:
+			while (r.length > 0U) {
+				INSIST(r.length >= 4U);
+				inet_ntop(AF_INET, r.base, buf, sizeof(buf));
+				RETERR(str_totext(buf, target));
+				isc_region_consume(&r, 4);
+				if (r.length != 0U) {
+					RETERR(str_totext(",", target));
+				}
+			}
+			break;
+		case sbpr_ipv6s:
+			while (r.length > 0U) {
+				INSIST(r.length >= 16U);
+				inet_ntop(AF_INET6, r.base, buf, sizeof(buf));
+				RETERR(str_totext(buf, target));
+				isc_region_consume(&r, 16);
+				if (r.length != 0U) {
+					RETERR(str_totext(",", target));
+				}
+			}
+			break;
+		case sbpr_base64:
+			RETERR(isc_base64_totext(&r, 0, "", target));
+			break;
+		default:
+			INSIST(0);
+			ISC_UNREACHABLE();
+		}
+	}
+	return (ISC_R_SUCCESS);
 }
 
 static inline isc_result_t
 fromwire_in_httpssvc(ARGS_FROMWIRE) {
 	dns_name_t name;
-	isc_region_t sr;
+	isc_region_t region;
 
 	REQUIRE(type == dns_rdatatype_httpssvc);
 	REQUIRE(rdclass == dns_rdataclass_in);
@@ -145,13 +343,13 @@ fromwire_in_httpssvc(ARGS_FROMWIRE) {
 	dns_name_init(&name, NULL);
 
 	/*
-	 * SvcRecordType and SvcFieldPriority.
+	 * SvcFieldPriority.
 	 */
-	isc_buffer_activeregion(source, &sr);
-	if (sr.length < 3)
+	isc_buffer_activeregion(source, &region);
+	if (region.length < 2)
 		return (ISC_R_UNEXPECTEDEND);
-	RETERR(mem_tobuffer(target, sr.base, 3));
-	isc_buffer_forward(source, 3);
+	RETERR(mem_tobuffer(target, region.base, 2));
+	isc_buffer_forward(source, 2);
 
 	/*
 	 * SvcDomainName.
@@ -161,40 +359,72 @@ fromwire_in_httpssvc(ARGS_FROMWIRE) {
 	/*
 	 * SvcFieldValue.
 	 */
-	isc_buffer_activeregion(source, &sr);
-	isc_buffer_forward(source, sr.length);
-	return (mem_tobuffer(target, sr.base, sr.length));
+	isc_buffer_activeregion(source, &region);
+	while (region.length > 0U) {
+		unsigned short len;
+
+		/*
+		 * SvcParamKey
+		 */
+		if (region.length < 2U) {
+			return (ISC_R_UNEXPECTEDEND);
+		}
+		RETERR(mem_tobuffer(target, region.base, 2));
+		isc_region_consume(&region, 2);
+
+		/*
+		 * SvcParamValue length.
+		 */
+		if (region.length < 2U) {
+			return (ISC_R_UNEXPECTEDEND);
+		}
+		RETERR(mem_tobuffer(target, region.base, 2));
+		len = uint16_fromregion(&region);
+		isc_region_consume(&region, 2);
+
+		/*
+		 * SvcParamValue.
+		 */
+		if (region.length < len) {
+			return (ISC_R_UNEXPECTEDEND);
+		}
+		RETERR(mem_tobuffer(target, region.base, len));
+		isc_region_consume(&region, len);
+		isc_buffer_forward(source, len + 4);
+	}
+	return (ISC_R_SUCCESS);
 }
 
 static inline isc_result_t
 towire_in_httpssvc(ARGS_TOWIRE) {
 	dns_name_t name;
 	dns_offsets_t offsets;
-	isc_region_t sr;
+	isc_region_t region;
 
 	REQUIRE(rdata->type == dns_rdatatype_httpssvc);
 	REQUIRE(rdata->length != 0);
 
 	dns_compress_setmethods(cctx, DNS_COMPRESS_NONE);
+
 	/*
-	 * SvcRecordType, SvcFieldPriority.
+	 * SvcFieldPriority.
 	 */
-	dns_rdata_toregion(rdata, &sr);
-	RETERR(mem_tobuffer(target, sr.base, 3));
-	isc_region_consume(&sr, 3);
+	dns_rdata_toregion(rdata, &region);
+	RETERR(mem_tobuffer(target, region.base, 3));
+	isc_region_consume(&region, 3);
 
 	/*
 	 * SvcDomainName.
 	 */
 	dns_name_init(&name, offsets);
-	dns_name_fromregion(&name, &sr);
+	dns_name_fromregion(&name, &region);
 	RETERR(dns_name_towire(&name, cctx, target));
-	isc_region_consume(&sr, name_length(&name));
+	isc_region_consume(&region, name_length(&name));
 
 	/*
 	 * SvcFieldValue.
 	 */
-	return (mem_tobuffer(target, sr.base, sr.length));
+	return (mem_tobuffer(target, region.base, region.length));
 }
 
 static inline int
@@ -228,7 +458,6 @@ fromstruct_in_httpssvc(ARGS_FROMSTRUCT) {
 	UNUSED(type);
 	UNUSED(rdclass);
 
-	RETERR(uint8_tobuffer(httpssvc->type, target));
 	RETERR(uint16_tobuffer(httpssvc->priority, target));
 	dns_name_toregion(&httpssvc->svcdomain, &region);
 	RETERR(isc_buffer_copyregion(target, &region));
@@ -251,8 +480,6 @@ tostruct_in_httpssvc(ARGS_TOSTRUCT) {
 	ISC_LINK_INIT(&httpssvc->common, link);
 
 	dns_rdata_toregion(rdata, &region);
-	httpssvc->type = uint8_fromregion(&region);
-	isc_region_consume(&region, 1);
 	httpssvc->priority = uint16_fromregion(&region);
 	isc_region_consume(&region, 2);
 	dns_name_init(&httpssvc->svcdomain, NULL);
