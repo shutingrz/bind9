@@ -9,9 +9,6 @@
 # See the COPYRIGHT file distributed with this work for additional
 # information regarding copyright ownership.
 
-CURDIR="$(cd -P -- "$(dirname -- "$0")" && pwd -P)"
-
-SYSTEMTESTTOP="$(cd -P -- "$CURDIR/.." && pwd -P)"
 # shellcheck source=../conf.sh
 . "$SYSTEMTESTTOP/conf.sh"
 

@@ -9,8 +9,8 @@
 # See the COPYRIGHT file distributed with this work for additional
 # information regarding copyright ownership.
 
-SYSTEMTESTTOP=..
-. $SYSTEMTESTTOP/conf.sh
+# shellcheck source=../conf.sh
+. "$SYSTEMTESTTOP/conf.sh"
 
 $SHELL clean.sh
 
@@ -19,5 +19,5 @@ copy_setports ns2/named.conf.in ns2/named.conf
 copy_setports ns5/named.conf.in ns5/named.conf
 copy_setports ns7/named.conf.in ns7/named.conf
 
-cd ns2
-$SHELL sign.sh
+# shellcheck source=ns2/sign.sh
+( cd ns2 && $SHELL sign.sh )

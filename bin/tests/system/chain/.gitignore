@@ -1,0 +1,13 @@
+/trash*directory.*.sh/
+/dig.out.*
+/ns*/named*.pid
+/ns*/named.conf
+/ns*/named.memstats
+/ns*/named.recursing
+/ns*/named.lock
+/ns*/named.run
+/ans*/ans.run
+/ns2/K*
+/ns2/dsset-*
+/ns2/example.db.signed
+/ns*/managed-keys.bind*
