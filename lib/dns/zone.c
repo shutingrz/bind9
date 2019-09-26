@@ -211,7 +211,7 @@ struct dns_zone {
 	dns_masterformat_t	masterformat;
 	const dns_master_style_t *masterstyle;
 	char			*journal;
-	int32_t		journalsize;
+	int32_t			journalsize;
 	dns_rdataclass_t	rdclass;
 	dns_zonetype_t		type;
 	unsigned int		flags;
@@ -5464,8 +5464,8 @@ zone_iattach(dns_zone_t *source, dns_zone_t **target) {
 	/*
 	 * 'source' locked by caller.
 	 */
-	REQUIRE(LOCKED_ZONE(source));
 	REQUIRE(DNS_ZONE_VALID(source));
+	REQUIRE(LOCKED_ZONE(source));
 	REQUIRE(target != NULL && *target == NULL);
 	INSIST(source->irefs + isc_refcount_current(&source->erefs) > 0);
 	source->irefs++;
@@ -14210,6 +14210,8 @@ dns_zone_logv(dns_zone_t *zone, isc_logcategory_t *category, int level,
 	char message[4096];
 	const char *zstr;
 
+	REQUIRE(DNS_ZONE_VALID(zone));
+
 	if (!isc_log_wouldlog(dns_lctx, level)) {
 		return;
 	}
@@ -19889,10 +19891,11 @@ dns_zone_verifydb(dns_zone_t *zone, dns_db_t *db, dns_dbversion_t *ver) {
 	dns_name_t *origin;
 
 	const char me[] = "dns_zone_verifydb";
-	ENTER;
 
 	REQUIRE(DNS_ZONE_VALID(zone));
 	REQUIRE(db != NULL);
+
+	ENTER;
 
 	if (dns_zone_gettype(zone) != dns_zone_mirror) {
 		return (ISC_R_SUCCESS);
