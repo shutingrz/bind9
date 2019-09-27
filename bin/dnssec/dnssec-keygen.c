@@ -445,7 +445,8 @@ keygen(keygen_ctx_t *ctx, isc_mem_t *mctx, int argc, char **argv)
 			fatal("-S and -G cannot be used together");
 
 		ret = dst_key_fromnamedfile(ctx->predecessor, ctx->directory,
-					    DST_TYPE_PUBLIC | DST_TYPE_PRIVATE,
+					    (DST_TYPE_PUBLIC|
+					     DST_TYPE_PRIVATE|DST_TYPE_STATE),
 					    mctx, &prevkey);
 		if (ret != ISC_R_SUCCESS)
 			fatal("Invalid keyfile %s: %s",
@@ -766,6 +767,19 @@ keygen(keygen_ctx_t *ctx, isc_mem_t *mctx, int argc, char **argv)
 		fatal("cannot generate a null key due to possible key ID "
 		      "collision");
 
+	if (ctx->predecessor != NULL && prevkey != NULL) {
+		dst_key_setnum(prevkey, DST_NUM_SUCCESSOR, dst_key_id(key));
+		dst_key_setnum(key, DST_NUM_PREDECESSOR, dst_key_id(prevkey));
+
+		ret = dst_key_tofile(prevkey, ctx->options, ctx->directory);
+		if (ret != ISC_R_SUCCESS) {
+			char keystr[DST_KEY_FORMATSIZE];
+			dst_key_format(prevkey, keystr, sizeof(keystr));
+			fatal("failed to update predecessor %s: %s\n", keystr,
+			      isc_result_totext(ret));
+		}
+	}
+
 	ret = dst_key_tofile(key, ctx->options, ctx->directory);
 	if (ret != ISC_R_SUCCESS) {
 		char keystr[DST_KEY_FORMATSIZE];
@@ -780,6 +794,7 @@ keygen(keygen_ctx_t *ctx, isc_mem_t *mctx, int argc, char **argv)
 		fatal("dst_key_buildfilename returned: %s\n",
 		      isc_result_totext(ret));
 	printf("%s\n", filename);
+
 	dst_key_free(&key);
 	if (prevkey != NULL) {
 		dst_key_free(&prevkey);

@@ -65,11 +65,11 @@
       <arg choice="opt" rep="norepeat"><option>-v <replaceable class="parameter">level</replaceable></option></arg>
       <arg choice="opt" rep="norepeat"><option>-E <replaceable class="parameter">engine</replaceable></option></arg>
       <arg choice="opt" rep="norepeat"><option>-s</option></arg>
-      <arg choice="opt" rep="norepeat"><option>-d <replaceable class="parameter">state</replaceable></option></arg>
-      <arg choice="opt" rep="norepeat"><option>-k <replaceable class="parameter">state</replaceable></option></arg>
-      <arg choice="opt" rep="norepeat"><option>-r <replaceable class="parameter">state</replaceable></option></arg>
-      <arg choice="opt" rep="norepeat"><option>-z <replaceable class="parameter">state</replaceable></option></arg>
       <arg choice="opt" rep="norepeat"><option>-g <replaceable class="parameter">state</replaceable></option></arg>
+      <arg choice="opt" rep="norepeat"><option>-d <replaceable class="parameter">state</replaceable> <replaceable class="parameter">date/offset</replaceable></option></arg>
+      <arg choice="opt" rep="norepeat"><option>-k <replaceable class="parameter">state</replaceable> <replaceable class="parameter">date/offset</replaceable></option></arg>
+      <arg choice="opt" rep="norepeat"><option>-r <replaceable class="parameter">state</replaceable> <replaceable class="parameter">date/offset</replaceable></option></arg>
+      <arg choice="opt" rep="norepeat"><option>-z <replaceable class="parameter">state</replaceable> <replaceable class="parameter">date/offset</replaceable></option></arg>
       <arg choice="req" rep="norepeat">keyfile</arg>
     </cmdsynopsis>
   </refsynopsisdiv>
@@ -375,7 +375,7 @@
         <term>-d</term>
         <listitem>
           <para>
-	    Set the DS state for this key.
+	    Set the DS state for this key, and when it was last changed.
           </para>
         </listitem>
       </varlistentry>
@@ -384,7 +384,7 @@
         <term>-k</term>
         <listitem>
           <para>
-	    Set the DNSKEY state for this key.
+	    Set the DNSKEY state for this key, and when it was last changed.
           </para>
         </listitem>
       </varlistentry>
@@ -393,7 +393,8 @@
         <term>-r</term>
         <listitem>
           <para>
-	    Set the RRSIG (KSK) state for this key.
+	    Set the RRSIG (KSK) state for this key, and when it was last
+	    changed.
           </para>
         </listitem>
       </varlistentry>
@@ -402,7 +403,8 @@
         <term>-z</term>
         <listitem>
           <para>
-	    Set the RRSIG (ZSK) state for this key.
+	    Set the RRSIG (ZSK) state for this key, and when it was last
+	    changed.
           </para>
         </listitem>
       </varlistentry>

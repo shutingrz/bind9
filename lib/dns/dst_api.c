@@ -113,18 +113,18 @@ static const char *timingtags[TIMING_NTAGS] = {
 	"Generated:",
 	"Published:",
 	"Active:",
-	"Retired:",
 	"Revoked:",
+	"Retired:",
 	"Removed:",
 
 	"DSPublish:",
 	"SyncPublish:",
-	"SyncDelete:"
+	"SyncDelete:",
 
 	"DNSKEYChange:",
 	"ZRRSIGChange:",
 	"KRRSIGChange:",
-	"DSChange:",
+	"DSChange:"
 };
 
 #define KEYSTATES_NTAGS (DST_MAX_KEYSTATES + 1)
@@ -1992,6 +1992,8 @@ write_key_state(const dst_key_t *key, int type, const char *directory) {
 		fprintf(fp, "Length: %u\n", key->key_size);
 
 		printnum(key, DST_NUM_LIFETIME, "Lifetime", fp);
+		printnum(key, DST_NUM_PREDECESSOR, "Predecessor", fp);
+		printnum(key, DST_NUM_SUCCESSOR, "Successor", fp);
 
 		printbool(key, DST_BOOL_KSK, "KSK", fp);
 		printbool(key, DST_BOOL_ZSK, "ZSK", fp);
@@ -2430,6 +2432,11 @@ dst_key_is_active(dst_key_t *key, isc_stdtime_t now, isc_stdtime_t *active)
 		if (result == ISC_R_SUCCESS) {
 			krrsig_ok = ((state == DST_KEY_STATE_RUMOURED) ||
 				    (state == DST_KEY_STATE_OMNIPRESENT));
+			/*
+			 * Key states trump timing metadata.
+			 * Ignore inactive time.
+			 */
+			inactive = false;
 		}
 	}
 	if (zsk) {
@@ -2437,9 +2444,13 @@ dst_key_is_active(dst_key_t *key, isc_stdtime_t now, isc_stdtime_t *active)
 		if (result == ISC_R_SUCCESS) {
 			zrrsig_ok = ((state == DST_KEY_STATE_RUMOURED) ||
 				    (state == DST_KEY_STATE_OMNIPRESENT));
+			/*
+			 * Key states trump timing metadata.
+			 * Ignore inactive time.
+			 */
+			inactive = false;
 		}
 	}
-
 	return krrsig_ok && zrrsig_ok && time_ok && !inactive;
 }
 
