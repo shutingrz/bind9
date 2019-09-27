@@ -11,6 +11,8 @@
 
 
 /*! \file */
+#include <inttypes.h>
+#include <stdio.h>
 
 #include <isc/bind9.h>
 #include <isc/lib.h>
@@ -19,7 +21,13 @@
  *** Functions
  ***/
 
+enum foo {
+	ZERO = 0,
+	MAX = UINT64_MAX
+};
+
 void
 isc_lib_register(void) {
 	isc_bind9 = false;
+	fprintf(stderr, "%zu\n", sizeof(enum foo));
 }
