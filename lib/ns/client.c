@@ -2536,7 +2536,7 @@ client_setup(ns_clientmgr_t *manager, isc_mem_t *mctx, ns_client_t *client) {
 	ns_server_attach(manager->sctx, &client->sctx);
 
 	client->task = NULL;
-	isc_task_attach(manager->taskpool[isc_random_uniform(CLIENT_NTASKS)], &client->task);
+	isc_task_create(manager->taskmgr, 20,  &client->task);
 
 	client->delaytimer = NULL;
 
