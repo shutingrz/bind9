@@ -2062,10 +2062,10 @@ static cfg_type_t cfg_type_validityinterval = {
  */
 static cfg_clausedef_t
 dnssecpolicy_clauses[] = {
-	{ "dnskey-publish-safety", &cfg_type_duration, 0 },
-	{ "dnskey-retire-safety", &cfg_type_duration, 0 },
 	{ "dnskey-ttl", &cfg_type_ttlval, 0 },
 	{ "keys", &cfg_type_kaspkeys, 0 },
+	{ "publish-safety", &cfg_type_duration, 0 },
+	{ "retire-safety", &cfg_type_duration, 0 },
 	{ "signatures-refresh", &cfg_type_duration, 0 },
 	{ "signatures-resign", &cfg_type_duration, 0 },
 	{ "signatures-validity", &cfg_type_duration, 0 },
@@ -2074,7 +2074,11 @@ dnssecpolicy_clauses[] = {
 	{ "signatures-jitter", &cfg_type_duration, 0 },
 	{ "signatures-inception-offset", &cfg_type_duration, 0 },
 	{ "zone-max-ttl", &cfg_type_ttlval, 0 },
+	{ "zone-propagation-delay", &cfg_type_duration, 0 },
 	{ "zone-soa-serial-update-method", &cfg_type_updatemethod, 0 },
+	{ "parent-ds-ttl", &cfg_type_ttlval, 0 },
+	{ "parent-propagation-delay", &cfg_type_duration, 0 },
+	{ "parent-registration-delay", &cfg_type_duration, 0 },
 	{ NULL, NULL, 0 }
 };
 

@@ -418,6 +418,7 @@ dns_kasp_attach
 dns_kasp_create
 dns_kasp_detach
 dns_kasp_dnskeyttl
+dns_kasp_dsttl
 dns_kasp_freeze
 dns_kasp_getname
 dns_kasp_key_algorithm
@@ -427,11 +428,18 @@ dns_kasp_key_ksk
 dns_kasp_key_lifetime
 dns_kasp_key_size
 dns_kasp_key_zsk
+dns_kasp_parentpropagationdelay
+dns_kasp_parentregistrationdelay
+dns_kasp_publishsafety
+dns_kasp_retiresafety
+dns_kasp_signdelay
 dns_kasp_sigrefresh
 dns_kasp_sigvalidity
 dns_kasp_sigvalidity_denial
 dns_kasp_sigvalidity_dnskey
 dns_kasp_thaw
+dns_kasp_zonemaxttl
+dns_kasp_zonepropagationdelay
 dns_kasplist_find
 dns_keydata_fromdnskey
 dns_keydata_todnskey

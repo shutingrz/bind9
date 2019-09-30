@@ -1014,10 +1014,10 @@ zone <replaceable>string</replaceable> [ <replaceable>class</replaceable> ] {
 
     <literallayout class="normal">
 dnssec-policy <replaceable>string</replaceable> {
-	dnskey-publish-safety <replaceable>duration</replaceable>;
-	dnskey-retire-safety <replaceable>duration</replaceable>;
 	dnskey-ttl <replaceable>ttlval</replaceable>;
 	keys { ( csk | ksk | zsk ) key-directory <replaceable>duration</replaceable> <replaceable>integer</replaceable> [ <replaceable>integer</replaceable> ] ; ... };
+	publish-safety <replaceable>duration</replaceable>;
+	retire-safety <replaceable>duration</replaceable>;
 	signatures-inception-offset <replaceable>duration</replaceable>;
 	signatures-jitter <replaceable>duration</replaceable>;
 	signatures-refresh <replaceable>duration</replaceable>;

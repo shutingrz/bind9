@@ -193,11 +193,11 @@ cfg_kasp_fromconfig(const cfg_obj_t *config, isc_mem_t* mctx,
 		DNS_KASP_SIG_INCEPTION_OFFSET);
 
 	/* Configuration: Keys */
-	kasp->dnskey_ttl = get_ttlval(maps, "dnskey-ttl", DNS_KASP_KEY_TTL);
-	kasp->dnskey_publish_safety = get_duration(
-		maps, "dnskey-publish-safety", DNS_KASP_KEY_PUBLISH_SAFETY);
-	kasp->dnskey_retire_safety = get_duration(
-		maps, "dnskey-retire-safety", DNS_KASP_KEY_RETIRE_SAFETY);
+	kasp->dnskey_ttl = get_ttlval(maps, "dnskey-ttl", DNS_KASP_DNSKEY_TTL);
+	kasp->publish_safety = get_duration(maps, "publish-safety",
+					    DNS_KASP_PUBLISH_SAFETY);
+	kasp->retire_safety = get_duration(maps, "retire-safety",
+					   DNS_KASP_RETIRE_SAFETY);
 
 	(void)confget(maps, "keys", &keys);
 	if (keys == NULL) {
@@ -217,6 +217,25 @@ cfg_kasp_fromconfig(const cfg_obj_t *config, isc_mem_t* mctx,
 		}
 	}
 	ISC_INSIST(!(ISC_LIST_EMPTY(kasp->keys)));
+
+	/* Configuration: Zone settings */
+	kasp->zone_max_ttl = get_ttlval(maps, "zone-max-ttl",
+					DNS_KASP_ZONE_MAXTTL);
+	kasp->zone_propagation_delay = get_duration(maps,
+						    "zone-propagation-delay",
+						    DNS_KASP_ZONE_PROPDELAY);
+
+	/* Configuration: Parent settings */
+	kasp->parent_ds_ttl = get_ttlval(maps, "parent-ds-ttl",
+					 DNS_KASP_DS_TTL);
+	kasp->parent_propagation_delay = get_duration(
+						     maps,
+						     "parent-propagation-delay",
+						     DNS_KASP_PARENT_PROPDELAY);
+	kasp->parent_registration_delay = get_duration(
+						    maps,
+						    "parent-registration-delay",
+						    DNS_KASP_PARENT_REGDELAY);
 
 	// TODO: Rest of the configuration
 
