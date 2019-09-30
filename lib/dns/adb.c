@@ -2161,8 +2161,8 @@ log_quota(dns_adbentry_t *entry, const char *fmt, ...) {
 	isc_netaddr_format(&netaddr, addrbuf, sizeof(addrbuf));
 
 	isc_log_write(dns_lctx, DNS_LOGCATEGORY_DATABASE, DNS_LOGMODULE_ADB,
-		      ISC_LOG_INFO, "adb: quota %s (%" PRIuFAST32 "/%"
-		      PRIuFAST32 "): %s",
+		      ISC_LOG_INFO,
+		      "adb: quota %s (%" PRIuFAST32 "/%" PRIuFAST32 "): %s",
 		      addrbuf, atomic_load_relaxed(&entry->active),
 		      atomic_load_relaxed(&entry->quota), msgbuf);
 }
