@@ -15,15 +15,6 @@
     <title>BIND 9 DNS Library Support</title>
   </info>
   <para>
-    This version of BIND 9 "exports" its internal libraries so
-    that they can be used by third-party applications more easily (we
-    call them "export" libraries in this document). Certain library
-    functions are altered from specific BIND-only behavior to more generic
-    behavior when used by other applications; to enable this generic behavior,
-    the calling program initializes the libraries by calling
-    <command>isc_lib_register()</command>.
-  </para>
-  <para>
     In addition to DNS-related APIs that are used within BIND 9, the
     libraries provide the following features:
   </para>

@@ -12,7 +12,6 @@
 #include <stdbool.h>
 
 #include <isc/app.h>
-#include <isc/lib.h>
 #include <isc/magic.h>
 #include <isc/mem.h>
 #include <isc/once.h>
@@ -199,7 +198,6 @@ irs_context_create(irs_context_t **contextp) {
 	irs_dnsconf_dnskeylist_t *trustedkeys;
 	irs_dnsconf_dnskey_t *trustedkey;
 
-	isc_lib_register();
 	result = dns_lib_init();
 	if (result != ISC_R_SUCCESS)
 		return (result);

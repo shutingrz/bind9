@@ -269,7 +269,7 @@ isc_app_ctxrun(isc_appctx_t *ctx) {
 	/*
 	 * BIND9 internal tools using multiple contexts do not
 	 * rely on signal. */
-	if (isc_bind9 && ctx != &isc_g_appctx) {
+	if (ctx != &isc_g_appctx) {
 		return (ISC_R_SUCCESS);
 	}
 #endif /* WIN32 */
@@ -305,52 +305,37 @@ isc_app_ctxrun(isc_appctx_t *ctx) {
 			}
 		}
 #else /* WIN32 */
-		if (isc_bind9) {
-			sigset_t sset;
-			int sig;
-			/*
-			 * BIND9 internal; single context:
-			 * Wait for SIGHUP, SIGINT, or SIGTERM.
-			 */
-			if (sigemptyset(&sset) != 0 ||
-			    sigaddset(&sset, SIGHUP) != 0 ||
-			    sigaddset(&sset, SIGINT) != 0 ||
-			    sigaddset(&sset, SIGTERM) != 0) {
-				char strbuf[ISC_STRERRORSIZE];
-				strerror_r(errno, strbuf, sizeof(strbuf));
-				isc_error_fatal(__FILE__, __LINE__,
-						"isc_app_run() sigsetops: %s",
-						strbuf);
-			}
+		sigset_t sset;
+		int sig;
+		/*
+		 * BIND9 internal; single context:
+		 * Wait for SIGHUP, SIGINT, or SIGTERM.
+		 */
+		if (sigemptyset(&sset) != 0 ||
+		    sigaddset(&sset, SIGHUP) != 0 ||
+		    sigaddset(&sset, SIGINT) != 0 ||
+		    sigaddset(&sset, SIGTERM) != 0) {
+			char strbuf[ISC_STRERRORSIZE];
+			strerror_r(errno, strbuf, sizeof(strbuf));
+			isc_error_fatal(__FILE__, __LINE__,
+					"isc_app_run() sigsetops: %s",
+					strbuf);
+		}
 
-			if (sigwait(&sset, &sig) == 0) {
-				switch (sig) {
-				case SIGINT:
-				case SIGTERM:
-					atomic_store_release(
-						&ctx->want_shutdown, true);
-					break;
-				case SIGHUP:
-					atomic_store_release(
-						&ctx->want_reload, true);
-					break;
-				default:
-					INSIST(0);
-					ISC_UNREACHABLE();
-				}
-			}
-		} else {
-			/*
-			 * External, or BIND9 using multiple contexts:
-			 * wait until woken up.
-			 */
-			if (atomic_load_acquire(&ctx->want_shutdown)) {
+		if (sigwait(&sset, &sig) == 0) {
+			switch (sig) {
+			case SIGINT:
+			case SIGTERM:
+				atomic_store_release(
+					&ctx->want_shutdown, true);
 				break;
-			}
-			if (!atomic_load_acquire(&ctx->want_reload)) {
-				LOCK(&ctx->readylock);
-				WAIT(&ctx->ready, &ctx->readylock);
-				UNLOCK(&ctx->readylock);
+			case SIGHUP:
+				atomic_store_release(
+					&ctx->want_reload, true);
+				break;
+			default:
+				INSIST(0);
+				ISC_UNREACHABLE();
 			}
 		}
 #endif /* WIN32 */
@@ -408,10 +393,10 @@ isc_app_ctxshutdown(isc_appctx_t *ctx) {
 #ifdef WIN32
 		SetEvent(ctx->hEvents[SHUTDOWN_EVENT]);
 #else /* WIN32 */
-		if (isc_bind9 && ctx != &isc_g_appctx) {
+		if (ctx != &isc_g_appctx) {
 			/* BIND9 internal, but using multiple contexts */
 			atomic_store_release(&ctx->want_shutdown, true);
-		} else if (isc_bind9) {
+		} else {
 			/* BIND9 internal, single context */
 			if (kill(getpid(), SIGTERM) < 0) {
 				char strbuf[ISC_STRERRORSIZE];
@@ -421,10 +406,6 @@ isc_app_ctxshutdown(isc_appctx_t *ctx) {
 						"isc_app_shutdown() "
 						"kill: %s", strbuf);
 			}
-		} else {
-			/* External, multiple contexts */
-			atomic_store_release(&ctx->want_shutdown, true);
-			SIGNAL(&ctx->ready);
 		}
 #endif /* WIN32 */
 	}
@@ -449,10 +430,10 @@ isc_app_ctxsuspend(isc_appctx_t *ctx) {
 #ifdef WIN32
 				SetEvent(ctx->hEvents[RELOAD_EVENT]);
 #else /* WIN32 */
-		if (isc_bind9 && ctx != &isc_g_appctx) {
+		if (ctx != &isc_g_appctx) {
 			/* BIND9 internal, but using multiple contexts */
 			atomic_store_release(&ctx->want_reload, true);
-		} else if (isc_bind9) {
+		} else {
 			/* BIND9 internal, single context */
 			if (kill(getpid(), SIGHUP) < 0) {
 				char strbuf[ISC_STRERRORSIZE];
@@ -462,10 +443,6 @@ isc_app_ctxsuspend(isc_appctx_t *ctx) {
 						"isc_app_reload() "
 						"kill: %s", strbuf);
 			}
-		} else {
-			/* External, multiple contexts */
-			atomic_store_release(&ctx->want_reload, true);
-			SIGNAL(&ctx->ready);
 		}
 #endif /* WIN32 */
 	}
