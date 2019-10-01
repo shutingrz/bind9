@@ -599,7 +599,7 @@ dns_dnssec_keyactive(dst_key_t *key, isc_stdtime_t now) {
 		return (true);
 
 	hint_publish = dst_key_is_published(key, now, &publish);
-	hint_sign = dst_key_is_active(key, now, &active);
+	hint_sign = dst_key_is_signing(key, now, &active);
 	hint_revoke = dst_key_is_revoked(key, now, &revoke);
 	hint_remove = dst_key_is_removed(key, now, &remove);
 
@@ -1255,7 +1255,7 @@ dns_dnssec_get_hints(dns_dnsseckey_t *key, isc_stdtime_t now) {
 	REQUIRE(key != NULL && key->key != NULL);
 
 	key->hint_publish = dst_key_is_published(key->key, now, &publish);
-	key->hint_sign = dst_key_is_active(key->key, now, &active);
+	key->hint_sign = dst_key_is_signing(key->key, now, &active);
 	key->hint_revoke = dst_key_is_revoked(key->key, now, &revoke);
 	key->hint_remove = dst_key_is_removed(key->key, now, &remove);
 
@@ -1600,7 +1600,8 @@ dns_dnssec_keylistfromrdataset(const dns_name_t *origin,
 		result = dst_key_fromfile(dst_key_name(pubkey),
 					  dst_key_id(pubkey),
 					  dst_key_alg(pubkey),
-					  DST_TYPE_PUBLIC|DST_TYPE_PRIVATE,
+					  (DST_TYPE_PUBLIC|DST_TYPE_PRIVATE|
+					   DST_TYPE_STATE),
 					  directory, mctx, &privkey);
 
 		/*
@@ -1617,8 +1618,9 @@ dns_dnssec_keylistfromrdataset(const dns_name_t *origin,
 				result = dst_key_fromfile(dst_key_name(pubkey),
 							  dst_key_id(pubkey),
 							  dst_key_alg(pubkey),
-							  DST_TYPE_PUBLIC|
-							  DST_TYPE_PRIVATE,
+							  (DST_TYPE_PUBLIC|
+							   DST_TYPE_PRIVATE|
+							   DST_TYPE_STATE),
 							  directory,
 							  mctx, &privkey);
 				if (result == ISC_R_SUCCESS &&
@@ -1642,7 +1644,8 @@ dns_dnssec_keylistfromrdataset(const dns_name_t *origin,
 						      dst_key_id(pubkey),
 						      dst_key_alg(pubkey),
 						      (DST_TYPE_PUBLIC |
-						       DST_TYPE_PRIVATE),
+						       DST_TYPE_PRIVATE|
+						       DST_TYPE_STATE),
 						      directory, mctx,
 						      &buf);
 			if (result2 != ISC_R_SUCCESS) {

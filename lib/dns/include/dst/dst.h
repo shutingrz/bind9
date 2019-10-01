@@ -1128,7 +1128,17 @@ dst_key_is_published(dst_key_t *key, isc_stdtime_t now, isc_stdtime_t *publish);
  */
 
 bool
-dst_key_is_active(dst_key_t *key, isc_stdtime_t now, isc_stdtime_t *active);
+dst_key_is_active(dst_key_t *key, isc_stdtime_t now);
+/*%<
+ * Check if this key is active. This means that it is creating RRSIG records
+ * (ZSK), or that it is used to create a chain of trust (KSK), or both (CSK).
+ *
+ * Requires:
+ *	'key' to be valid.
+ */
+
+bool
+dst_key_is_signing(dst_key_t *key, isc_stdtime_t now, isc_stdtime_t *active);
 /*%<
  * Check if it is safe to use this key for signing.
  *

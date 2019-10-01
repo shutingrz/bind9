@@ -1433,6 +1433,7 @@ dst_key_is_active
 dst_key_is_published
 dst_key_is_removed
 dst_key_is_revoked
+dst_key_is_signing
 dst_key_is_unused
 dst_key_inactive
 dst_key_isexternal

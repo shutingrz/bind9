@@ -2394,13 +2394,79 @@ dst_key_is_published(dst_key_t *key, isc_stdtime_t now,
 	if (result == ISC_R_SUCCESS) {
 		state_ok = ((state == DST_KEY_STATE_RUMOURED) ||
 			    (state == DST_KEY_STATE_OMNIPRESENT));
+		/*
+		 * Key states trump timing metadata.
+		 * Ignore inactive time.
+		 */
+		time_ok = true;
 	}
 
 	return state_ok && time_ok;
 }
 
 bool
-dst_key_is_active(dst_key_t *key, isc_stdtime_t now, isc_stdtime_t *active)
+dst_key_is_active(dst_key_t *key, isc_stdtime_t now)
+{
+	dst_key_state_t state;
+	isc_result_t result;
+	isc_stdtime_t when = 0;
+	bool ksk = false, zsk = false, inactive = false;
+	bool ds_ok = true, zrrsig_ok = true, time_ok = false;
+
+	REQUIRE(VALID_KEY(key));
+
+	result = dst_key_gettime(key, DST_TIME_INACTIVE, &when);
+	if (result == ISC_R_SUCCESS) {
+		inactive = (when <= now);
+	}
+
+	result = dst_key_gettime(key, DST_TIME_ACTIVATE, &when);
+	if (result == ISC_R_SUCCESS) {
+		time_ok = (when <= now);
+	}
+
+	get_ksk_zsk(key, &ksk, &zsk);
+
+	/* Check key states:
+	 * KSK: If the DS is RUMOURED or OMNIPRESENT the key is considered
+	 * active.
+	 */
+	if (ksk) {
+		result = dst_key_getstate(key, DST_KEY_DS, &state);
+		if (result == ISC_R_SUCCESS) {
+			ds_ok = ((state == DST_KEY_STATE_RUMOURED) ||
+				 (state == DST_KEY_STATE_OMNIPRESENT));
+			/*
+			 * Key states trump timing metadata.
+			 * Ignore inactive time.
+			 */
+			time_ok = true;
+			inactive = false;
+		}
+	}
+	/*
+	 * ZSK: If the ZRRSIG state is RUMOURED or OMNIPRESENT, it means the
+	 * key is active.
+	 */
+	if (zsk) {
+		result = dst_key_getstate(key, DST_KEY_ZRRSIG, &state);
+		if (result == ISC_R_SUCCESS) {
+			zrrsig_ok = ((state == DST_KEY_STATE_RUMOURED) ||
+				    (state == DST_KEY_STATE_OMNIPRESENT));
+			/*
+			 * Key states trump timing metadata.
+			 * Ignore inactive time.
+			 */
+			time_ok = true;
+			inactive = false;
+		}
+	}
+	return ds_ok && zrrsig_ok && time_ok && !inactive;
+}
+
+
+bool
+dst_key_is_signing(dst_key_t *key, isc_stdtime_t now, isc_stdtime_t *active)
 {
 	dst_key_state_t state;
 	isc_result_t result;
@@ -2436,6 +2502,7 @@ dst_key_is_active(dst_key_t *key, isc_stdtime_t now, isc_stdtime_t *active)
 			 * Key states trump timing metadata.
 			 * Ignore inactive time.
 			 */
+			time_ok = true;
 			inactive = false;
 		}
 	}
@@ -2448,6 +2515,7 @@ dst_key_is_active(dst_key_t *key, isc_stdtime_t now, isc_stdtime_t *active)
 			 * Key states trump timing metadata.
 			 * Ignore inactive time.
 			 */
+			time_ok = true;
 			inactive = false;
 		}
 	}
@@ -2478,7 +2546,6 @@ dst_key_is_removed(dst_key_t *key, isc_stdtime_t now, isc_stdtime_t *remove)
 	dst_key_state_t state;
 	isc_result_t result;
 	isc_stdtime_t when = 0;
-	bool ksk = false, zsk = false;
 	bool state_ok = true, time_ok = false;
 
 	REQUIRE(VALID_KEY(key));
@@ -2494,8 +2561,6 @@ dst_key_is_removed(dst_key_t *key, isc_stdtime_t now, isc_stdtime_t *remove)
 		time_ok = (when <= now);
 	}
 
-	get_ksk_zsk(key, &ksk, &zsk);
-
 	/* Check key states:
 	 * If the DNSKEY state is UNRETENTIVE or HIDDEN, it means the key
 	 * should not be published.
@@ -2504,6 +2569,11 @@ dst_key_is_removed(dst_key_t *key, isc_stdtime_t now, isc_stdtime_t *remove)
 	if (result == ISC_R_SUCCESS) {
 		state_ok = ((state == DST_KEY_STATE_UNRETENTIVE) ||
 			    (state == DST_KEY_STATE_HIDDEN));
+		/*
+		 * Key states trump timing metadata.
+		 * Ignore delete time.
+		 */
+		time_ok = true;
 	}
 
 	return state_ok && time_ok;
