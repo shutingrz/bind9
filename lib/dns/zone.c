@@ -7185,6 +7185,7 @@ sign_a_node(dns_db_t *db, dns_zone_t *zone, dns_name_t *name,
 		if (signed_with_key(db, node, version, rdataset.type, key)) {
 			goto next_rdataset;
 		}
+
 		/* Calculate the signature, creating a RRSIG RDATA. */
 		isc_buffer_clear(&buffer);
 		CHECK(dns_dnssec_sign(name, &rdataset, key, &inception,
@@ -8895,7 +8896,7 @@ zone_sign(dns_zone_t *zone) {
 		ZONEDB_LOCK(&zone->dblock, isc_rwlocktype_read);
 		if (signing->done || signing->db != zone->db) {
 			/*
-			 * The zone has been reloaded.	We will have
+			 * The zone has been reloaded.	We will have to
 			 * created new signings as part of the reload
 			 * process so we can destroy this one.
 			 */
@@ -18514,7 +18515,7 @@ zone_rekey(dns_zone_t *zone) {
 	dns_ttl_t ttl = 3600;
 	const char *dir = NULL;
 	isc_mem_t *mctx = NULL;
-	isc_stdtime_t now;
+	isc_stdtime_t now, nexttime = 0;
 	isc_time_t timenow;
 	isc_interval_t ival;
 	char timebuf[80];
@@ -18596,7 +18597,7 @@ zone_rekey(dns_zone_t *zone) {
 
 	if (kasp && (result == ISC_R_SUCCESS || result == ISC_R_NOTFOUND)) {
 		result = dns_keymgr_run(&zone->origin, zone->rdclass, dir,
-					now, mctx, &keys, kasp);
+					mctx, &keys, kasp, now, &nexttime);
 		if (result != ISC_R_SUCCESS) {
 			dnssec_log(zone, ISC_LOG_ERROR,
 				   "zone_rekey:dns_dnssec_keymgr failed: %s",
@@ -18827,11 +18828,26 @@ zone_rekey(dns_zone_t *zone) {
 	isc_time_settoepoch(&zone->refreshkeytime);
 
 	/*
+	 * If keymgr provided a next time, use the calculated next rekey time.
+	 */
+	if (kasp != NULL && nexttime > 0) {
+		isc_time_t timenext;
+
+		LOCK_ZONE(zone);
+		DNS_ZONE_TIME_ADD(&timenow, nexttime - now, &timenext);
+		zone->refreshkeytime = timenext;
+		UNLOCK_ZONE(zone);
+
+		zone_settimer(zone, &timenow);
+		isc_time_formattimestamp(&zone->refreshkeytime, timebuf, 80);
+		dnssec_log(zone, ISC_LOG_INFO, "next key event: %s", timebuf);
+	}
+	/*
 	 * If we're doing key maintenance, set the key refresh timer to
 	 * the next scheduled key event or to 'dnssec-loadkeys-interval'
 	 * seconds in the future, whichever is sooner.
 	 */
-	if (DNS_ZONEKEY_OPTION(zone, DNS_ZONEKEY_MAINTAIN)) {
+	else if (DNS_ZONEKEY_OPTION(zone, DNS_ZONEKEY_MAINTAIN)) {
 		isc_time_t timethen;
 		isc_stdtime_t then;
 

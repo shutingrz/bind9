@@ -26,14 +26,16 @@ ISC_LANG_BEGINDECLS
 
 isc_result_t
 dns_keymgr_run(const dns_name_t *origin, dns_rdataclass_t rdclass,
-	       const char *directory, isc_stdtime_t now, isc_mem_t *mctx,
-	       dns_dnsseckeylist_t *keyring, dns_kasp_t *kasp);
+	       const char *directory, isc_mem_t *mctx,
+	       dns_dnsseckeylist_t *keyring, dns_kasp_t *kasp,
+	       isc_stdtime_t now, isc_stdtime_t *nexttime);
 /*%<
  * Manage keys in 'keylist' and update timing data according to 'kasp' policy.
  * Create new keys for 'origin' if necessary in 'directory'.  Append all such
  * keys, along with use hints gleaned from their metadata, onto 'keylist'.
  *
- * Update key states and store changes back to disk.
+ * Update key states and store changes back to disk. Store when to run next
+ * in 'nexttime'.
  *
  *	Requires:
  *\li		'origin' is a valid FQDN.
@@ -49,9 +51,6 @@ dns_keymgr_run(const dns_name_t *origin, dns_rdataclass_t rdclass,
  *	Ensures:
  *\li		On error, keypool is unchanged
  */
-
-
-
 
 ISC_LANG_ENDDECLS
 

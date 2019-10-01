@@ -29,6 +29,7 @@
 #include <dns/log.h>
 #include <dns/result.h>
 
+#include <dst/dst.h>
 #include <dst/result.h>
 
 #define RETERR(x) do {			\
@@ -107,8 +108,8 @@ keymgr_keyrole(dst_key_t* key)
  *
  */
 static isc_stdtime_t
-keymgr_prepublication_time(dns_dnsseckey_t *key, uint32_t lifetime,
-			   isc_stdtime_t now)
+keymgr_prepublication_time(dns_dnsseckey_t *key, dns_kasp_t* kasp,
+			   uint32_t lifetime, isc_stdtime_t now)
 {
 	isc_result_t ret;
 	isc_stdtime_t active, retire, prepub;
@@ -118,7 +119,8 @@ keymgr_prepublication_time(dns_dnsseckey_t *key, uint32_t lifetime,
 
 	active = 0;
 	retire = 0;
-	prepub = 600; /* TODO: derive from policy. */
+	prepub = dst_key_getttl(key->key) + dns_kasp_publishsafety(kasp) +
+		 dns_kasp_zonepropagationdelay(kasp);
 
 	ret = dst_key_gettime(key->key, DST_TIME_INACTIVE, &retire);
 	if (ret != ISC_R_SUCCESS) {
@@ -204,10 +206,7 @@ keymgr_key_retire(dns_dnsseckey_t *key, isc_stdtime_t now)
 		}
 	}
 
-	/* Update hints. */
-	dns_dnssec_get_hints(key, now);
-
-	dst_key_format(key->key,keystr, sizeof(keystr));
+	dst_key_format(key->key, keystr, sizeof(keystr));
 	isc_log_write(dns_lctx, DNS_LOGCATEGORY_DNSSEC, DNS_LOGMODULE_DNSSEC,
 	     ISC_LOG_INFO, "keymgr: retire DNSKEY %s (%s)", keystr,
 	     keymgr_keyrole(key->key));
@@ -412,6 +411,7 @@ keymgr_key_match_state(dst_key_t *key, dst_key_t* subject, int type,
 			if (states[i] != HIDDEN) {
 				return false;
 			}
+			continue;
 		}
 		if (state != states[i]) {
 			return false;
@@ -505,6 +505,18 @@ keymgr_key_exists_with_state(dns_dnsseckeylist_t *keyring,
 	}
 	/* No match. */
 	return false;
+}
+
+/*
+ * Check if a key has a successor.
+ */
+static bool
+keymgr_key_has_successor(dns_dnsseckey_t *key, dns_dnsseckeylist_t *keyring)
+{
+	/* Don't worry about key states. */
+	dst_key_state_t na[4] = { NA, NA, NA, NA };
+	return keymgr_key_exists_with_state(keyring, key, DST_KEY_DNSKEY, NA,
+					    na, na, true, true);
 }
 
 /*
@@ -773,7 +785,7 @@ keymgr_have_rrsig(dns_dnsseckeylist_t *keyring, dns_dnsseckey_t *key,
 		 * If all DS records are hidden than this rule can be ignored.
 		 */
 		keymgr_ds_hidden_or_chained(keyring, key, type,
-					    next_state, true)
+					    next_state, true, true) ||
 		/*
 		 * Equation (3f):
 		 * There is a key with the same algorithm with its DNSKEY and
@@ -953,23 +965,17 @@ keymgr_transition_allowed(dns_dnsseckeylist_t *keyring, dns_dnsseckey_t *key,
  */
 static void
 keymgr_transition_time(dns_dnsseckey_t* key, int type,
-		       dst_key_state_t next_state, isc_stdtime_t now,
-		       isc_stdtime_t *when)
+		       dst_key_state_t next_state, dns_kasp_t* kasp,
+		       isc_stdtime_t now, isc_stdtime_t *when)
 {
 	isc_result_t ret;
 	isc_stdtime_t lastchange, nexttime = now;
 
-	/* TODO: derive these values from the policy or zone. */
-	isc_stdtime_t ttl = 3600;
-	isc_stdtime_t delay = 300;
-	isc_stdtime_t parent_delay = 86400;
-	isc_stdtime_t safety = 300;
-
 	/*
-	 * No need to wait if we move things into RUMOURED.
+	 * No need to wait if we move things into an uncertain state.
 	 */
-	if (next_state == RUMOURED) {
-		*when = 0;
+	if (next_state == RUMOURED || next_state == UNRETENTIVE) {
+		*when = now;
 		return;
 	}
 
@@ -983,13 +989,65 @@ keymgr_transition_time(dns_dnsseckey_t* key, int type,
 	switch(type) {
 	case DST_KEY_DNSKEY:
 	case DST_KEY_KRRSIG:
-		nexttime = lastchange + ttl + safety + delay;
+		/*
+		 * RFC 7583: The publication interval (Ipub) is the amount of
+		 * time that must elapse after the publication of a DNSKEY
+		 * (plus RRSIG (KSK)) before it can be assumed that any
+		 * resolvers that have the relevant RRset cached have a copy
+		 * of the new information. This is the sum of the
+		 * propagation delay (Dprp) and the DNSKEY TTL (TTLkey).
+		 * This translates to zone-propagation-delay + dnskey-ttl.  We
+		 * will also add the publish-safety interval.
+		 */
+		nexttime = lastchange + dst_key_getttl(key->key) +
+			   dns_kasp_zonepropagationdelay(kasp);
+			   dns_kasp_publishsafety(kasp);
 		break;
 	case DST_KEY_ZRRSIG:
-		nexttime = lastchange + ttl + delay;
+		/*
+		 * RFC 7583: The retire interval (Iret) is the amount of time
+		 * that must elapse after a DNSKEY or associated data enters
+		 * the retire state for any dependent information (RRSIG ZSK)
+		 * to be purged from validating resolver caches. This is
+		 * defined as:
+		 *
+		 *     Iret = Dsgn + Dprp + TTLsig
+		 *
+		 * Where Dsgn is the Dsgn is the delay needed to ensure that
+		 * all existing RRsets have been re-signed with the new key,
+		 * Dprp is the propagation delay and TTLsig is the maximum
+		 * TTL of all zone RRSIG records.  This translates to
+		 * Dsgn + zone-propragation-delay + zone-max-ttl.  We will
+		 * also add the retire-safety interval.
+		 */
+		nexttime = lastchange + dns_kasp_signdelay(kasp) +
+			   dns_kasp_zonemaxttl(kasp) +
+			   dns_kasp_zonepropagationdelay(kasp);
+			   dns_kasp_retiresafety(kasp);
 		break;
 	case DST_KEY_DS:
-		nexttime = lastchange + ttl + parent_delay;
+		/*
+		 * RFC 7583: The successor DS record is published in the
+		 * parent zone and after the registration delay (Dreg),
+		 * the time taken after the DS record has been submitted to
+		 * the parent zone manager for it to be placed in the zone.
+		 * Key N (the predecessor) must remain in the zone until any
+		 * caches that contain a copy of the DS RRset have a copy
+		 * containing the new DS record. This interval is the retire
+		 * interval (Iret), given by:
+		 *
+		 *      Iret = DprpP + TTLds
+		 *
+		 * So we need to wait Dreg + Iret before the DS becomes
+		 * OMNIPRESENT. This translates to parent-registration-delay +
+		 * parent-propagation-delay + parent-ds-ttl.  We will also add
+		 * the retire-safety interval.
+		 */
+		nexttime = lastchange + dns_kasp_dsttl(kasp) +
+			   dns_kasp_parentregistrationdelay(kasp) +
+			   dns_kasp_parentpropagationdelay(kasp) +
+			   dns_kasp_retiresafety(kasp);
+		break;
 	default:
 		break;
 	}
@@ -1003,7 +1061,8 @@ keymgr_transition_time(dns_dnsseckey_t* key, int type,
  *
  */
 static isc_result_t
-keymgr_update(dns_dnsseckeylist_t *keyring, isc_stdtime_t now)
+keymgr_update(dns_dnsseckeylist_t *keyring, dns_kasp_t* kasp,
+	      isc_stdtime_t now, isc_stdtime_t *nexttime)
 {
 	bool changed;
 
@@ -1100,16 +1159,20 @@ transition:
 
 			/* Is it time to make the transition? */
 			when = now;
-			keymgr_transition_time(dkey, i, next_state, now, &when);
+			keymgr_transition_time(dkey, i, next_state, kasp, now,
+					       &when);
 			if (when > now) {
 				/* Not yet. */
 				isc_log_write(dns_lctx, DNS_LOGCATEGORY_DNSSEC,
 				      DNS_LOGMODULE_DNSSEC, ISC_LOG_DEBUG(1),
 				      "keymgr: time says no to %s %s type %s "
-				      "state %s to state %s (when %u now %u)",
+				      "state %s to state %s (wait %u seconds)",
 				      keymgr_keyrole(dkey->key), keystr,
 				      keystatetags[i], keystatestrings[state],
-				      keystatestrings[next_state], when, now);
+				      keystatestrings[next_state], when - now);
+				if (*nexttime == 0 || *nexttime > when) {
+					*nexttime = when;
+				}
 				continue;
 			}
 
@@ -1169,8 +1232,9 @@ keymgr_key_init_role(dns_dnsseckey_t *key)
  */
 isc_result_t
 dns_keymgr_run(const dns_name_t *origin, dns_rdataclass_t rdclass,
-	       const char *directory, isc_stdtime_t now, isc_mem_t *mctx,
-	       dns_dnsseckeylist_t *keyring, dns_kasp_t *kasp)
+	       const char *directory, isc_mem_t *mctx,
+	       dns_dnsseckeylist_t *keyring, dns_kasp_t *kasp,
+	       isc_stdtime_t now, isc_stdtime_t *nexttime)
 {
 	isc_result_t result = ISC_R_SUCCESS;
 	dns_dnsseckeylist_t newkeys;
@@ -1194,6 +1258,8 @@ dns_keymgr_run(const dns_name_t *origin, dns_rdataclass_t rdclass,
 
 	RETERR(isc_dir_open(&dir, directory));
 	dir_open = true;
+
+	*nexttime = 0;
 
 	/* Debug logging: what keys are available in the keyring? */
 	if (isc_log_wouldlog(dns_lctx, ISC_LOG_DEBUG(1))) {
@@ -1235,7 +1301,19 @@ dns_keymgr_run(const dns_name_t *origin, dns_rdataclass_t rdclass,
 
 			if (keymgr_dnsseckey_kaspkey_match(dkey, kkey)) {
 				/* Found a match. */
-				if (dkey->hint_sign) {
+
+				/* Initialize lifetime. */
+				uint32_t l;
+				if (dst_key_getnum(dkey->key,
+						   DST_NUM_LIFETIME, &l) !=
+								  ISC_R_SUCCESS)
+				{
+					dst_key_setnum(dkey->key,
+						       DST_NUM_LIFETIME,
+						       lifetime);
+				}
+
+				if (dst_key_is_active(dkey->key, now)) {
 					if (active_key != NULL) {
 						/*
 						 * Multiple signing keys match
@@ -1269,10 +1347,17 @@ dns_keymgr_run(const dns_name_t *origin, dns_rdataclass_t rdclass,
 			 * Calculate when the successor needs to be published
 			 * in the zone.
 			 */
-			prepub = keymgr_prepublication_time(active_key,
+			prepub = keymgr_prepublication_time(active_key, kasp,
 							    lifetime, now);
 			if (prepub == 0 || prepub > now) {
 				/* No need to start rollover now. */
+				if (*nexttime == 0 || prepub < *nexttime) {
+					*nexttime = prepub;
+				}
+				continue;
+			}
+			if (keymgr_key_has_successor(active_key, keyring)) {
+				/* Key already has successor. */
 				continue;
 			}
 
@@ -1401,7 +1486,7 @@ dns_keymgr_run(const dns_name_t *origin, dns_rdataclass_t rdclass,
 	}
 
 	/* Read to update key states. */
-	keymgr_update(keyring, now);
+	keymgr_update(keyring, kasp, now, nexttime);
 
 	/* Store key states and update hints. */
 	for (dns_dnsseckey_t *dkey = ISC_LIST_HEAD(*keyring);
@@ -1427,5 +1512,6 @@ failure:
 			dns_dnsseckey_destroy(mctx, &newkey);
 		}
 	}
+
 	return (result);
 }
