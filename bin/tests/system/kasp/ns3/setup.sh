@@ -82,6 +82,18 @@ private_type_record $zone 13 $KSK >> "$infile"
 private_type_record $zone 13 $ZSK >> "$infile"
 $SIGNER -PS -x -s now-2mo -e now-1mo -o $zone -O full -f $zonefile $infile > signer.out.$zone.1 2>&1
 
+# These signatures are still good, and can be reused.
+setup fresh-sigs.autosign
+KSK=`$KEYGEN -a ECDSAP256SHA256 -f KSK -L 300 $zone 2> keygen.out.$zone.1`
+ZSK=`$KEYGEN -a ECDSAP256SHA256 -L 300 $zone 2> keygen.out.$zone.2`
+T="now-6mo"
+$SETTIME -s -P $T -A $T  -g $O  -d $O $T -k $O $T -r $O $T $KSK > settime.out.$zone.1 2>&1
+$SETTIME -s -P $T -A $T  -g $O  -k $O $T -z $O $T $ZSK > settime.out.$zone.2 2>&1
+cat template.db.in "${KSK}.key" "${ZSK}.key" > "$infile"
+private_type_record $zone 13 $KSK >> "$infile"
+private_type_record $zone 13 $ZSK >> "$infile"
+$SIGNER -S -x -s now-1h -e now+2w -o $zone -O full -f $zonefile $infile > signer.out.$zone.1 2>&1
+
 # These signatures are still good, but not fresh enough, update immediately.
 setup unfresh-sigs.autosign
 KSK=`$KEYGEN -a ECDSAP256SHA256 -f KSK -L 300 $zone 2> keygen.out.$zone.1`

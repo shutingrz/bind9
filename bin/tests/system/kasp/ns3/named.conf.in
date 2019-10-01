@@ -23,6 +23,15 @@ options {
 	recursion no;
 };
 
+key rndc_key {
+        secret "1234abcd8765";
+        algorithm hmac-sha256;
+};
+
+controls {
+        inet 10.53.0.3 port @CONTROLPORT@ allow { any; } keys { rndc_key; };
+};
+
 include "policies/kasp.conf";
 include "policies/autosign.conf";
 
@@ -115,6 +124,15 @@ zone "ecdsa384.kasp" {
 zone "expired-sigs.autosign" {
 	type master;
 	file "expired-sigs.autosign.db";
+	dnssec-policy "autosign";
+};
+
+/*
+ * Zone that has valid, fresh signatures.
+ */
+zone "fresh-sigs.autosign" {
+	type master;
+	file "fresh-sigs.autosign.db";
 	dnssec-policy "autosign";
 };
 

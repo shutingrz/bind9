@@ -83,6 +83,11 @@ dig_with_opts() {
 	"$DIG" +tcp +noadd +nosea +nostat +nocmd +dnssec -p "$PORT" "$@"
 }
 
+# RNDC.
+rndccmd() {
+    "$RNDC" -c "$SYSTEMTESTTOP/common/rndc.conf" -p "$CONTROLPORT" -s "$@"
+}
+
 # Print IDs of keys used for generating RRSIG records for RRsets of type $1
 # found in dig output file $2.
 get_keys_which_signed() {
@@ -722,6 +727,40 @@ get_keys_which_signed $qtype dig.out.$DIR.test$n | grep "^${KEY_ID}$" > /dev/nul
 test "$ret" -eq 0 || echo_i "failed"
 status=$((status+ret))
 
+# Update zone.
+n=$((n+1))
+echo_i "check that we can update unsigned zone file and new record gets signed for zone ${ZONE} ($n)"
+ret=0
+cp "${DIR}/template2.db.in" "${DIR}/${ZONE}.db"
+rndccmd 10.53.0.3 reload $ZONE > /dev/null || log_error "rndc reload zone ${ZONE} failed"
+_log=0
+while [ $i -lt 5 ]
+do
+	ret=0
+
+	dig_with_opts "a.${ZONE}" @10.53.0.3 A > dig.out.$DIR.test$n.a || log_error "dig a.${ZONE} A failed"
+	grep "status: NOERROR" dig.out.$DIR.test$n.a > /dev/null || log_error "mismatch status in DNS response"
+	grep "a.${ZONE}\..*${DEFAULT_TTL}.*IN.*A.*10\.0\.0\.11" dig.out.$DIR.test$n.a > /dev/null || log_error "missing a.${ZONE} A record in response"
+	lines=$(get_keys_which_signed A dig.out.$DIR.test$n.a | wc -l)
+	test "$lines" -eq 1 || log_error "bad number ($lines) of RRSIG records in DNS response"
+	get_keys_which_signed A dig.out.$DIR.test$n.a | grep "^${KEY_ID}$" > /dev/null || log_error "A RRset not signed with ${KEY_ID}"
+
+	dig_with_opts "d.${ZONE}" @10.53.0.3 A > dig.out.$DIR.test$n.d || log_error "dig d.${ZONE} A failed"
+	grep "status: NOERROR" dig.out.$DIR.test$n.d > /dev/null || log_error "mismatch status in DNS response"
+	grep "d.${ZONE}\..*${DEFAULT_TTL}.*IN.*A.*10\.0\.0\.4" dig.out.$DIR.test$n.d > /dev/null || log_error "missing d.${ZONE} A record in response"
+	lines=$(get_keys_which_signed A dig.out.$DIR.test$n.d | wc -l)
+	test "$lines" -eq 1 || log_error "bad number ($lines) of RRSIG records in DNS response"
+	get_keys_which_signed A dig.out.$DIR.test$n.d | grep "^${KEY_ID}$" > /dev/null || log_error "A RRset not signed with ${KEY_ID}"
+
+	i=`expr $i + 1`
+	if [ $ret = 0 ]; then break; fi
+	echo_i "waiting ... ($i)"
+	sleep 1
+done
+_log=1
+test "$ret" -eq 0 || echo_i "failed"
+status=$((status+ret))
+
 #
 # Zone: rsasha1.kasp.
 #
@@ -1073,6 +1112,58 @@ check_rrsig_refresh() {
 }
 
 check_rrsig_refresh
+
+#
+# Zone: fresh-sigs.autosign.
+#
+zone_properties "ns3" "fresh-sigs.autosign" "autosign" "300" "2"
+# key_properties, key_timings and key_states same as above.
+check_keys
+check_apex
+check_subdomain
+dnssec_verify
+
+# Verify signature reuse.
+check_rrsig_reuse() {
+	# Apex.
+	_qtypes="NS NSEC"
+	for _qtype in $_qtypes
+	do
+		n=$((n+1))
+		echo_i "check ${_qtype} rrsig is reused correctly for zone ${ZONE} ($n)"
+		ret=0
+		dig_with_opts $ZONE @10.53.0.3 $_qtype > dig.out.$DIR.test$n || log_error "dig ${ZONE} ${_qtype} failed"
+		grep "status: NOERROR" dig.out.$DIR.test$n > /dev/null || log_error "mismatch status in DNS response"
+		grep "${ZONE}\..*IN.*RRSIG.*${_qtype}.*${ZONE}" dig.out.$DIR.test$n > rrsig.out.$ZONE.$_qtype || log_error "missing RRSIG (${_qtype}) record in response"
+		# If this exact RRSIG is also in the zone file it is not refreshed.
+		_rrsig=$(awk '{print $5, $6, $7, $8, $9, $10, $11, $12, $13, $14;}' < rrsig.out.$ZONE.$_qtype)
+		grep "${_rrsig}" "${DIR}/${ZONE}.db" > /dev/null || log_error "RRSIG (${_qtype}) not reused in zone ${ZONE}"
+		test "$ret" -eq 0 || echo_i "failed"
+		status=$((status+ret))
+	done
+
+	# Below apex.
+	_labels="a b c ns3"
+	for _label in $_labels;
+	do
+		_qtypes="A NSEC"
+		for _qtype in $_qtypes
+		do
+			n=$((n+1))
+			echo_i "check ${_label} ${_qtype} rrsig is reused correctly for zone ${ZONE} ($n)"
+			ret=0
+			dig_with_opts "${_label}.${ZONE}" @10.53.0.3 $_qtype > dig.out.$DIR.test$n || log_error "dig ${_label}.${ZONE} ${_qtype} failed"
+			grep "status: NOERROR" dig.out.$DIR.test$n > /dev/null || log_error "mismatch status in DNS response"
+			grep "${ZONE}\..*IN.*RRSIG.*${_qtype}.*${ZONE}" dig.out.$DIR.test$n > rrsig.out.$ZONE.$_qtype || log_error "missing RRSIG (${_qtype}) record in response"
+			_rrsig=$(awk '{print $5, $6, $7, $8, $9, $10, $11, $12, $13, $14;}' < rrsig.out.$ZONE.$_qtype)
+			grep "${_rrsig}" "${DIR}/${ZONE}.db" > /dev/null || log_error "RRSIG (${_qtype}) not reused in zone ${ZONE}"
+			test "$ret" -eq 0 || echo_i "failed"
+			status=$((status+ret))
+		done
+	done
+}
+
+check_rrsig_reuse
 
 #
 # Zone: unfresh-sigs.autosign.
