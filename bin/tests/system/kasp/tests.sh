@@ -27,69 +27,52 @@ DEFAULT_TTL=300
 ID=0
 EXPECT=1
 ROLE=2
-LIFETIME=3
-ALG_NUM=4
-ALG_STR=5
-ALG_LEN=6
-PUBLISHED=7
-ACTIVE=8
-RETIRED=9
-REVOKED=10
-REMOVED=11
-GOAL=12
-STATE_DNSKEY=13
-STATE_ZRRSIG=14
-STATE_KRRSIG=15
-STATE_DS=16
+KSK=3
+ZSK=4
+LIFETIME=5
+ALG_NUM=6
+ALG_STR=7
+ALG_LEN=8
+PUBLISHED=9
+ACTIVE=10
+RETIRED=11
+REVOKED=12
+REMOVED=13
+GOAL=14
+STATE_DNSKEY=15
+STATE_ZRRSIG=16
+STATE_KRRSIG=17
+STATE_DS=18
+EXPECT_RRSIG=19
 
 # Clear key state.
 #
-# This will update either the KSK, ZSK1 or ZSK2 array.
+# This will update either the KEY1, KEY2, or KEY3 array.
 key_clear() {
 	_key=(	[$ID]="no" [$EXPECT]="no" \
-		[$ROLE]="none" [$LIFETIME]="0" [$ALG_NUM]="0" \
+		[$ROLE]="none" [$KSK]="no" [$ZSK]="no" \
+		[$LIFETIME]="0" [$ALG_NUM]="0" \
 		[$ALG_STR]="none" [$ALG_LEN]="0" \
 		[$PUBLISHED]="none" [$ACTIVE]="none" \
 		[$RETIRED]="none" [$REVOKED]="none" \
 		[$REMOVED]="none" \
 		[$GOAL]="none" [$STATE_DNSKEY]="none" \
 		[$STATE_KRRSIG]="none" [$STATE_ZRRSIG]="none" \
-		[$STATE_DS]="none")
+		[$STATE_DS]="none" [$EXPECT_RRSIG]="no")
 
-	if [ $1 == "KSK" ]; then
-		KSK=(${_key[*]})
-	elif [ $1 == "ZSK1" ]; then
-		ZSK1=(${_key[*]})
-	elif [ $1 == "ZSK2" ]; then
-		ZSK2=(${_key[*]})
+	if [ $1 == "KEY1" ]; then
+		KEY1=(${_key[*]})
+	elif [ $1 == "KEY2" ]; then
+		KEY2=(${_key[*]})
+	elif [ $1 == "KEY3" ]; then
+		KEY3=(${_key[*]})
 	fi
 }
 
-print_keys() {
-	echo KSK:
-	arr=(${KSK[*]})
-	echo "Number of items: ${#arr[*]}"
-	for ix in ${!arr[*]}
-	do echo "  $ix: ${arr[$ix]}"
-	done
-	echo ZSK1:
-	echo "Number of items: ${#arr[*]}"
-	arr=(${ZSK1[*]})
-	for ix in ${!arr[*]}
-	do echo "  $ix: ${arr[$ix]}"
-	done
-	echo ZSK2:
-	echo "Number of items: ${#arr[*]}"
-	arr=(${ZSK2[*]})
-	for ix in ${!arr[*]}
-	do echo "  $ix: ${arr[$ix]}"
-	done
-}
-
 # Start clear.
-key_clear "KSK"
-key_clear "ZSK1"
-key_clear "ZSK2"
+key_clear "KEY1"
+key_clear "KEY2"
+key_clear "KEY3"
 
 ###############################################################################
 # Utilities                                                                   #
@@ -123,12 +106,9 @@ get_keyids() {
 
 # By default log errors and don't quit immediately.
 _log=1
-_continue=1
 log_error() {
 	test $_log -eq 1 && echo_i "error: $1"
 	ret=$((ret+1))
-
-	test $_continue -eq 1 || exit 1
 }
 
 # TODO: Move wait_for_log to conf.sh.common
@@ -167,30 +147,52 @@ zone_properties() {
 # $4: Algorithm (number)
 # $5: Algorithm (string-format)
 # $6: Algorithm length
+# $7: Is signing
 #
-# This will update either the KSK, ZSK1 or ZSK2 array.
+# This will update either the KEY1, KEY2 or KEY3 array.
 key_properties() {
-	if [ $1 == "KSK" ]; then
-		KSK[$EXPECT]="yes"
-		KSK[$ROLE]=$2
-		KSK[$LIFETIME]=$3
-		KSK[$ALG_NUM]=$4
-		KSK[$ALG_STR]=$5
-		KSK[$ALG_LEN]=$6
-	elif [ $1 == "ZSK1" ]; then
-		ZSK1[$EXPECT]="yes"
-		ZSK1[$ROLE]=$2
-		ZSK1[$LIFETIME]=$3
-		ZSK1[$ALG_NUM]=$4
-		ZSK1[$ALG_STR]=$5
-		ZSK1[$ALG_LEN]=$6
-	elif [ $1 == "ZSK2" ]; then
-		ZSK2[$EXPECT]="yes"
-		ZSK2[$ROLE]=$2
-		ZSK2[$LIFETIME]=$3
-		ZSK2[$ALG_NUM]=$4
-		ZSK2[$ALG_STR]=$5
-		ZSK2[$ALG_LEN]=$6
+	if [ $1 == "KEY1" ]; then
+		KEY1[$EXPECT]="yes"
+		KEY1[$ROLE]=$2
+		KEY1[$KSK]="no"
+		KEY1[$ZSK]="no"
+		test $2 == "ksk" && KEY1[$KSK]="yes"
+		test $2 == "zsk" && KEY1[$ZSK]="yes"
+		test $2 == "csk" && KEY1[$KSK]="yes"
+		test $2 == "csk" && KEY1[$ZSK]="yes"
+		KEY1[$LIFETIME]=$3
+		KEY1[$ALG_NUM]=$4
+		KEY1[$ALG_STR]=$5
+		KEY1[$ALG_LEN]=$6
+		KEY1[$EXPECT_RRSIG]=$7
+	elif [ $1 == "KEY2" ]; then
+		KEY2[$EXPECT]="yes"
+		KEY2[$ROLE]=$2
+		KEY2[$KSK]="no"
+		KEY2[$ZSK]="no"
+		test $2 == "ksk" && KEY2[$KSK]="yes"
+		test $2 == "zsk" && KEY2[$ZSK]="yes"
+		test $2 == "csk" && KEY2[$KSK]="yes"
+		test $2 == "csk" && KEY2[$ZSK]="yes"
+		KEY2[$LIFETIME]=$3
+		KEY2[$ALG_NUM]=$4
+		KEY2[$ALG_STR]=$5
+		KEY2[$ALG_LEN]=$6
+		KEY2[$EXPECT_RRSIG]=$7
+	elif [ $1 == "KEY3" ]; then
+		KEY3[$EXPECT]="yes"
+		KEY3[$ROLE]=$2
+		KEY3[$KSK]="no"
+		KEY3[$ZSK]="no"
+		test $2 == "ksk" && KEY3[$KSK]="yes"
+		test $2 == "zsk" && KEY3[$ZSK]="yes"
+		test $2 == "csk" && KEY3[$KSK]="yes"
+		test $2 == "csk" && KEY3[$ZSK]="yes"
+		KEY3[$LIFETIME]=$3
+		KEY3[$ALG_NUM]=$4
+		KEY3[$ALG_STR]=$5
+		KEY3[$ALG_LEN]=$6
+		KEY3[$EXPECT_RRSIG]=$7
 	fi
 }
 
@@ -204,29 +206,29 @@ key_properties() {
 # $5: Revoked
 # $6: Removed
 #
-# This will update either the KSK, ZSK1 or ZSK2 array.
+# This will update either the KEY1, KEY2 or KEY3 array.
 key_timings() {
-	if [ $1 == "KSK" ]; then
-		KSK[$EXPECT]="yes"
-		KSK[$PUBLISHED]=$2
-		KSK[$ACTIVE]=$3
-		KSK[$RETIRED]=$4
-		KSK[$REVOKED]=$5
-		KSK[$REMOVED]=$6
-	elif [ $1 == "ZSK1" ]; then
-		ZSK1[$EXPECT]="yes"
-		ZSK1[$PUBLISHED]=$2
-		ZSK1[$ACTIVE]=$3
-		ZSK1[$RETIRED]=$4
-		ZSK1[$REVOKED]=$5
-		ZSK1[$REMOVED]=$6
-	elif [ $1 == "ZSK2" ]; then
-		ZSK2[$EXPECT]="yes"
-		ZSK2[$PUBLISHED]=$2
-		ZSK2[$ACTIVE]=$3
-		ZSK2[$RETIRED]=$4
-		ZSK2[$REVOKED]=$5
-		ZSK2[$REMOVED]=$6
+	if [ $1 == "KEY1" ]; then
+		KEY1[$EXPECT]="yes"
+		KEY1[$PUBLISHED]=$2
+		KEY1[$ACTIVE]=$3
+		KEY1[$RETIRED]=$4
+		KEY1[$REVOKED]=$5
+		KEY1[$REMOVED]=$6
+	elif [ $1 == "KEY2" ]; then
+		KEY2[$EXPECT]="yes"
+		KEY2[$PUBLISHED]=$2
+		KEY2[$ACTIVE]=$3
+		KEY2[$RETIRED]=$4
+		KEY2[$REVOKED]=$5
+		KEY2[$REMOVED]=$6
+	elif [ $1 == "KEY3" ]; then
+		KEY3[$EXPECT]="yes"
+		KEY3[$PUBLISHED]=$2
+		KEY3[$ACTIVE]=$3
+		KEY3[$RETIRED]=$4
+		KEY3[$REVOKED]=$5
+		KEY3[$REMOVED]=$6
 	fi
 }
 
@@ -238,29 +240,29 @@ key_timings() {
 # $5: RRSIG state (ksk)
 # $6: DS state
 #
-# This will update either the KSK, ZSK1 or ZSK2 array.
+# This will update either the KEY1, KEY2, OR KEY3 array.
 key_states() {
-	if [ $1 == "KSK" ]; then
-		KSK[$EXPECT]="yes"
-		KSK[$GOAL]=$2
-		KSK[$STATE_DNSKEY]=$3
-		KSK[$STATE_ZRRSIG]=$4
-		KSK[$STATE_KRRSIG]=$5
-		KSK[$STATE_DS]=$6
-	elif [ $1 == "ZSK1" ]; then
-		ZSK1[$EXPECT]="yes"
-		ZSK1[$GOAL]=$2
-		ZSK1[$STATE_DNSKEY]=$3
-		ZSK1[$STATE_ZRRSIG]=$4
-		ZSK1[$STATE_KRRSIG]=$5
-		ZSK1[$STATE_DS]=$6
-	elif [ $1 == "ZSK2" ]; then
-		ZSK2[$EXPECT]="yes"
-		ZSK2[$GOAL]=$2
-		ZSK2[$STATE_DNSKEY]=$3
-		ZSK2[$STATE_ZRRSIG]=$4
-		ZSK2[$STATE_KRRSIG]=$5
-		ZSK2[$STATE_DS]=$6
+	if [ $1 == "KEY1" ]; then
+		KEY1[$EXPECT]="yes"
+		KEY1[$GOAL]=$2
+		KEY1[$STATE_DNSKEY]=$3
+		KEY1[$STATE_ZRRSIG]=$4
+		KEY1[$STATE_KRRSIG]=$5
+		KEY1[$STATE_DS]=$6
+	elif [ $1 == "KEY2" ]; then
+		KEY2[$EXPECT]="yes"
+		KEY2[$GOAL]=$2
+		KEY2[$STATE_DNSKEY]=$3
+		KEY2[$STATE_ZRRSIG]=$4
+		KEY2[$STATE_KRRSIG]=$5
+		KEY2[$STATE_DS]=$6
+	elif [ $1 == "KEY3" ]; then
+		KEY3[$EXPECT]="yes"
+		KEY3[$GOAL]=$2
+		KEY3[$STATE_DNSKEY]=$3
+		KEY3[$STATE_ZRRSIG]=$4
+		KEY3[$STATE_KRRSIG]=$5
+		KEY3[$STATE_DS]=$6
 	fi
 }
 
@@ -275,12 +277,12 @@ key_states() {
 # STATE_FILE="${BASE_FILE}.state"
 # KEY_ID=$(echo $1 | sed 's/^0*//')
 check_key() {
-	if [ $1 == "KSK" ]; then
-		_key=(${KSK[*]})
-	elif [ $1 == "ZSK1" ]; then
-		_key=(${ZSK1[*]})
-	elif [ $1 == "ZSK2" ]; then
-		_key=(${ZSK2[*]})
+	if [ $1 == "KEY1" ]; then
+		_key=(${KEY1[*]})
+	elif [ $1 == "KEY2" ]; then
+		_key=(${KEY2[*]})
+	elif [ $1 == "KEY3" ]; then
+		_key=(${KEY3[*]})
 	fi
 
 	_dir=$DIR
@@ -355,26 +357,34 @@ check_key() {
 
 	if [ "$_state_dnskey" == "none" ]; then
 		grep "DNSKEYState: " $STATE_FILE > /dev/null && log_error "unexpected dnskey state in $STATE_FILE"
+		grep "DNSKEYChange: " $STATE_FILE > /dev/null && log_error "unexpected dnskey change in $STATE_FILE"
 	else
 		grep "DNSKEYState: ${_state_dnskey}" $STATE_FILE > /dev/null || log_error "mismatch dnskey state in $STATE_FILE"
+		grep "DNSKEYChange: " $STATE_FILE > /dev/null || log_error "mismatch dnskey change in $STATE_FILE"
 	fi
 
 	if [ "$_state_zrrsig" == "none" ]; then
 		grep "ZRRSIGState: " $STATE_FILE > /dev/null && log_error "unexpected zrrsig state in $STATE_FILE"
+		grep "ZRRSIGChange: " $STATE_FILE > /dev/null && log_error "unexpected zrrsig change in $STATE_FILE"
 	else
 		grep "ZRRSIGState: ${_state_zrrsig}" $STATE_FILE > /dev/null || log_error "mismatch zrrsig state in $STATE_FILE"
+		grep "ZRRSIGChange: " $STATE_FILE > /dev/null || log_error "mismatch zrrsig change in $STATE_FILE"
 	fi
 
 	if [ "$_state_krrsig" == "none" ]; then
 		grep "KRRSIGState: " $STATE_FILE > /dev/null && log_error "unexpected krrsig state in $STATE_FILE"
+		grep "KRRSIGChange: " $STATE_FILE > /dev/null && log_error "unexpected krrsig change in $STATE_FILE"
 	else
 		grep "KRRSIGState: ${_state_krrsig}" $STATE_FILE > /dev/null || log_error "mismatch krrsig state in $STATE_FILE"
+		grep "KRRSIGChange: " $STATE_FILE > /dev/null || log_error "mismatch krrsig change in $STATE_FILE"
 	fi
 
 	if [ "$_state_ds" == "none" ]; then
 		grep "DSState: " $STATE_FILE > /dev/null && log_error "unexpected ds state in $STATE_FILE"
+		grep "DSChange: " $STATE_FILE > /dev/null && log_error "unexpected ds change in $STATE_FILE"
 	else
 		grep "DSState: ${_state_ds}" $STATE_FILE > /dev/null || log_error "mismatch ds state in $STATE_FILE"
+		grep "DSChange: " $STATE_FILE > /dev/null || log_error "mismatch ds change in $STATE_FILE"
 	fi
 
 	# Check timing metadata.
@@ -448,7 +458,7 @@ key_unused() {
 	_zone=$ZONE
 	_key_idpad=$1
 	_key_id=$(echo $_key_idpad | sed 's/^0*//')
-	_alg_num="${KSK[$ALG_NUM]}"
+	_alg_num="${KEY1[$ALG_NUM]}"
         _alg_numpad=$(printf "%03d" $_alg_num)
 
 	BASE_FILE="${_dir}/K${_zone}.+${_alg_numpad}+${_key_idpad}"
@@ -480,13 +490,11 @@ key_unused() {
 # Test: dnssec-verify zone $1.
 dnssec_verify()
 {
-	_zone=$1
-
 	n=$((n+1))
-	echo_i "dnssec-verify zone ${_zone} ($n)"
+	echo_i "dnssec-verify zone ${ZONE} ($n)"
 	ret=0
-	dig_with_opts $_zone @10.53.0.3 AXFR > dig.out.axfr.test$n || log_error "dig ${_zone} AXFR failed"
-	$VERIFY -z -o $_zone dig.out.axfr.test$n > /dev/null || log_error "dnssec verify zone $_zone failed"
+	dig_with_opts $ZONE @10.53.0.3 AXFR > dig.out.axfr.test$n || log_error "dig ${ZONE} AXFR failed"
+	$VERIFY -z -o $ZONE dig.out.axfr.test$n > /dev/null || log_error "dnssec verify zone $ZONE failed"
 	test "$ret" -eq 0 || echo_i "failed"
 	status=$((status+ret))
 }
@@ -509,37 +517,37 @@ test "$lines" -eq 4 || log_error "wrong number of keys created for policy kasp: 
 # Temporarily don't log errors because we are searching multiple files.
 _log=0
 # Check one algorithm.
-key_properties "KSK" "csk" "31536000" "13" "ECDSAP256SHA256" "256"
-key_timings "KSK" "none" "none" "none" "none" "none"
-key_states "KSK" "none" "none" "none" "none" "none"
-id=$(get_keyids $DIR $ZONE "${KSK[$ALG_NUM]}")
-check_key "KSK" $id
+key_properties "KEY1" "csk" "31536000" "13" "ECDSAP256SHA256" "256" "yes"
+key_timings "KEY1" "none" "none" "none" "none" "none"
+key_states "KEY1" "none" "none" "none" "none" "none"
+id=$(get_keyids $DIR $ZONE "${KEY1[$ALG_NUM]}")
+check_key "KEY1" $id
 test "$ret" -eq 0 || echo_i "failed"
 status=$((status+ret))
 # Check the other algorithm.
-key_properties "KSK" "ksk" "31536000" "8" "RSASHA256" "2048"
-key_timings "KSK" "none" "none" "none" "none" "none"
-key_states "KSK" "none" "none" "none" "none" "none"
+key_properties "KEY1" "ksk" "31536000" "8" "RSASHA256" "2048" "yes"
+key_timings "KEY1" "none" "none" "none" "none" "none"
+key_states "KEY1" "none" "none" "none" "none" "none"
 
-key_properties "ZSK1" "zsk" "2592000" "8" "RSASHA256" "1024"
-key_timings "ZSK1" "none" "none" "none" "none" "none"
-key_states "ZSK1" "none" "none" "none" "none" "none"
+key_properties "KEY2" "zsk" "2592000" "8" "RSASHA256" "1024" "yes"
+key_timings "KEY2" "none" "none" "none" "none" "none"
+key_states "KEY2" "none" "none" "none" "none" "none"
 
-key_properties "ZSK2" "zsk" "16070400" "8" "RSASHA256" "2000"
-key_timings "ZSK2" "none" "none" "none" "none" "none"
-key_states "ZSK2" "none" "none" "none" "none" "none"
+key_properties "KEY3" "zsk" "16070400" "8" "RSASHA256" "2000" "yes"
+key_timings "KEY3" "none" "none" "none" "none" "none"
+key_states "KEY3" "none" "none" "none" "none" "none"
 
-ids=$(get_keyids $DIR $ZONE "${KSK[$ALG_NUM]}")
+ids=$(get_keyids $DIR $ZONE "${KEY1[$ALG_NUM]}")
 for id in $ids; do
 	# There are three key files with the same algorithm.
 	# Check them until a match is found.
-	ret=0 && check_key "KSK" $id
+	ret=0 && check_key "KEY1" $id
 	test "$ret" -eq 0 && continue
 
-	ret=0 && check_key "ZSK1" $id
+	ret=0 && check_key "KEY2" $id
 	test "$ret" -eq 0 && continue
 
-	ret=0 && check_key "ZSK2" $id
+	ret=0 && check_key "KEY3" $id
 	# If ret is still non-zero, non of the files matched.
 	test "$ret" -eq 0 || echo_i "failed"
 	status=$((status+ret))
@@ -551,14 +559,14 @@ n=$((n+1))
 echo_i "check that 'dnssec-keygen -k' (default policy) creates valid files ($n)"
 ret=0
 zone_properties "." "kasp" "_default" "3600"
-key_properties "KSK" "csk" "0" "13" "ECDSAP256SHA256" "256"
-key_timings "KSK" "none" "none" "none" "none" "none"
-key_states "KSK" "none" "none" "none" "none" "none"
+key_properties "KEY1" "csk" "0" "13" "ECDSAP256SHA256" "256" "yes"
+key_timings "KEY1" "none" "none" "none" "none" "none"
+key_states "KEY1" "none" "none" "none" "none" "none"
 $KEYGEN -k $POLICY $ZONE > keygen.out._default.test$n 2>/dev/null || ret=1
 lines=$(cat keygen.out._default.test$n | wc -l)
 test "$lines" -eq 1 || log_error "wrong number of keys created for policy _default: $lines"
-id=$(get_keyids $DIR $ZONE "${KSK[$ALG_NUM]}")
-check_key "KSK" $id
+id=$(get_keyids $DIR $ZONE "${KEY1[$ALG_NUM]}")
+check_key "KEY1" $id
 test "$ret" -eq 0 || echo_i "failed"
 status=$((status+ret))
 
@@ -600,10 +608,10 @@ echo_i "check that 'dnssec-settime -s' also sets publish time metadata and state
 ret=0
 cp $STATE_FILE $CMP_FILE
 now=$(date +%Y%m%d%H%M%S)
-$SETTIME -s -P $now -g "omnipresent" -k "rumoured" -z "omnipresent" -r "rumoured" -d "hidden"  $BASE_FILE > /dev/null || log_error "settime failed"
-key_timings "KSK" "set" "none" "none" "none" "none"
-key_states "KSK" "omnipresent" "rumoured" "omnipresent" "rumoured" "hidden"
-check_key "KSK" $id
+$SETTIME -s -P $now -g "omnipresent" -k "rumoured" $now -z "omnipresent" $now -r "rumoured" $now -d "hidden" $now $BASE_FILE > /dev/null || log_error "settime failed"
+key_timings "KEY1" "published" "none" "none" "none" "none"
+key_states "KEY1" "omnipresent" "rumoured" "omnipresent" "rumoured" "hidden"
+check_key "KEY1" $id
 test "$ret" -eq 0 || echo_i "failed"
 status=$((status+ret))
 
@@ -611,22 +619,22 @@ n=$((n+1))
 echo_i "check that 'dnssec-settime -s' also unsets publish time metadata and states in key state file ($n)"
 ret=0
 cp $STATE_FILE $CMP_FILE
-$SETTIME -s -P "none" -g "none" -k "none" -z "none" -r "none" -d "none" $BASE_FILE > /dev/null || log_error "settime failed"
-key_timings "KSK" "none" "none" "none" "none" "none"
-key_states "KSK" "none" "none" "none" "none" "none"
-check_key "KSK" $id
+$SETTIME -s -P "none" -g "none" -k "none" $now -z "none" $now -r "none" $now -d "none" $now $BASE_FILE > /dev/null || log_error "settime failed"
+key_timings "KEY1" "none" "none" "none" "none" "none"
+key_states "KEY1" "none" "none" "none" "none" "none"
+check_key "KEY1" $id
 test "$ret" -eq 0 || echo_i "failed"
 status=$((status+ret))
 
 n=$((n+1))
-echo_i "check that 'dnssec-settime -s' also sets publish time metadata and states in key state file (uppercase) ($n)"
+echo_i "check that 'dnssec-settime -s' also sets active time metadata and states in key state file (uppercase) ($n)"
 ret=0
 cp $STATE_FILE $CMP_FILE
 now=$(date +%Y%m%d%H%M%S)
-$SETTIME -s -P $now -g "HIDDEN" -k "UNRETENTIVE" -z "UNRETENTIVE" -r "OMNIPRESENT" -d "OMNIPRESENT"  $BASE_FILE > /dev/null || log_error "settime failed"
-key_timings "KSK" "set" "none" "none" "none" "none"
-key_states "KSK" "hidden" "unretentive" "unretentive" "omnipresent" "omnipresent"
-check_key "KSK" $id
+$SETTIME -s -A $now -g "HIDDEN" -k "UNRETENTIVE" $now -z "UNRETENTIVE" $now -r "OMNIPRESENT" $now -d "OMNIPRESENT" $now $BASE_FILE > /dev/null || log_error "settime failed"
+key_timings "KEY1" "none" "active" "none" "none" "none"
+key_states "KEY1" "hidden" "unretentive" "unretentive" "omnipresent" "omnipresent"
+check_key "KEY1" $id
 test "$ret" -eq 0 || echo_i "failed"
 status=$((status+ret))
 
@@ -667,19 +675,19 @@ status=$((status+ret))
 
 # Check the zone with default kasp policy has loaded and is signed.
 zone_properties "ns3" "default.kasp" "_default" "3600"
-key_properties "KSK" "csk" "0" "13" "ECDSAP256SHA256" "256"
+key_properties "KEY1" "csk" "0" "13" "ECDSAP256SHA256" "256" "yes"
 # The first key is immediately published and activated.
-key_timings "KSK" "set" "set" "none" "none" "none" "none"
+key_timings "KEY1" "published" "active" "none" "none" "none" "none"
 # DNSKEY, RRSIG (ksk), RRSIG (zsk) are published. DS needs to wait.
-key_states "KSK" "omnipresent" "rumoured" "rumoured" "rumoured" "hidden"
+key_states "KEY1" "omnipresent" "rumoured" "rumoured" "rumoured" "hidden"
 
 n=$((n+1))
 echo_i "check key is created for zone ${ZONE} ($n)"
 ret=0
 wait_for_log "DNSKEY .* created for policy ${POLICY}" "${DIR}/named.run"
 nextpartreset "${DIR}/named.run"
-id=$(get_keyids $DIR $ZONE "${KSK[$ALG_NUM]}")
-check_key "KSK" $id
+id=$(get_keyids $DIR $ZONE "${KEY1[$ALG_NUM]}")
+check_key "KEY1" $id
 test "$ret" -eq 0 || echo_i "failed"
 status=$((status+ret))
 
@@ -693,10 +701,10 @@ echo_i "check ${qtype} rrset is signed correctly for zone ${ZONE} ($n)"
 ret=0
 dig_with_opts $ZONE @10.53.0.3 $qtype > dig.out.$DIR.test$n || log_error "dig ${ZONE} ${qtype} failed"
 grep "status: NOERROR" dig.out.$DIR.test$n > /dev/null || log_error "mismatch status in DNS response"
-grep "${ZONE}\..*${DNSKEY_TTL}.*IN.*${qtype}.*257.*.3.*${ALG_NUM}" dig.out.$DIR.test$n > /dev/null || log_error "missing ${qtype} record in response"
+grep "${ZONE}\..*${DNSKEY_TTL}.*IN.*${qtype}.*257.*.3.*${KEY1[$ALG_NUM]}" dig.out.$DIR.test$n > /dev/null || log_error "missing ${qtype} record in response"
 lines=$(get_keys_which_signed $qtype dig.out.$DIR.test$n | wc -l)
 test "$lines" -eq 1 || log_error "bad number ($lines) of RRSIG records in DNS response"
-get_keys_which_signed $qtype dig.out.$DIR.test$n | grep "^$KEY_ID$" > /dev/null || log_error "${qtype} RRset not signed with ${CHECK_KSK_ID}"
+get_keys_which_signed $qtype dig.out.$DIR.test$n | grep "^${KEY_ID}$" > /dev/null || log_error "${qtype} RRset not signed with ${KEY_ID}"
 test "$ret" -eq 0 || echo_i "failed"
 status=$((status+ret))
 
@@ -710,7 +718,7 @@ grep "status: NOERROR" dig.out.$DIR.test$n > /dev/null || log_error "mismatch st
 grep "${ZONE}\..*${DEFAULT_TTL}.*IN.*${qtype}.*mname1\..*\." dig.out.$DIR.test$n > /dev/null || log_error "missing ${qtype} record in response"
 lines=$(get_keys_which_signed $qtype dig.out.$DIR.test$n | wc -l)
 test "$lines" -eq 1 || log_error "bad number ($lines) of RRSIG records in DNS response"
-get_keys_which_signed $qtype dig.out.$DIR.test$n | grep "^$KEY_ID$" > /dev/null || log_error "${qtype} RRset not signed with ${CHECK_KSK_ID}"
+get_keys_which_signed $qtype dig.out.$DIR.test$n | grep "^${KEY_ID}$" > /dev/null || log_error "${qtype} RRset not signed with ${KEY_ID}"
 test "$ret" -eq 0 || echo_i "failed"
 status=$((status+ret))
 
@@ -718,44 +726,37 @@ status=$((status+ret))
 # Zone: rsasha1.kasp.
 #
 zone_properties "ns3" "rsasha1.kasp" "rsasha1" "1234" "3"
-key_properties "KSK" "ksk" "315360000" "5" "RSASHA1" "2048"
-key_properties "ZSK1" "zsk" "157680000" "5" "RSASHA1" "1024"
-key_properties "ZSK2" "zsk" "31536000" "5" "RSASHA1" "2000"
+key_properties "KEY1" "ksk" "315360000" "5" "RSASHA1" "2048" "yes"
+key_properties "KEY2" "zsk" "157680000" "5" "RSASHA1" "1024" "yes"
+key_properties "KEY3" "zsk" "31536000" "5" "RSASHA1" "2000" "yes"
 # The first keys are immediately published and activated.
 # Because lifetime > 0, retired timing is also set.
-key_timings "KSK" "set" "set" "set" "none" "none"
-key_timings "ZSK1" "set" "set" "set" "none" "none"
-key_timings "ZSK2" "set" "set" "set" "none" "none"
+key_timings "KEY1" "published" "active" "retired" "none" "none"
+key_timings "KEY2" "published" "active" "retired" "none" "none"
+key_timings "KEY3" "published" "active" "retired" "none" "none"
 # KSK: DNSKEY, RRSIG (ksk) published. DS needs to wait.
 # ZSK: DNSKEY, RRSIG (zsk) published.
-key_states "KSK" "omnipresent" "rumoured" "none" "rumoured" "hidden"
-key_states "ZSK1" "omnipresent" "rumoured" "rumoured" "none" "none"
-key_states "ZSK2" "omnipresent" "rumoured" "rumoured" "none" "none"
+key_states "KEY1" "omnipresent" "rumoured" "none" "rumoured" "hidden"
+key_states "KEY2" "omnipresent" "rumoured" "rumoured" "none" "none"
+key_states "KEY3" "omnipresent" "rumoured" "rumoured" "none" "none"
 
-# Check a configured zone. This verifies:
+# Check keys for a configured zone. This verifies:
 # 1. The right number of keys exist in the key pool ($1).
-# 2. The right number of keys is active (always expect one KSK and two ZSKs).
+# 2. The right number of keys is active (always expect three keys).
 #    The algorithm expected is set with $2 (string) and $3 (number), and the
 #    expected sizes for the keys are set with $4 (ksk), $5 and $6 (zsk).
-#    A size set to 0 means the corresponding key (KSK, ZSK1 or ZSK2) is not
+#    A size set to 0 means the corresponding key (KEY1, KEY2 or KEY3) is not
 #    expected.
-# 3. The zone is DNSSEC verified.
-# 4. That the SOA and DNSKEY RRsets are signed with the right keys.
 #
-# It is expected that KSK, ZSK1 and ZSK2 arrays are set correctly. Found key
+# It is expected that KEY1, KEY2 and KEY3 arrays are set correctly. Found key
 # identifiers are stored in the right key array.
-check_zone()
+check_keys()
 {
 	n=$((n+1))
 	echo_i "check keys are created for zone ${ZONE} ($n)"
 	ret=0
 
-	_key_algnum="${KSK[$ALG_NUM]}"
-	_ksk_count=0
-	test "${KSK[$EXPECT]}" == "yes" && _ksk_count=$((_ksk_count+1))
-	_zsk_count=0
-	test "${ZSK1[$EXPECT]}" == "yes" && _zsk_count=$((_zsk_count+1))
-	test "${ZSK2[$EXPECT]}" == "yes" && _zsk_count=$((_zsk_count+1))
+	_key_algnum="${KEY1[$ALG_NUM]}"
 
 	n=$((n+1))
 	echo_i "check number of keys with algorithm ${_key_algnum} for zone ${ZONE} in dir ${DIR} ($n)"
@@ -769,9 +770,9 @@ check_zone()
 	_log=0
 
 	# Clear key ids.
-	KSK[$ID]="0"
-	ZSK1[$ID]="0"
-	ZSK2[$ID]="0"
+	KEY1[$ID]="0"
+	KEY2[$ID]="0"
+	KEY3[$ID]="0"
 
 	# Check key files.
 	_ids=$(get_keyids $DIR $ZONE "$_key_algnum")
@@ -780,20 +781,20 @@ check_zone()
 		# Check them until a match is found.
 		echo_i "check key $_id"
 
-		if [ "0" == "${KSK[$ID]}" ] && [ "${KSK[$EXPECT]}" == "yes" ]; then
+		if [ "0" == "${KEY1[$ID]}" ] && [ "${KEY1[$EXPECT]}" == "yes" ]; then
 			ret=0
-			check_key "KSK" $_id
-			test "$ret" -eq 0 && KSK[$ID]=$KEY_ID && continue
+			check_key "KEY1" $_id
+			test "$ret" -eq 0 && KEY1[$ID]=$KEY_ID && continue
 		fi
-		if [ "0" == "${ZSK1[$ID]}" ] && [ "${ZSK1[$EXPECT]}" == "yes" ]; then
+		if [ "0" == "${KEY2[$ID]}" ] && [ "${KEY2[$EXPECT]}" == "yes" ]; then
 			ret=0
-			check_key "ZSK1" $_id
-			test "$ret" -eq 0 && ZSK1[$ID]=$KEY_ID && continue
+			check_key "KEY2" $_id
+			test "$ret" -eq 0 && KEY2[$ID]=$KEY_ID && continue
 		fi
-		if [ "0" == "${ZSK2[$ID]}" ] && [ "${ZSK2[$EXPECT]}" == "yes"  ]; then
+		if [ "0" == "${KEY3[$ID]}" ] && [ "${KEY3[$EXPECT]}" == "yes"  ]; then
 			ret=0
-			check_key "ZSK2" $_id
-			test "$ret" -eq 0 && ZSK2[$ID]=$KEY_ID && continue
+			check_key "KEY3" $_id
+			test "$ret" -eq 0 && KEY3[$ID]=$KEY_ID && continue
 		fi
 
 		# This may be an unused key.
@@ -809,20 +810,48 @@ check_zone()
 	_log=1
 
 	ret=0
-	if [ "${KSK[$EXPECT]}" == "yes" ]; then
-		test "0" == "${KSK[$ID]}" && log_error "No KSK found for zone ${ZONE}"
+	if [ "${KEY1[$EXPECT]}" == "yes" ]; then
+		test "0" == "${KEY1[$ID]}" && log_error "No KEY1 found for zone ${ZONE}"
 	fi
-	if [ "${ZSK1[$EXPECT]}" == "yes" ]; then
-		test "0" == "${ZSK1[$ID]}" && log_error "No ZSK found for zone ${ZONE}"
+	if [ "${KEY2[$EXPECT]}" == "yes" ]; then
+		test "0" == "${KEY2[$ID]}" && log_error "No KEY2 found for zone ${ZONE}"
 	fi
-	if [ "${ZSK2[$EXPECT]}" == "yes" ]; then
-		test "0" == "${ZSK2[$ID]}" && log_error "No ZSK2 found for zone ${ZONE}"
+	if [ "${KEY3[$EXPECT]}" == "yes" ]; then
+		test "0" == "${KEY3[$ID]}" && log_error "No KEY3 found for zone ${ZONE}"
 	fi
 	test "$ret" -eq 0 || echo_i "failed"
 	status=$((status+ret))
+}
 
-	# Verify signed zone.
-	dnssec_verify $ZONE
+# Check if RRset of type $1 in file $2 is signed with the right keys.
+# The right keys are the ones that expect a signature and matches the role $3.
+check_signatures() {
+	_qtype=$1
+	_file=$2
+	_role=$3
+
+	if [ "${KEY1[$EXPECT_RRSIG]}" == "yes" ] && [ "${KEY1[$_role]}" == "yes" ]; then
+		get_keys_which_signed $_qtype $_file | grep "^${KEY1[$ID]}$" > /dev/null || log_error "${_qtype} RRset not signed with key ${KEY1[$ID]}"
+	elif [ "${KEY1[$EXPECT]}" == "yes" ]; then
+		get_keys_which_signed $_qtype $_file | grep "^${KEY1[$ID]}$" > /dev/null && log_error "${_qtype} RRset signed unexpectedly with ${KEY1[$ID]}"
+	fi
+
+	if [ "${KEY2[$EXPECT_RRSIG]}" == "yes" ] && [ "${KEY2[$_role]}" == "yes" ]; then
+		get_keys_which_signed $_qtype $_file | grep "^${KEY2[$ID]}$" > /dev/null || log_error "${_qtype} RRset not signed with ${KEY2[$ID]}"
+	elif [ "${KEY2[$EXPECT]}" == "yes" ]; then
+		get_keys_which_signed $_qtype $_file | grep "^${KEY2[$ID]}$" > /dev/null && log_error "${_qtype} RRset signed unexpectedly with ${KEY2[$ID]}"
+	fi
+
+	if [ "${KEY3[$EXPECT_RRSIG]}" == "yes" ] && [ "${KEY3[$_role]}" == "yes" ]; then
+		get_keys_which_signed $_qtype $_file | grep "^${KEY3[$ID]}$" > /dev/null || log_error "${_qtype} RRset not signed with ${KEY3[$ID]}"
+	elif [ "${KEY3[$EXPECT]}" == "yes" ]; then
+		get_keys_which_signed $_qtype $_file | grep "^${KEY3[$ID]}$" > /dev/null && log_error "${_qtype} RRset signed unexpectedly with ${KEY3[$ID]}"
+	fi
+}
+
+# Test the apex of a configured zone. This checks that the SOA and DNSKEY
+# RRsets are signed correctly and with the appropriate keys.
+check_apex() {
 
 	# Test DNSKEY query.
 	_qtype="DNSKEY"
@@ -833,10 +862,7 @@ check_zone()
 	grep "status: NOERROR" dig.out.$DIR.test$n > /dev/null || log_error "mismatch status in DNS response"
 	grep "${ZONE}\..*${DNSKEY_TTL}.*IN.*${_qtype}.*257.*.3.*${_key_algnum}" dig.out.$DIR.test$n > /dev/null || log_error "missing ${_qtype} record in response"
 	lines=$(get_keys_which_signed $_qtype dig.out.$DIR.test$n | wc -l)
-	test "$lines" -eq $_ksk_count || log_error "bad number ($lines) of RRSIG records in DNS response (expected $_ksk_count)"
-	if [ "${KSK[$EXPECT]}" == "yes" ]; then
-		get_keys_which_signed $_qtype dig.out.$DIR.test$n | grep "^${KSK[$ID]}$" > /dev/null || log_error "${_qtype} RRset not signed with ${KSK[$ID]}"
-	fi
+	check_signatures $_qtype dig.out.$DIR.test$n $KSK
 	test "$ret" -eq 0 || echo_i "failed"
 	status=$((status+ret))
 
@@ -849,39 +875,60 @@ check_zone()
 	grep "status: NOERROR" dig.out.$DIR.test$n > /dev/null || log_error "mismatch status in DNS response"
 	grep "${ZONE}\..*${DEFAULT_TTL}.*IN.*${_qtype}.*mname1\..*\." dig.out.$DIR.test$n > /dev/null || log_error "missing ${_qtype} record in response"
 	lines=$(get_keys_which_signed $_qtype dig.out.$DIR.test$n | wc -l)
-	test "$lines" -eq $_zsk_count || log_error "bad number ($lines) of RRSIG records in DNS response (expected $_zsk_count)"
-	if [ "${ZSK1[$EXPECT]}" == "yes" ]; then
-		get_keys_which_signed $_qtype dig.out.$DIR.test$n | grep "^${ZSK1[$ID]}$" > /dev/null || log_error "${_qtype} RRset not signed with ${ZSK1[$ID]}"
-	fi
-	if [ "${ZSK2[$EXPECT]}" == "yes" ]; then
-		get_keys_which_signed $_qtype dig.out.$DIR.test$n | grep "^${ZSK2[$ID]}$" > /dev/null || log_error "${_qtype} RRset not signed with ${ZSK2[$ID]}"
-	fi
+	check_signatures $_qtype dig.out.$DIR.test$n $ZSK
 	test "$ret" -eq 0 || echo_i "failed"
 	status=$((status+ret))
 }
 
-check_zone
+# Test an RRset below the apex and verify it is signed correctly.
+check_subdomain() {
+	_qtype="A"
+	n=$((n+1))
+	echo_i "check ${_qtype} a.${ZONE} rrset is signed correctly for zone ${ZONE} ($n)"
+	ret=0
+	dig_with_opts a.$ZONE @10.53.0.3 $_qtype > dig.out.$DIR.test$n || log_error "dig a.${ZONE} ${_qtype} failed"
+	grep "status: NOERROR" dig.out.$DIR.test$n > /dev/null || log_error "mismatch status in DNS response"
+	grep "a.${ZONE}\..*${DEFAULT_TTL}.*IN.*${_qtype}.*10\.0\.0\.1" dig.out.$DIR.test$n > /dev/null || log_error "missing a.${ZONE} ${_qtype} record in response"
+	lines=$(get_keys_which_signed $_qtype dig.out.$DIR.test$n | wc -l)
+	check_signatures $_qtype dig.out.$DIR.test$n $ZSK
+	test "$ret" -eq 0 || echo_i "failed"
+	status=$((status+ret))
+}
+
+check_keys
+check_apex
+check_subdomain
+dnssec_verify
 
 #
 # Zone: dnssec-keygen.kasp.
 #
 zone_properties "ns3" "dnssec-keygen.kasp" "rsasha1" "1234" "3"
-# key_properties, key_timings and key_states stay the same.
-check_zone
+# key_properties, key_timings and key_states same as above.
+check_keys
+check_apex
+check_subdomain
+dnssec_verify
 
 #
 # Zone: some-keys.kasp.
 #
 zone_properties "ns3" "some-keys.kasp" "rsasha1" "1234" "3"
-# key_properties, key_timings and key_states stay the same.
-check_zone
+# key_properties, key_timings and key_states same as above.
+check_keys
+check_apex
+check_subdomain
+dnssec_verify
 
 #
 # Zone: legacy-keys.kasp.
 #
 zone_properties "ns3" "legacy-keys.kasp" "rsasha1" "1234" "3"
-# key_properties, key_timings and key_states stay the same.
-check_zone
+# key_properties, key_timings and key_states same as above.
+check_keys
+check_apex
+check_subdomain
+dnssec_verify
 
 #
 # Zone: pregenerated.kasp.
@@ -889,8 +936,11 @@ check_zone
 # There are more pregenerated keys than needed, hence the number of keys is
 # six, not three.
 zone_properties "ns3" "pregenerated.kasp" "rsasha1" "1234" "6"
-# key_properties, key_timings and key_states stay the same.
-check_zone
+# key_properties, key_timings and key_states same as above.
+check_keys
+check_apex
+check_subdomain
+dnssec_verify
 
 # TODO: we might want to test:
 # - configuring a zone with too many active keys (should trigger retire).
@@ -900,52 +950,66 @@ check_zone
 # Zone: rsasha1-nsec3.kasp.
 #
 zone_properties "ns3" "rsasha1-nsec3.kasp" "rsasha1-nsec3" "1234" "3"
-key_properties "KSK" "ksk" "315360000" "7" "NSEC3RSASHA1" "2048"
-key_properties "ZSK1" "zsk" "157680000" "7" "NSEC3RSASHA1" "1024"
-key_properties "ZSK2" "zsk" "31536000" "7" "NSEC3RSASHA1" "2000"
-# key_timings and key_states stay the same.
-check_zone
+key_properties "KEY1" "ksk" "315360000" "7" "NSEC3RSASHA1" "2048" "yes"
+key_properties "KEY2" "zsk" "157680000" "7" "NSEC3RSASHA1" "1024" "yes"
+key_properties "KEY3" "zsk" "31536000" "7" "NSEC3RSASHA1" "2000" "yes"
+# key_timings and key_states same as above.
+check_keys
+check_apex
+check_subdomain
+dnssec_verify
 
 #
 # Zone: rsasha256.kasp.
 #
 zone_properties "ns3" "rsasha256.kasp" "rsasha256" "1234" "3"
-key_properties "KSK" "ksk" "315360000" "8" "RSASHA256" "2048"
-key_properties "ZSK1" "zsk" "157680000" "8" "RSASHA256" "1024"
-key_properties "ZSK2" "zsk" "31536000" "8" "RSASHA256" "2000"
-# key_timings and key_states stay the same.
-check_zone
+key_properties "KEY1" "ksk" "315360000" "8" "RSASHA256" "2048" "yes"
+key_properties "KEY2" "zsk" "157680000" "8" "RSASHA256" "1024" "yes"
+key_properties "KEY3" "zsk" "31536000" "8" "RSASHA256" "2000" "yes"
+# key_timings and key_states same as above.
+check_keys
+check_apex
+check_subdomain
+dnssec_verify
 
 #
 # Zone: rsasha512.kasp.
 #
 zone_properties "ns3" "rsasha512.kasp" "rsasha512" "1234" "3"
-key_properties "KSK" "ksk" "315360000" "10" "RSASHA512" "2048"
-key_properties "ZSK1" "zsk" "157680000" "10" "RSASHA512" "1024"
-key_properties "ZSK2" "zsk" "31536000" "10" "RSASHA512" "2000"
-# key_timings and key_states stay the same.
-check_zone
+key_properties "KEY1" "ksk" "315360000" "10" "RSASHA512" "2048" "yes"
+key_properties "KEY2" "zsk" "157680000" "10" "RSASHA512" "1024" "yes"
+key_properties "KEY3" "zsk" "31536000" "10" "RSASHA512" "2000" "yes"
+# key_timings and key_states same as above.
+check_keys
+check_apex
+check_subdomain
+dnssec_verify
 
 #
 # Zone: ecdsa256.kasp.
 #
 zone_properties "ns3" "ecdsa256.kasp" "ecdsa256" "1234" "3"
-key_properties "KSK" "ksk" "315360000" "13" "ECDSAP256SHA256" "256"
-key_properties "ZSK1" "zsk" "157680000" "13" "ECDSAP256SHA256" "256"
-key_properties "ZSK2" "zsk" "31536000" "13" "ECDSAP256SHA256" "256"
-# key_timings and key_states stay the same.
-check_zone
-
+key_properties "KEY1" "ksk" "315360000" "13" "ECDSAP256SHA256" "256" "yes"
+key_properties "KEY2" "zsk" "157680000" "13" "ECDSAP256SHA256" "256" "yes"
+key_properties "KEY3" "zsk" "31536000" "13" "ECDSAP256SHA256" "256" "yes"
+# key_timings and key_states same as above.
+check_keys
+check_apex
+check_subdomain
+dnssec_verify
 
 #
 # Zone: ecdsa512.kasp.
 #
 zone_properties "ns3" "ecdsa384.kasp" "ecdsa384" "1234" "3"
-key_properties "KSK" "ksk" "315360000" "14" "ECDSAP384SHA384" "384"
-key_properties "ZSK1" "zsk" "157680000" "14" "ECDSAP384SHA384" "384"
-key_properties "ZSK2" "zsk" "31536000" "14" "ECDSAP384SHA384" "384"
-# key_timings and key_states stay the same.
-check_zone
+key_properties "KEY1" "ksk" "315360000" "14" "ECDSAP384SHA384" "384" "yes"
+key_properties "KEY2" "zsk" "157680000" "14" "ECDSAP384SHA384" "384" "yes"
+key_properties "KEY3" "zsk" "31536000" "14" "ECDSAP384SHA384" "384" "yes"
+# key_timings and key_states same as above.
+check_keys
+check_apex
+check_subdomain
+dnssec_verify
 
 # TODO: ED25519 and ED448.
 
@@ -953,14 +1017,20 @@ check_zone
 # Zone: expired-sigs.autosign.
 #
 zone_properties "ns3" "expired-sigs.autosign" "autosign" "300" "2"
-key_properties "KSK" "ksk" "63072000" "13" "ECDSAP256SHA256" "256"
-key_properties "ZSK1" "zsk" "31536000" "13" "ECDSAP256SHA256" "256"
-key_clear "ZSK2"
-key_timings "KSK" "set" "set" "set" "none" "none"
-key_timings "ZSK1" "set" "set" "set" "none" "none"
-key_states "KSK" "omnipresent" "omnipresent" "none" "omnipresent" "omnipresent"
-key_states "ZSK1" "omnipresent" "omnipresent" "omnipresent" "none" "none"
-check_zone
+# Both KSK and ZSK stay OMNIPRESENT.
+key_properties "KEY1" "ksk" "63072000" "13" "ECDSAP256SHA256" "256" "yes"
+key_timings "KEY1" "published" "active" "retired" "none" "none"
+key_states "KEY1" "omnipresent" "omnipresent" "none" "omnipresent" "omnipresent"
+key_properties "KEY2" "zsk" "31536000" "13" "ECDSAP256SHA256" "256" "yes"
+key_states "KEY2" "omnipresent" "omnipresent" "omnipresent" "none" "none"
+key_timings "KEY2" "published" "active" "retired" "none" "none"
+# Expect only two keys.
+key_clear "KEY3"
+
+check_keys
+check_apex
+check_subdomain
+dnssec_verify
 
 # Verify all signatures have been refreshed.
 check_rrsig_refresh() {
@@ -973,7 +1043,7 @@ check_rrsig_refresh() {
 		ret=0
 		dig_with_opts $ZONE @10.53.0.3 $_qtype > dig.out.$DIR.test$n || log_error "dig ${ZONE} ${_qtype} failed"
 		grep "status: NOERROR" dig.out.$DIR.test$n > /dev/null || log_error "mismatch status in DNS response"
-		grep "${ZONE}\..*IN.*RRSIG.*${_qtype}" dig.out.$DIR.test$n > rrsig.out.$ZONE.$_qtype || log_error "missing RRSIG (${_qtype}) record in response"
+		grep "${ZONE}\..*IN.*RRSIG.*${_qtype}.*${ZONE}" dig.out.$DIR.test$n > rrsig.out.$ZONE.$_qtype || log_error "missing RRSIG (${_qtype}) record in response"
 		# If this exact RRSIG is also in the zone file it is not refreshed.
 		_rrsig=`cat rrsig.out.$ZONE.$_qtype`
 		grep "${_rrsig}" "${DIR}/${ZONE}.db" > /dev/null && log_error "RRSIG (${_qtype}) not refreshed in zone ${ZONE}"
@@ -993,7 +1063,7 @@ check_rrsig_refresh() {
 			ret=0
 			dig_with_opts "${_label}.${ZONE}" @10.53.0.3 $_qtype > dig.out.$DIR.test$n || log_error "dig ${_label}.${ZONE} ${_qtype} failed"
 			grep "status: NOERROR" dig.out.$DIR.test$n > /dev/null || log_error "mismatch status in DNS response"
-			grep "${_label}.${ZONE}\..*IN.*RRSIG.*${_qtype}" dig.out.$DIR.test$n > rrsig.out.$ZONE.$_qtype || log_error "missing RRSIG (${_qtype}, ${_label}) record in response"
+			grep "${ZONE}\..*IN.*RRSIG.*${_qtype}.*${ZONE}" dig.out.$DIR.test$n > rrsig.out.$ZONE.$_qtype || log_error "missing RRSIG (${_qtype}) record in response"
 			_rrsig=`cat rrsig.out.$ZONE.$_qtype`
 			grep "${_rrsig}" "${DIR}/${ZONE}.db" > /dev/null && log_error "RRSIG (${_qtype}) not refreshed in zone ${ZONE}"
 			test "$ret" -eq 0 || echo_i "failed"
@@ -1008,9 +1078,208 @@ check_rrsig_refresh
 # Zone: unfresh-sigs.autosign.
 #
 zone_properties "ns3" "unfresh-sigs.autosign" "autosign" "300" "2"
-# key_properties, key_timings and key_states stay the same.
-check_zone
+# key_properties, key_timings and key_states same as above.
+check_keys
+check_apex
+check_subdomain
+dnssec_verify
 check_rrsig_refresh
+
+#
+# Zone: zsk-missing.autosign.
+#
+zone_properties "ns3" "zsk-missing.autosign" "autosign" "300" "2"
+# KSK stays OMNIPRESENT.
+key_properties "KEY1" "ksk" "63072000" "13" "ECDSAP256SHA256" "256" "yes"
+key_timings "KEY1" "published" "active" "retired" "none" "none"
+key_states "KEY1" "omnipresent" "omnipresent" "none" "omnipresent" "omnipresent"
+# key_properties, key_timings and key_states same as above.
+# TODO
+
+#
+# Zone: zsk-retired.autosign.
+#
+zone_properties "ns3" "zsk-retired.autosign" "autosign" "300" "3"
+# KSK properties, timings and states same as above.
+# The ZSK goal is set to HIDDEN but records stay OMNIPRESENT until the new ZSK
+# is active.
+key_properties "KEY2" "zsk" "31536000" "13" "ECDSAP256SHA256" "256" "yes"
+key_timings "KEY2" "published" "active" "retired" "none" "none"
+key_states "KEY2" "hidden" "omnipresent" "omnipresent" "none" "none"
+# A new ZSK should be introduced, so expect a key with goal OMNIPRESENT,
+# the DNSKEY introduced (RUMOURED) and the signatures HIDDEN.
+key_properties "KEY3" "zsk" "31536000" "13" "ECDSAP256SHA256" "256" "no"
+key_timings "KEY3" "published" "active" "retired" "none" "none"
+key_states "KEY3" "omnipresent" "rumoured" "hidden" "none" "none"
+
+#
+# Testing ZSK Pre-Publication rollover.
+#
+
+#
+# Zone: step1.zsk-prepub.autosign.
+#
+zone_properties "ns3" "step1.zsk-prepub.autosign" "zsk-prepub" "3600" "2"
+# Both KSK (KEY1) and ZSK (KEY2) start in OMNIPRESENT.
+key_properties "KEY1" "ksk" "63072000" "13" "ECDSAP256SHA256" "256" "yes"
+key_timings "KEY1" "published" "active" "retired" "none" "none"
+key_states "KEY1" "omnipresent" "omnipresent" "none" "omnipresent" "omnipresent"
+key_properties "KEY2" "zsk" "2592000" "13" "ECDSAP256SHA256" "256" "yes"
+key_states "KEY2" "omnipresent" "omnipresent" "omnipresent" "none" "none"
+key_timings "KEY2" "published" "active" "retired" "none" "none"
+# Initially only two keys.
+key_clear "KEY3"
+check_keys
+check_apex
+check_subdomain
+dnssec_verify
+
+#
+# Zone: step2.zsk-prepub.autosign.
+#
+zone_properties "ns3" "step2.zsk-prepub.autosign" "zsk-prepub" "3600" "3"
+# KSK (KEY1) doesn't change.
+# ZSK (KEY2) remains active, no change in properties/timings/states.
+# New ZSK (KEY3) is prepublished.
+key_properties "KEY3" "zsk" "2592000" "13" "ECDSAP256SHA256" "256" "no"
+key_states "KEY3" "omnipresent" "rumoured" "hidden" "none" "none"
+key_timings "KEY3" "published" "active" "retired" "none" "none"
+check_keys
+check_apex
+check_subdomain
+dnssec_verify
+
+#
+# Zone: step3.zsk-prepub.autosign.
+#
+zone_properties "ns3" "step3.zsk-prepub.autosign" "zsk-prepub" "3600" "3"
+# KSK (KEY1) doesn't change.
+# ZSK (KEY2) properties and timing metadata same as above.
+# ZSK (KEY2) no longer is actively signing, RRSIG state in UNRETENTIVE.
+# New ZSK (KEY3) is now actively signing, RRSIG state in RUMOURED.
+key_properties "KEY2" "zsk" "2592000" "13" "ECDSAP256SHA256" "256" "no"
+key_states "KEY2" "hidden" "omnipresent" "unretentive" "none" "none"
+
+key_properties "KEY3" "zsk" "2592000" "13" "ECDSAP256SHA256" "256" "yes"
+key_states "KEY3" "omnipresent" "omnipresent" "rumoured" "none" "none"
+check_keys
+check_apex
+# Subdomain still has good signatures of ZSK (KEY2)
+key_properties "KEY2" "zsk" "2592000" "13" "ECDSAP256SHA256" "256" "yes"
+key_properties "KEY3" "zsk" "2592000" "13" "ECDSAP256SHA256" "256" "no"
+check_subdomain
+dnssec_verify
+
+#
+# Zone: step4.zsk-prepub.autosign.
+#
+zone_properties "ns3" "step4.zsk-prepub.autosign" "zsk-prepub" "3600" "3"
+# KSK (KEY1) doesn't change.
+# ZSK (KEY2) properties and timing metadata same as above.
+# ZSK (KEY2) DNSKEY is no longer needed.
+# ZSK (KEY3) is now actively signing, RRSIG state in RUMOURED.
+key_properties "KEY2" "zsk" "2592000" "13" "ECDSAP256SHA256" "256" "no"
+key_states "KEY2" "hidden" "unretentive" "hidden" "none" "none"
+key_properties "KEY3" "zsk" "2592000" "13" "ECDSAP256SHA256" "256" "yes"
+key_states "KEY3" "omnipresent" "omnipresent" "omnipresent" "none" "none"
+check_keys
+check_apex
+check_subdomain
+dnssec_verify
+
+#
+# Zone: step5.zsk-prepub.autosign.
+#
+zone_properties "ns3" "step5.zsk-prepub.autosign" "zsk-prepub" "3600" "3"
+# KSK (KEY1) doesn't change.
+# ZSK (KEY2) properties and timing metadata same as above.
+# ZSK (KEY3) DNSKEY is now completely HIDDEN and removed.
+key_timings "KEY2" "published" "active" "retired" "none" "removed"
+key_states "KEY2" "hidden" "hidden" "hidden" "none" "none"
+# ZSK (KEY3) remains actively signing, staying in OMNIPRESENT.
+check_keys
+check_apex
+check_subdomain
+dnssec_verify
+
+#
+# Testing KSK Double-KSK rollover.
+#
+
+#
+# Zone: step1.ksk-doubleksk.autosign.
+#
+zone_properties "ns3" "step1.ksk-doubleksk.autosign" "ksk-doubleksk" "7200" "2"
+# Both KSK (KEY1) and ZSK (KEY2) start in OMNIPRESENT.
+key_properties "KEY1" "ksk" "5184000" "13" "ECDSAP256SHA256" "256" "yes"
+key_timings "KEY1" "published" "active" "retired" "none" "none"
+key_states "KEY1" "omnipresent" "omnipresent" "none" "omnipresent" "omnipresent"
+key_properties "KEY2" "zsk" "31536000" "13" "ECDSAP256SHA256" "256" "yes"
+key_timings "KEY2" "published" "active" "retired" "none" "none"
+key_states "KEY2" "omnipresent" "omnipresent" "omnipresent" "none" "none"
+# Initially only two keys.
+key_clear "KEY3"
+check_keys
+check_apex
+check_subdomain
+dnssec_verify
+
+#
+# Zone: step2.ksk-doubleksk.autosign.
+#
+zone_properties "ns3" "step2.ksk-doubleksk.autosign" "ksk-doubleksk" "7200" "3"
+# ZSK (KEY2) doesn't change.
+# KSK (KEY1) remains active, no change in properties/timings/states.
+# New KSK (KEY3) is prepublished (and signs DNSKEY RRset).
+key_properties "KEY3" "ksk" "5184000" "13" "ECDSAP256SHA256" "256" "yes"
+key_states "KEY3" "omnipresent" "rumoured" "none" "rumoured" "hidden"
+key_timings "KEY3" "published" "active" "retired" "none" "none"
+check_keys
+check_apex
+check_subdomain
+dnssec_verify
+
+#
+# Zone: step3.ksk-doubleksk.autosign.
+#
+zone_properties "ns3" "step3.ksk-doubleksk.autosign" "ksk-doubleksk" "7200" "3"
+# ZSK (KEY2) doesn't change.
+# KSK (KEY1) DS will be removed, so it is UNRETENTIVE.
+key_states "KEY1" "hidden" "omnipresent" "none" "omnipresent" "unretentive"
+# New KSK (KEY3) has its DS submitted.
+key_states "KEY3" "omnipresent" "omnipresent" "none" "omnipresent" "rumoured"
+check_keys
+check_apex
+check_subdomain
+dnssec_verify
+
+#
+# Zone: step4.ksk-doubleksk.autosign.
+#
+zone_properties "ns3" "step4.ksk-doubleksk.autosign" "ksk-doubleksk" "7200" "3"
+# ZSK (KEY2) doesn't change.
+# KSK (KEY1) DNSKEY can be removed.
+key_properties "KEY1" "ksk" "5184000" "13" "ECDSAP256SHA256" "256" "no"
+key_states "KEY1" "hidden" "unretentive" "none" "unretentive" "hidden"
+# New KSK (KEY3) DS is now OMNIPRESENT.
+key_states "KEY3" "omnipresent" "omnipresent" "none" "omnipresent" "omnipresent"
+check_keys
+check_apex
+check_subdomain
+dnssec_verify
+
+#
+# Zone: step5.ksk-doubleksk.autosign.
+#
+zone_properties "ns3" "step5.ksk-doubleksk.autosign" "ksk-doubleksk" "7200" "3"
+# ZSK (KEY2) doesn't change.
+# KSK (KEY1) DNSKEY is now HIDDEN.
+key_states "KEY1" "hidden" "hidden" "none" "hidden" "hidden"
+# New KSK (KEY3) stays OMNIPRESENT.
+check_keys
+check_apex
+check_subdomain
+dnssec_verify
 
 echo_i "exit status: $status"
 [ $status -eq 0 ] || exit 1

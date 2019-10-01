@@ -19,5 +19,6 @@ rm -f ns*/*.jnl ns*/*.jbk
 rm -f ns*/K*.private ns*/K*.key ns*/K*.state
 rm -f ns*/dsset-* ns*/*.db ns*/*.db.signed
 rm -f ns*/keygen.out.* ns*/settime.out.* ns*/signer.out.*
-rm -f ns3/zones
+rm -f ns*/managed-keys.bind
+rm -f ns3/zones ns3/*.db.infile
 rm -f dig.out* rrsig.out.*
