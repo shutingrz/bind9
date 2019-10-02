@@ -39,7 +39,6 @@ R="RUMOURED"
 O="OMNIPRESENT"
 U="UNRETENTIVE"
 
-
 #
 # Set up zones that will be initially signed.
 #

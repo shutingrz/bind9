@@ -734,6 +734,7 @@ ret=0
 cp "${DIR}/template2.db.in" "${DIR}/${ZONE}.db"
 rndccmd 10.53.0.3 reload $ZONE > /dev/null || log_error "rndc reload zone ${ZONE} failed"
 _log=0
+i=0
 while [ $i -lt 5 ]
 do
 	ret=0
@@ -912,7 +913,7 @@ check_apex() {
 	ret=0
 	dig_with_opts $ZONE @10.53.0.3 $_qtype > dig.out.$DIR.test$n || log_error "dig ${ZONE} ${_qtype} failed"
 	grep "status: NOERROR" dig.out.$DIR.test$n > /dev/null || log_error "mismatch status in DNS response"
-	grep "${ZONE}\..*${DEFAULT_TTL}.*IN.*${_qtype}.*mname1\..*\." dig.out.$DIR.test$n > /dev/null || log_error "missing ${_qtype} record in response"
+	grep "${ZONE}\..*${DEFAULT_TTL}.*IN.*${_qtype}.*" dig.out.$DIR.test$n > /dev/null || log_error "missing ${_qtype} record in response"
 	lines=$(get_keys_which_signed $_qtype dig.out.$DIR.test$n | wc -l)
 	check_signatures $_qtype dig.out.$DIR.test$n $ZSK
 	test "$ret" -eq 0 || echo_i "failed"
@@ -980,6 +981,48 @@ check_keys
 check_apex
 check_subdomain
 dnssec_verify
+
+#
+# Zone: secondary.kasp.
+#
+zone_properties "ns3" "secondary.kasp" "rsasha1" "1234" "3"
+# KSK properties, timings and states same as above.
+check_keys
+check_apex
+check_subdomain
+dnssec_verify
+
+# Update zone.
+n=$((n+1))
+echo_i "check that we correctly sign the zone after IXFR for zone ${ZONE} ($n)"
+ret=0
+cp ns2/secondary.kasp.db.in2 ns2/secondary.kasp.db
+rndccmd 10.53.0.2 reload $ZONE > /dev/null || log_error "rndc reload zone ${ZONE} failed"
+_log=0
+i=0
+while [ $i -lt 5 ]
+do
+	ret=0
+
+	dig_with_opts "a.${ZONE}" @10.53.0.3 A > dig.out.$DIR.test$n.a || log_error "dig a.${ZONE} A failed"
+	grep "status: NOERROR" dig.out.$DIR.test$n.a > /dev/null || log_error "mismatch status in DNS response"
+	grep "a.${ZONE}\..*${DEFAULT_TTL}.*IN.*A.*10\.0\.0\.11" dig.out.$DIR.test$n.a > /dev/null || log_error "missing a.${ZONE} A record in response"
+	check_signatures $_qtype dig.out.$DIR.test$n.a $ZSK
+
+	dig_with_opts "d.${ZONE}" @10.53.0.3 A > dig.out.$DIR.test$n.d || log_error "dig d.${ZONE} A failed"
+	grep "status: NOERROR" dig.out.$DIR.test$n.d > /dev/null || log_error "mismatch status in DNS response"
+	grep "d.${ZONE}\..*${DEFAULT_TTL}.*IN.*A.*10\.0\.0\.4" dig.out.$DIR.test$n.d > /dev/null || log_error "missing d.${ZONE} A record in response"
+	lines=$(get_keys_which_signed A dig.out.$DIR.test$n.d | wc -l)
+	check_signatures $_qtype dig.out.$DIR.test$n.d $ZSK
+
+	i=`expr $i + 1`
+	if [ $ret = 0 ]; then break; fi
+	echo_i "waiting ... ($i)"
+	sleep 1
+done
+_log=1
+test "$ret" -eq 0 || echo_i "failed"
+status=$((status+ret))
 
 # TODO: we might want to test:
 # - configuring a zone with too many active keys (should trigger retire).

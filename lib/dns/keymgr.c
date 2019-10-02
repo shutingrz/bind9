@@ -819,7 +819,7 @@ keymgr_have_rrsig(dns_dnsseckeylist_t *keyring, dns_dnsseckey_t *key,
 		 * must be a path that can be validated from there.
 		 */
 		keymgr_dnskey_hidden_or_chained(keyring, key, type,
-					        next_state, true)
+						next_state, true)
 	);
 }
 

@@ -44,17 +44,25 @@ zone "default.kasp" {
 	dnssec-policy "_default";
 };
 
-/* A configured dnssec-policy, no keys created. */
+/* A master zone with dnssec-policy, no keys created. */
 zone "rsasha1.kasp" {
 	type master;
 	file "rsasha1.kasp.db";
 	dnssec-policy "rsasha1";
 };
 
-/* A configured dnssec-policy but keys already created. */
+/* A master zone with dnssec-policy but keys already created. */
 zone "dnssec-keygen.kasp" {
 	type master;
 	file "dnssec-keygen.kasp.db";
+	dnssec-policy "rsasha1";
+};
+
+/* A secondary zone with dnssec-policy. */
+zone "secondary.kasp" {
+	type secondary;
+	masters { 10.53.0.2; };
+	file "secondary.kasp.db";
 	dnssec-policy "rsasha1";
 };
 

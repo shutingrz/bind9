@@ -6,6 +6,6 @@ The test setup for the KASP tests.
 
 ns1 is reserved for the root server.
 
-ns2 is reserved for the tld server.
+ns2 is running primary service for ns3.
 
 ns3 is an authoritative server for the various test domains.
