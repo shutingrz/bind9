@@ -190,6 +190,10 @@ isc_error_unexpected
 isc_event_allocate
 isc_event_constallocate
 isc_event_free
+isc_faaa_queue_dequeue
+isc_faaa_queue_destroy
+isc_faaa_queue_enqueue
+isc_faaa_queue_new
 isc_file_absolutepath
 isc_file_basename
 isc_file_bopenunique
@@ -242,6 +246,13 @@ isc_heap_insert
 isc_hex_decodestring
 isc_hex_tobuffer
 isc_hex_totext
+isc_hp_clear
+isc_hp_destroy
+isc_hp_protect
+isc_hp_protect_ptr
+isc_hp_protect_release
+isc_hp_new
+isc_hp_retire
 isc_hmac
 isc_hmac_new
 isc_hmac_free

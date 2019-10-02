@@ -8,6 +8,7 @@
  * See the COPYRIGHT file distributed with this work for additional
  * information regarding copyright ownership.
  */
+
 /*
  * This work is based on C++ code available from:
  * https://github.com/pramalhe/ConcurrencyFreaks/
@@ -50,24 +51,24 @@ typedef void
 typedef struct isc_hp isc_hp_t;
 
 isc_hp_t *
-isc_hp_new(isc_mem_t *mctx, size_t max_hps, size_t max_threads, isc_hp_deletefunc_t *deletefunc);
+isc_hp_new(isc_mem_t *mctx, size_t max_hps, isc_hp_deletefunc_t *deletefunc);
 
 void
 isc_hp_destroy(isc_hp_t *hp);
 
 void
-isc_hp_clear(isc_hp_t *hp, const int tid);
+isc_hp_clear(isc_hp_t *hp);
 
-void isc_hp_clear_one(isc_hp_t *hp, int ihp, const int tid);
-
-uintptr_t
-isc_hp_protect(isc_hp_t *hp, int ihp, const atomic_uintptr_t atom, const int tid);
+void isc_hp_clear_one(isc_hp_t *hp, int ihp);
 
 uintptr_t
-isc_hp_protect_ptr(isc_hp_t *hp, int ihp, const atomic_uintptr_t ptr, const int tid);
+isc_hp_protect(isc_hp_t *hp, int ihp, const atomic_uintptr_t* atom);
 
 uintptr_t
-isc_hp_protect_release(isc_hp_t *hp, int ihp, const atomic_uintptr_t ptr, const int tid);
+isc_hp_protect_ptr(isc_hp_t *hp, int ihp, const atomic_uintptr_t ptr);
+
+uintptr_t
+isc_hp_protect_release(isc_hp_t *hp, int ihp, const atomic_uintptr_t ptr);
 
 void
-isc_hp_retire(isc_hp_t *hp, const atomic_uintptr_t ptr, const int tid);
+isc_hp_retire(isc_hp_t *hp, const atomic_uintptr_t ptr);
