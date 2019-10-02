@@ -1225,6 +1225,34 @@ check_apex
 check_subdomain
 dnssec_verify
 
+check_next_key_event() {
+	_expect=$1
+
+	n=$((n+1))
+	echo_i "check next key event for zone ${ZONE} ($n)"
+	ret=0
+	grep "zone ${ZONE}.*: next key event in .* seconds" "${DIR}/named.run" > keyevent.out.$ZONE.test$n || log_error "no next key event for zone ${ZONE}"
+
+	_time=$(awk '{print $10}' < keyevent.out.$ZONE.test$n)
+
+	# The next key event time must within 10 seconds of the
+	# expected time.
+	_expectmin=$((_expect-10))
+	_expectmax=$((_expect+10))
+
+	test $_expectmin -le $_time || log_error "bad next key event time ${_time} for zone ${ZONE} (expect ${_expect})"
+	test $_expectmax -ge $_time || log_error "bad next key event time ${_time} for zone ${ZONE} (expect ${_expect})"
+
+	test "$ret" -eq 0 || echo_i "failed"
+	status=$((status+ret))
+}
+
+# Next key event is when the successor ZSK needs to be published.  That is
+# the ZSK lifetime - prepublication time.  The prepublication time is DNSKEY
+# TTL plus publish safety plus the zone propagation delay.  For the
+# zsk-prepub policy that means: 30d - 3600s + 1d + 1h = 2498400 seconds.
+check_next_key_event 2498400
+
 #
 # Zone: step2.zsk-prepub.autosign.
 #
@@ -1239,6 +1267,11 @@ check_keys
 check_apex
 check_subdomain
 dnssec_verify
+
+# Next key event is when the successor ZSK becomes OMNIPRESENT.  That is the
+# DNSKEY TTL plus the zone propagation delay, plus the publish-safety. For
+# the zsk-prepub policy, this means: 3600s + 1h + 1d = 93600 seconds.
+check_next_key_event 93600
 
 #
 # Zone: step3.zsk-prepub.autosign.
@@ -1261,6 +1294,13 @@ key_properties "KEY3" "zsk" "2592000" "13" "ECDSAP256SHA256" "256" "no"
 check_subdomain
 dnssec_verify
 
+# Next key event is when all the RRSIG records have been replaced with
+# signatures of the new ZSK, in other words when ZRRSIG becomes OMNIPRESENT.
+# That is Dsgn plus the maximum zone TTL plus the zone propagation delay plus
+# retire-safety. For the zsk-prepub policy that means: 1w (because 2w validity
+# and refresh within a week) + 1d + 1h + 2d = 10d1h = 867600 seconds.
+check_next_key_event 867600
+
 #
 # Zone: step4.zsk-prepub.autosign.
 #
@@ -1278,6 +1318,11 @@ check_apex
 check_subdomain
 dnssec_verify
 
+# Next key event is when the DNSKEY enters the HIDDEN state.  This is the
+# DNSKEY TTL plus zone propagation delay. For the zsk-prepub policy this is:
+# 3600s + 1h = 7200s
+check_next_key_event 7200
+
 #
 # Zone: step5.zsk-prepub.autosign.
 #
@@ -1292,6 +1337,11 @@ check_keys
 check_apex
 check_subdomain
 dnssec_verify
+
+# Next key event is when the new successor needs to be published.  This is the
+# ZSK lifetime minus Iret minus Ipub minus DNSKEY TTL.  For the zsk-prepub
+# policy this is: 30d - 867600s - 93600s - 3600s = 1627200 seconds.
+check_next_key_event 1627200
 
 #
 # Testing KSK Double-KSK rollover.
@@ -1315,6 +1365,12 @@ check_apex
 check_subdomain
 dnssec_verify
 
+# Next key event is when the successor KSK needs to be published.  That is
+# the KSK lifetime - prepublication time.  The prepublication time is
+# DNSKEY TTL plus publish safety plus the zone propagation delay. For the
+# ksk-doubleksk policy that means: 60d - (1d3h) = 5086800 seconds.
+check_next_key_event 5086800
+
 #
 # Zone: step2.ksk-doubleksk.autosign.
 #
@@ -1330,6 +1386,11 @@ check_apex
 check_subdomain
 dnssec_verify
 
+# Next key event is when the successor KSK becomes OMNIPRESENT.  That is the
+# DNSKEY TTL plus the zone propagation delay, plus the publish-safety. For
+# the ksk-doubleksk policy, this means: 7200s + 1h + 1d = 97200 seconds.
+check_next_key_event 97200
+
 #
 # Zone: step3.ksk-doubleksk.autosign.
 #
@@ -1343,6 +1404,15 @@ check_keys
 check_apex
 check_subdomain
 dnssec_verify
+
+# Next key event is when the predecessor DS has been replaced with the
+# successor DS and enough time has passed such that the all validators that
+# have this DS RRset cached only know about the successor DS.  This is the
+# registration delay plus the retire interval, which is the parent
+# propagation delay plus the DS TTL plus the retire-safety.  For the
+# ksk-double-ksk policy this means: 1d + 1h + 3600s + 2d = 3d2h =
+# 266400 seconds.
+check_next_key_event 266400
 
 #
 # Zone: step4.ksk-doubleksk.autosign.
@@ -1359,6 +1429,11 @@ check_apex
 check_subdomain
 dnssec_verify
 
+# Next key event is when the DNSKEY enters the HIDDEN state.  This is the
+# DNSKEY TTL plus zone propagation delay. For the ksk-doubleksk policy this is:
+# 7200s + 1h = 10800s
+check_next_key_event 10800
+
 #
 # Zone: step5.ksk-doubleksk.autosign.
 #
@@ -1371,6 +1446,11 @@ check_keys
 check_apex
 check_subdomain
 dnssec_verify
+
+# Next key event is when the new successor needs to be published.  This is the
+# KSK lifetime minus Dreg minus Iret minus Ipub minus DNSKEY TTL.  For the
+# ksk-doubleksk this is: 60d - 266400s - 97200s - 7200s = 4813200 seconds.
+check_next_key_event 4813200
 
 echo_i "exit status: $status"
 [ $status -eq 0 ] || exit 1

@@ -21,4 +21,4 @@ rm -f ns*/dsset-* ns*/*.db ns*/*.db.signed
 rm -f ns*/keygen.out.* ns*/settime.out.* ns*/signer.out.*
 rm -f ns*/managed-keys.bind
 rm -f ns3/zones ns3/*.db.infile
-rm -f dig.out* rrsig.out.*
+rm -f dig.out* rrsig.out.* keyevent.out.*

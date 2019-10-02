@@ -1001,7 +1001,9 @@ keymgr_transition_time(dns_dnsseckey_t* key, int type,
 		 */
 		nexttime = lastchange + dst_key_getttl(key->key) +
 			   dns_kasp_zonepropagationdelay(kasp);
-			   dns_kasp_publishsafety(kasp);
+		if (next_state == OMNIPRESENT) {
+			nexttime += dns_kasp_publishsafety(kasp);
+		}
 		break;
 	case DST_KEY_ZRRSIG:
 		/*
@@ -1022,7 +1024,7 @@ keymgr_transition_time(dns_dnsseckey_t* key, int type,
 		 */
 		nexttime = lastchange + dns_kasp_signdelay(kasp) +
 			   dns_kasp_zonemaxttl(kasp) +
-			   dns_kasp_zonepropagationdelay(kasp);
+			   dns_kasp_zonepropagationdelay(kasp) +
 			   dns_kasp_retiresafety(kasp);
 		break;
 	case DST_KEY_DS:

@@ -18890,6 +18890,9 @@ zone_rekey(dns_zone_t *zone) {
 
 		zone_settimer(zone, &timenow);
 		isc_time_formattimestamp(&zone->refreshkeytime, timebuf, 80);
+		dnssec_log(zone, ISC_LOG_DEBUG(3),
+			   "next key event in %u seconds: %s",
+			   (nexttime - now), timebuf);
 		dnssec_log(zone, ISC_LOG_INFO, "next key event: %s", timebuf);
 	}
 	/*
