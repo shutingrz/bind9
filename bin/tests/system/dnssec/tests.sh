@@ -44,9 +44,25 @@ rndccmd() {
     "$RNDC" -c "$SYSTEMTESTTOP/common/rndc.conf" -p "$CONTROLPORT" -s "$@"
 }
 
+prepare_dnssec_signzone_expected() {
+    cat > dnssec-signzone.expected <<__EOF
+^Verifying the zone using the following algorithms:
+^Zone fully signed:
+^Algorithm:
+^[[:space:]]]+ZSKs:
+
+^Signatures (generated|retained|dropped|(un|)successfully verified):
+^Signing time in seconds:
+^Signatures per second:
+^Runtime in seconds:
+__EOF
+}
+
 cleanup_dnssec_signzone_output() (
-    grep -Ev "^(Verifying the zone using the following algorithms|Zone fully signed|Algorithm|[[:space:]]]+ZSKs|Signatures generated|Signatures retained|Signatures dropped|Signatures successfully verified|Signatures unsuccessfully verified|Signing time in seconds|Signatures per second|Runtime in seconds):"
-    return 0
+    if [ ! -r dnssec-signzone.expected ]; then
+	prepare_dnssec_signzone_expected
+    fi
+    grep -Ev -f dnssec-signzone.expected
 )
 
 dnssec_signzone_errmsg() (
