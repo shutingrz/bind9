@@ -732,7 +732,7 @@ client_send(ns_client_t *client) {
 
 	REQUIRE(NS_CLIENT_VALID(client));
 
-	env = ns_interfacemgr_getaclenv(client->interface->mgr);
+	env = ns_interfacemgr_getaclenv(client->manager->interface->mgr);
 
 	CTRACE("send");
 
@@ -1216,7 +1216,7 @@ ns_client_addopt(ns_client_t *client, dns_message_t *message,
 	REQUIRE(opt != NULL && *opt == NULL);
 	REQUIRE(message != NULL);
 
-	env = ns_interfacemgr_getaclenv(client->interface->mgr);
+	env = ns_interfacemgr_getaclenv(client->manager->interface->mgr);
 	view = client->view;
 	resolver = (view != NULL) ? view->resolver : NULL;
 	if (resolver != NULL)
