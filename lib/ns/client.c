@@ -2478,7 +2478,6 @@ ns__client_request(void *arg,
 static isc_result_t
 get_clientmctx(ns_clientmgr_t *manager, isc_mem_t **mctxp) {
 	isc_mem_t *clientmctx;
-	isc_result_t result;
 #if CLIENT_NMCTXS > 0
 	unsigned int nextmctx;
 #endif

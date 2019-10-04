@@ -9,10 +9,9 @@
  * information regarding copyright ownership.
  */
 
+#include <inttypes.h>
 #include <unistd.h>
 #include <uv.h>
-#include <ck_fifo.h>
-#include <ck_stack.h>
 
 #include <isc/atomic.h>
 #include <isc/buffer.h>
@@ -109,9 +108,7 @@ isc_nm_start(isc_mem_t *mctx, int workers) {
 		isc_condition_init(&worker->cond);
 
 		isc_mempool_create(mgr->mctx, 65536, &worker->mpool_bufs);
-		struct ck_fifo_mpmc_entry *stub =
-			isc_mem_get(mgr->mctx, sizeof(*stub));
-		ck_fifo_mpmc_init(&worker->ievents, stub);
+		worker->ievents = isc_faaa_queue_new(mgr->mctx, 128);
 
 		isc_thread_create(nm_thread, &mgr->workers[i],
 				  &worker->thread);
@@ -148,9 +145,7 @@ isc_nm_shutdown(isc_nm_t **mgr0) {
 		isc_condition_wait(&mgr->wkstatecond, &mgr->lock);
 	}
 	for (size_t i = 0; i < mgr->nworkers; i++) {
-		struct ck_fifo_mpmc_entry *garbage;
-		ck_fifo_mpmc_deinit(&mgr->workers[i].ievents, &garbage);
-		isc_mem_put(mgr->mctx, garbage, sizeof(*garbage));
+		isc_faaa_queue_destroy(mgr->workers[i].ievents);
 		isc_mempool_destroy(&mgr->workers[i].mpool_bufs);
 	}
 	UNLOCK(&mgr->lock);
@@ -281,13 +276,12 @@ static void
 async_cb(uv_async_t *handle) {
 	isc__networker_t *worker = (isc__networker_t *) handle->loop->data;
 	isc__netievent_t *ievent;
-	struct ck_fifo_mpmc_entry *garbage;
 	/*
 	 * We only try dequeue to not waste time, libuv guarantees
 	 * that if someone calls uv_async_send -after- async_cb was called
 	 * then async_cb will be called again, we won't loose any signals.
 	 */
-	while (ck_fifo_mpmc_trydequeue(&worker->ievents, &ievent, &garbage)) {
+	while ((ievent = (isc__netievent_t*) isc_faaa_queue_dequeue(worker->ievents)) != NULL) {
 		switch (ievent->type) {
 		case netievent_stop:
 			uv_stop(handle->loop);
@@ -327,7 +321,6 @@ async_cb(uv_async_t *handle) {
 		}
 		isc_mem_put(worker->mgr->mctx, ievent,
 			    sizeof(isc__netievent_storage_t));
-		isc_mem_put(worker->mgr->mctx, garbage, sizeof(*garbage));
 	}
 }
 /*
@@ -348,9 +341,7 @@ isc__nm_get_ievent(isc_nm_t *mgr, isc__netievent_type type) {
  */
 void
 isc__nm_enqueue_ievent(isc__networker_t *worker, isc__netievent_t *event) {
-	struct ck_fifo_mpmc_entry *entry = isc_mem_get(worker->mgr->mctx,
-						       sizeof(*entry));
-	ck_fifo_mpmc_enqueue(&worker->ievents, entry, event);
+	isc_faaa_queue_enqueue(worker->ievents, (uintptr_t)event);
 	uv_async_send(&worker->async);
 }
 
@@ -398,16 +389,21 @@ isc__nmsocket_destroy(isc_nmsocket_t *socket, bool dofree) {
 		isc_quota_detach(&socket->quota);
 	}
 
-	ck_stack_entry_t *se;
-	while ((se = ck_stack_pop_mpmc(&socket->inactivehandles)) != NULL) {
+	isc_hpstack_link_t *se;
+	while ((se = isc_hpstack_pop(socket->inactivehandles)) != NULL) {
+		isc_hpstack_delelem(se); /* XXXWPK TODO is it safe? */
 		isc_nmhandle_t *handle = nm_handle_is_get(se);
 		isc__nmhandle_free(socket, handle);
 	}
+	isc_hpstack_destroy(socket->inactivehandles);
 
-	while ((se = ck_stack_pop_mpmc(&socket->inactivereqs)) != NULL) {
+	while ((se = isc_hpstack_pop(socket->inactivereqs)) != NULL) {
+		isc_hpstack_delelem(se);
 		isc__nm_uvreq_t *uvreq = uvreq_is_get(se);
 		isc_mem_put(mgr->mctx, uvreq, sizeof(*uvreq));
 	}
+	isc_hpstack_destroy(socket->inactivereqs);
+
 	isc_mem_free(mgr->mctx, socket->ah_frees);
 	isc_mem_free(mgr->mctx, socket->ah_handles);
 	if (dofree) {
@@ -416,6 +412,15 @@ isc__nmsocket_destroy(isc_nmsocket_t *socket, bool dofree) {
 	isc_nm_detach(&mgr);
 }
 
+static void
+delhandle(isc_hpstack_link_t* se) {
+	(void) se;
+}
+
+static void
+delreq(isc_hpstack_link_t *se) {
+	(void) se;
+}
 
 static void
 isc__nmsocket_maybe_destroy(isc_nmsocket_t *socket) {
@@ -500,8 +505,8 @@ isc__nmsocket_init(isc_nmsocket_t *socket,
 	isc_nm_attach(mgr, &socket->mgr);
 	uv_handle_set_data(&socket->uv_handle.handle, socket);
 
-	ck_stack_init(&socket->inactivehandles);
-	ck_stack_init(&socket->inactivereqs);
+	socket->inactivehandles = isc_hpstack_new(mgr->mctx, delhandle);
+	socket->inactivereqs = isc_hpstack_new(mgr->mctx, delreq);
 
 	socket->ah_cpos = 0;
 	socket->ah_size = 32;
@@ -576,10 +581,11 @@ alloc_handle(isc_nmsocket_t *socket) {
 isc_nmhandle_t *
 isc__nmhandle_get(isc_nmsocket_t *socket, isc_sockaddr_t *peer) {
 	isc_nmhandle_t *handle = NULL;
-	ck_stack_entry_t *sentry;
+	isc_hpstack_link_t *sentry;
 	REQUIRE(VALID_NMSOCK(socket));
 	INSIST(peer != NULL);
-	sentry = ck_stack_pop_mpmc(&socket->inactivehandles);
+	sentry = isc_hpstack_pop(socket->inactivehandles);
+
 	if (sentry != NULL) {
 		handle = nm_handle_is_get(sentry);
 	}
@@ -675,9 +681,8 @@ isc_nmhandle_detach(isc_nmhandle_t **handlep) {
 
 		bool reuse = false;
 		if (atomic_load(&socket->active)) {
-			reuse = ck_stack_trypush_mpmc(
-				&socket->inactivehandles,
-				&handle->ilink);
+			reuse = isc_hpstack_trypush(socket->inactivehandles,
+						    &handle->ilink);
 		}
 
 		isc_mutex_unlock(&socket->lock);
@@ -734,8 +739,8 @@ isc__nm_uvreq_get(isc_nm_t *mgr, isc_nmsocket_t *socket) {
 	isc__nm_uvreq_t *req = NULL;
 	if (socket != NULL && atomic_load(&socket->active)) {
 		/* Try to reuse one */
-		ck_stack_entry_t *sentry =
-			ck_stack_pop_mpmc(&socket->inactivereqs);
+		isc_hpstack_link_t *sentry =
+			isc_hpstack_pop(socket->inactivereqs);
 		if (sentry != NULL) {
 			req = uvreq_is_get(sentry);
 		}
@@ -773,7 +778,7 @@ isc__nm_uvreq_put(isc__nm_uvreq_t **req0, isc_nmsocket_t *socket) {
 	mgr = req->mgr;
 	req->mgr = NULL;
 	if (socket == NULL || !atomic_load(&socket->active) ||
-	    !ck_stack_trypush_mpmc(&socket->inactivereqs, &req->ilink))
+	    !isc_hpstack_trypush(socket->inactivereqs, &req->ilink))
 	{
 		isc_mem_put(mgr->mctx, req, sizeof(isc__nm_uvreq_t));
 	}

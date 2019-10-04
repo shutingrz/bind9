@@ -3499,7 +3499,6 @@ send_forward_event(ns_client_t *client, dns_zone_t *zone) {
 	dns_zone_gettask(zone, &zonetask);
 	isc_task_send(zonetask, ISC_EVENT_PTR(&event));
 
- failure:
 	if (event != NULL)
 		isc_event_free(ISC_EVENT_PTR(&event));
 	return (result);

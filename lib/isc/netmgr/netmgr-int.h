@@ -11,12 +11,12 @@
 
 #include <unistd.h>
 #include <uv.h>
-#include <ck_fifo.h>
-#include <ck_stack.h>
 
 #include <isc/atomic.h>
 #include <isc/buffer.h>
 #include <isc/condition.h>
+#include <isc/faaa_queue.h>
+#include <isc/hpstack.h>
 #include <isc/magic.h>
 #include <isc/mem.h>
 #include <isc/netmgr.h>
@@ -46,7 +46,7 @@ typedef struct isc__networker {
 	bool			   paused;
 	bool			   finished;
 	isc_thread_t		   thread;
-	struct ck_fifo_mpmc	   ievents;     /* incoming async events */
+	isc_faaa_queue_t	   *ievents;     /* incoming async events */
 	isc_refcount_t		   references;
 	atomic_int_fast64_t	   pktcount;
 	char			   udprecvbuf[65536];
@@ -54,10 +54,9 @@ typedef struct isc__networker {
 } isc__networker_t;
 
 /*
- * A general handle for a connection bound to a networker.
- * For UDP connections we have peer address here,
- * so both TCP and UDP can be handled with a simple send-like
- * function
+ * A general handle for a connection bound to a networker.  For UDP
+ * connections we have peer address here, so both TCP and UDP can be
+ * handled with a simple send-like function
  */
 #define NMHANDLE_MAGIC                        ISC_MAGIC('N', 'M', 'H', 'D')
 #define VALID_NMHANDLE(t)                     ISC_MAGIC_VALID(t, \
@@ -68,27 +67,35 @@ typedef void (*isc__nm_closecb)(isc_nmhandle_t*);
 struct isc_nmhandle {
 	int		      magic;
 	isc_refcount_t	      references;
-	/* The socket is not 'attached' in the traditional reference-counting
-	 * sense. Instead, we keep all handles in an array in the socket object.
-	 * This way, we don't have circular dependencies and we can close all
-	 * handles when we're destroying the socket. */
+
+	/*
+	 * The socket is not 'attached' in the traditional
+	 * reference-counting sense. Instead, we keep all handles in an
+	 * array in the socket object.  This way, we don't have circular
+	 * dependencies and we can close all handles when we're destroying
+	 * the socket.
+	 */
 	isc_nmsocket_t *      socket;
 	size_t		      ah_pos;    /* Position in socket active handles
 					  * array */
-	/* The handle is 'inflight' if netmgr is not currently processing it in
-	 * any way - it might mean that e.g. a recursive resolution is
-	 * happening. For an inflight handle we must wait for the calling
-	 * code to finish before we can free it. */
+
+	/*
+	 * The handle is 'inflight' if netmgr is not currently processing
+	 * it in any way - it might mean that e.g. a recursive resolution
+	 * is happening. For an inflight handle we must wait for the
+	 * calling code to finish before we can free it.
+	 */
 	atomic_bool		inflight;
+
 	isc_sockaddr_t		peer;
-	ck_stack_entry_t	ilink;
+	isc_hpstack_link_t	ilink;
 	isc_nm_opaquecb		doreset; /* reset extra callback, external */
 	isc_nm_opaquecb		dofree;  /* free extra callback, external */
 	void *			opaque;
 	char			extra[];
 };
 
-CK_STACK_CONTAINER(struct isc_nmhandle, ilink, nm_handle_is_get)
+ISC_HPSTACK_CONTAINER(struct isc_nmhandle, ilink, nm_handle_is_get);
 
 /*
  * An interface - an address we can listen on.
@@ -117,8 +124,10 @@ typedef struct isc__netievent_stop {
 	isc__netievent_type        type;
 } isc__netievent_stop_t;
 
-/* We have to split it because we can read and write on a socket simultaneously
- * */
+/*
+ * We have to split it because we can read and write on a socket
+ * simultaneously.
+ */
 typedef union {
 	isc_nm_recv_cb_t	  recv;
 	isc_nm_accept_cb_t	  accept;
@@ -137,10 +146,9 @@ typedef union {
 } isc__nm_cb_t;
 
 /*
- * Wrapper around uv_req_t with 'our' fields in it.
- * req->data should always point to it's parent.
- * Note that we always allocate more than sizeof(struct)
- * because we make room for different req types;
+ * Wrapper around uv_req_t with 'our' fields in it.  req->data should
+ * always point to its parent.  Note that we always allocate more than
+ * sizeof(struct) because we make room for different req types;
  */
 #define UVREQ_MAGIC                        ISC_MAGIC('N', 'M', 'U', 'R')
 #define VALID_UVREQ(t)                     ISC_MAGIC_VALID(t, UVREQ_MAGIC)
@@ -148,14 +156,14 @@ typedef union {
 typedef struct isc__nm_uvreq {
 	int			magic;
 	isc_nm_t *		mgr;
-	uv_buf_t		uvbuf; /* translated isc_region_t, to be sent or
-					* received */
-	isc_sockaddr_t		local; /* local address */
-	isc_sockaddr_t		peer; /* peer address */
-	isc__nm_cb_t		cb;  /* callback */
-	void *			cbarg;
+	uv_buf_t		uvbuf;	/* translated isc_region_t, to be
+					   sent or received */
+	isc_sockaddr_t		local;	/* local address */
+	isc_sockaddr_t		peer;	/* peer address */
+	isc__nm_cb_t		cb;	/* callback */
+	void *			cbarg;	/* callback argument */
 	isc_nmhandle_t *	handle;
-	ck_stack_entry_t	ilink;
+	isc_hpstack_link_t	ilink;
 	union {
 		uv_req_t		req;
 		uv_getaddrinfo_t	getaddrinfo;
@@ -169,7 +177,7 @@ typedef struct isc__nm_uvreq {
 	} uv_req;
 } isc__nm_uvreq_t;
 
-CK_STACK_CONTAINER(struct isc__nm_uvreq, ilink, uvreq_is_get);
+ISC_HPSTACK_CONTAINER(struct isc__nm_uvreq, ilink, uvreq_is_get);
 
 /*
  * TODO: unify the events.
@@ -267,15 +275,15 @@ typedef enum isc_nmsocket_type {
 } isc_nmsocket_type;
 
 
-/*
- * An universal structure for either a single socket or
- * a group of dup'd/SO_REUSE_PORT-using sockets listening
- * on the same interface.
+/*%
+ * A universal structure for either a single socket or a group of
+ * dup'd/SO_REUSE_PORT-using sockets listening on the same interface.
  */
 #define NMSOCK_MAGIC                    ISC_MAGIC('N', 'M', 'S', 'K')
 #define VALID_NMSOCK(t)                 ISC_MAGIC_VALID(t, NMSOCK_MAGIC)
+
 struct isc_nmsocket {
-	/* Unlocked, RO */
+	/*% Unlocked, RO */
 	int			   magic;
 	int			   tid;
 	isc_nmsocket_type	   type;
@@ -283,52 +291,58 @@ struct isc_nmsocket {
 	isc_nmsocket_t *	   parent;
 	isc_quota_t *		   quota;
 	bool			   overquota;
-	/* outer socket is for 'wrapped' sockets - e.g. tcpdns in tcp */
+
+	/*% outer socket is for 'wrapped' sockets - e.g. tcpdns in tcp */
 	isc_nmsocket_t *	   outer;
-	/* server socket for connections */
+
+	/*% server socket for connections */
 	isc_nmsocket_t *	   server;
-	/* children sockets for multi-socket setups */
+
+	/*% children sockets for multi-socket setups */
 	isc_nmsocket_t *	   children;
 	int			   nchildren;
 	isc_nmiface_t *		   iface;
 	isc_nmhandle_t *	   tcphandle;
 
-	/* extra data allocated at the end of each isc_nmhandle_t */
+	/*% extra data allocated at the end of each isc_nmhandle_t */
 	size_t			   extrahandlesize;
 
-	/* libuv data */
+	/*% libuv data */
 	uv_os_sock_t		   fd;
 	union uv_any_handle	   uv_handle;
 
 	/* Atomic */
-	/* Number of running (e.g. listening) children sockets */
+	/*% Number of running (e.g. listening) children sockets */
 	atomic_int_fast32_t        rchildren;
-	/*
+
+	/*%
 	 * Socket if active if it's listening, working, etc., if we're
 	 * closing a socket it doesn't make any sense to e.g. still
 	 * push handles or reqs for reuse
 	 */
 	atomic_bool        active;
-	/*
-	 * Socket is closed if it's not active and all the possible callbacks
-	 * were fired, there are no active handles, etc.
-	 * active==false, closed == false means the socket is closing.
+
+	/*%
+	 * Socket is closed if it's not active and all the possible
+	 * callbacks were fired, there are no active handles, etc.
+	 * active==false, closed==false means the socket is closing.
 	 */
 	atomic_bool	      closed;
 	atomic_bool	      listening;
 	isc_refcount_t	      references;
-	/*
+
+	/*%
 	 * 'spare' handles for that can be reused to avoid allocations,
 	 * for UDP.
 	 */
-	ck_stack_t inactivehandles	  CK_CC_CACHELINE;
-	ck_stack_t inactivereqs		  CK_CC_CACHELINE;
+	isc_hpstack_t *inactivehandles;
+	isc_hpstack_t *inactivereqs;
 
 	/* Used for active/rchildren during shutdown */
 	isc_mutex_t			  lock;
 	isc_condition_t			  cond;
 
-	/*
+	/*%
 	 * List of active handles.
 	 * ah_size - size of ah_frees and ah_handles
 	 * ah_cpos - current position in ah_frees;
@@ -356,9 +370,11 @@ struct isc_nmsocket {
 	void *			rcbarg;
 };
 
-/* Are we in network thread? */
 bool
 isc__nm_in_netthread(void);
+/*%
+ * Returns 'true' iff. we're in the network thread.
+ */
 
 void
 isc__nmhandle_free(isc_nmsocket_t *socket, isc_nmhandle_t *handle);
@@ -385,24 +401,19 @@ void
 isc__nm_uvreq_put(isc__nm_uvreq_t **req, isc_nmsocket_t *socket);
 
 void
-isc__nmsocket_init(isc_nmsocket_t *socket,
-		   isc_nm_t *mgr,
+isc__nmsocket_init(isc_nmsocket_t *socket, isc_nm_t *mgr,
 		   isc_nmsocket_type type);
 
 void
 isc__nmsocket_prep_destroy(isc_nmsocket_t *socket);
 
-/*
+isc_result_t
+isc__nm_udp_send(isc_nmhandle_t *handle, isc_region_t *region,
+		 isc_nm_send_cb_t cb, void *cbarg);
+/*%<
  * Send for UDP handle
  */
-isc_result_t
-isc__nm_udp_send(isc_nmhandle_t *handle,
-		 isc_region_t *region,
-		 isc_nm_send_cb_t cb,
-		 void *cbarg);
-/*
- * Async callbacks for UDP
- */
+
 void
 isc__nm_handle_udplisten(isc__networker_t *worker, isc__netievent_t *ievent0);
 void
@@ -410,23 +421,21 @@ isc__nm_handle_udpstoplisten(isc__networker_t *worker,
 			     isc__netievent_t *ievent0);
 void
 isc__nm_handle_udpsend(isc__networker_t *worker, isc__netievent_t *ievent0);
+/*%<
+ * Asynchrounous callbacks for UDP
+ */
 
-
-/*
+isc_result_t
+isc__nm_tcp_send(isc_nmhandle_t *handle, isc_region_t *region,
+		 isc_nm_send_cb_t cb, void *cbarg);
+/*%<
  * Send for TCP handle
  */
-isc_result_t
-isc__nm_tcp_send(isc_nmhandle_t *handle,
-		 isc_region_t *region,
-		 isc_nm_send_cb_t cb,
-		 void *cbarg);
 
 void
 isc__nm_tcp_close(isc_nmsocket_t *socket);
-
-
-/*
- * Async callbacks for TCP
+/*%<
+ * Close TCP socket
  */
 
 void
@@ -442,15 +451,13 @@ void
 isc__nm_handle_startread(isc__networker_t *worker, isc__netievent_t *ievent0);
 void
 isc__nm_handle_tcpclose(isc__networker_t *worker, isc__netievent_t *ievent0);
-/* static void
- * handle_stopread(isc__networker_t *worker, isc__netievent_t *ievent0);
+/*%<
+ * Asynchrounous callbacks for TCP
  */
 
 
 isc_result_t
-isc__nm_tcpdns_send(isc_nmhandle_t *handle,
-		    isc_region_t *region,
-		    isc_nm_send_cb_t cb,
-		    void *cbarg);
+isc__nm_tcpdns_send(isc_nmhandle_t *handle, isc_region_t *region,
+		    isc_nm_send_cb_t cb, void *cbarg);
 void
 isc__nm_tcpdns_close(isc_nmsocket_t *socket);
