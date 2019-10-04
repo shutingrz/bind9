@@ -21,13 +21,6 @@ rm -f ./*/tmp* ./*/*.jnl ./*/*.bk ./*/*.jbk
 rm -f ./*/trusted.conf ./*/managed.conf ./*/revoked.conf
 rm -f ./Kexample.*
 rm -f ./canonical?.*
-rm -f ./delv.out*
-rm -f ./delve.out*
-rm -f ./dig.out.*
-rm -f ./dsfromkey.out.* ./dsfromkey.err.*
-rm -f ./keygen.out.* ./keygen.err ./keygen.err.* ./*/keygen.err.*
-rm -f ./dnssectools.out*
-rm -f ./dnssectools.err*
 rm -f ./named.secroots.test*
 rm -f ./nosign.before
 rm -f ./ns*/*.nta
@@ -95,9 +88,6 @@ rm -f ./ns4/named_dump.db*
 rm -f ./ns6/optout-tld.db
 rm -f ./ns7/multiple.example.bk ./ns7/nsec3.example.bk ./ns7/optout.example.bk
 rm -f ./ns7/split-rrsig.db ./ns7/split-rrsig.db.unsplit
-rm -f ./nsupdate.out*
-rm -f ./python.out.*
-rm -f ./rndc.out.*
 rm -f ./signer/*.db
 rm -f ./signer/*.signed.post*
 rm -f ./signer/*.signed.pre*
@@ -105,7 +95,7 @@ rm -f ./signer/example.db.after ./signer/example.db.before
 rm -f ./signer/example.db.changed
 rm -f ./signer/general/dsset*
 rm -f ./signer/general/signed.zone
-rm -f ./signer/general/signer.out.*
 rm -f ./signer/nsec3param.out
-rm -f ./signer.out.* ./signer/signer.out.* ./signer.err.* ./*/signer.err.* ./*/*/signer.err.*
-rm -f ./signing.out*
+rm -f ./signing.out
+find ./ \( -name '*.out.*' -o -name '*.err.*' \) -delete
+find ./ -name dnssec-signzone.expected -delete

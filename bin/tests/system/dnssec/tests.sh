@@ -108,6 +108,28 @@ dnssec_keygen() {
     dnssec_keygen_errmsg "" "$@"
 }
 
+dnssec_dsfromkey_errmsg() (
+    r=0
+    msg="$1"
+    shift
+    "$DSFROMKEY" "$@" 2> dsfromkey.err.$n || r=$?
+    if test -n "$msg" && ! grep -E -q "$msg" dsfromkey.err.$n;
+    then
+	echo_i "Expected $DSFROMKEY error message '$msg' not found." >&2
+	exit 1
+    fi
+    if test -n "$msg"; then
+	grep -E -v "$msg" dsfromkey.err.$n >&2 || true
+    else
+	cat < dsfromkey.err.$n >&2
+    fi
+    exit "$r"
+)
+
+dnssec_dsfromkey() {
+    dnssec_dsfromkey_errmsg "" "$@"
+}
+
 # TODO: Move wait_for_log and loadkeys_on to conf.sh.common
 wait_for_log() {
     msg=$1
@@ -1455,8 +1477,8 @@ zone=example
 unsupportedkey=$(dnssec_keygen -q -a "$DEFAULT_ALGORITHM" -b "$DEFAULT_BITS" -n zone "$zone")
 awk '$3 == "DNSKEY" { $6 = 255 } { print }' "${unsupportedkey}.key" > "${unsupportedkey}.tmp"
 mv "${unsupportedkey}.tmp" "${unsupportedkey}.key"
-$DSFROMKEY "${unsupportedkey}" > dnssectools.out.test$n 2>&1 && ret=1
-grep -q "algorithm is unsupported" dnssectools.out.test$n || ret=1
+msg="algorithm is unsupported"
+dnssec_dsfromkey_errmsg "$msg" "${unsupportedkey}" > dsfromkey.out.test$n && ret=1
 n=$((n+1))
 test "$ret" -eq 0 || echo_i "failed"
 status=$((status+ret))
@@ -2786,7 +2808,7 @@ status=$((status+ret))
 echo_i "check dnssec-dsfromkey from stdin ($n)"
 ret=0
 dig_with_opts dnskey algroll. @10.53.0.2 | \
-        $DSFROMKEY -f - algroll. > dig.out.ns2.test$n || ret=1
+    dnssec_dsfromkey -f - algroll. > dig.out.ns2.test$n || ret=1
 NF=$(awk '{print NF}' dig.out.ns2.test$n | sort -u)
 [ "${NF}" = 7 ] || ret=1
 # make canonical
@@ -2812,7 +2834,8 @@ ret=0
 msg="dnssec-keygen: warning: dns_dnssec_findmatchingkeys: error reading key file" 
 key=$(dnssec_keygen_errmsg "$msg" -a RSASHA1 -q example.) || ret=1
 mv "$key.key" "$key"
-$DSFROMKEY "$key" > dsfromkey.out.$n 2> dsfromkey.err.$n && ret=1
+msg="fatal: can't load .*: file not found"
+dnssec_dsfromkey_errmsg "$msg" "$key" > dsfromkey.out.$n && ret=1
 grep "$key.key: file not found" dsfromkey.err.$n > /dev/null || ret=1
 n=$((n+1))
 test "$ret" -eq 0 || echo_i "failed"
@@ -3350,7 +3373,7 @@ echo server 10.53.0.2 "$PORT"
 echo update delete cds-update.secure CDS
 dig_with_opts +noall +answer @10.53.0.2 dnskey cds-update.secure |
 grep "DNSKEY.257" | sed 's/DNSKEY.257/DNSKEY 258/' |
-$DSFROMKEY -C -A -f - -T 1 cds-update.secure |
+dnssec_dsfromkey -C -A -f - -T 1 cds-update.secure |
 sed "s/^/update add /"
 echo send
 ) | $NSUPDATE > nsupdate.out.test$n 2>&1 || true
@@ -3371,7 +3394,7 @@ echo update delete cds-update.secure CDS
 echo send
 dig_with_opts +noall +answer @10.53.0.2 dnskey cds-update.secure |
 grep "DNSKEY.257" |
-$DSFROMKEY -12 -C -f - -T 1 cds-update.secure |
+dnssec_dsfromkey -12 -C -f - -T 1 cds-update.secure |
 sed "s/^/update add /"
 echo send
 ) | $NSUPDATE
@@ -3394,7 +3417,7 @@ echo update delete cds-kskonly.secure CDS
 echo send
 dig_with_opts +noall +answer @10.53.0.2 dnskey cds-kskonly.secure |
 grep "DNSKEY.257" |
-$DSFROMKEY -12 -C -f - -T 1 cds-kskonly.secure |
+dnssec_dsfromkey -12 -C -f - -T 1 cds-kskonly.secure |
 sed "s/^/update add /"
 echo send
 ) | $NSUPDATE
@@ -3428,11 +3451,11 @@ echo update delete cds-update.secure CDS
 echo send
 dig_with_opts +noall +answer @10.53.0.2 dnskey cds-update.secure |
 grep "DNSKEY.257" |
-$DSFROMKEY -12 -C -f - -T 1 cds-update.secure |
+dnssec_dsfromkey -12 -C -f - -T 1 cds-update.secure |
 sed "s/^/update add /"
 dig_with_opts +noall +answer @10.53.0.2 dnskey cds-update.secure |
 grep "DNSKEY.257" | sed 's/DNSKEY.257/DNSKEY 258/' |
-$DSFROMKEY -12 -C -A -f - -T 1 cds-update.secure |
+dnssec_dsfromkey -12 -C -A -f - -T 1 cds-update.secure |
 sed "s/^/update add /"
 echo send
 ) | $NSUPDATE
