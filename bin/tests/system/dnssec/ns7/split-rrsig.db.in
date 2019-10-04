@@ -7,6 +7,8 @@
 ; See the COPYRIGHT file distributed with this work for additional
 ; information regarding copyright ownership.
 
+$TTL 300
+
 split-rrsig.		3660	IN SOA	. . (
 					1          ; serial
 					3600       ; refresh (1 hour)
