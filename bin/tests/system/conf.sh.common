@@ -206,6 +206,13 @@ DISABLED_BITS=384
 # Useful functions in test scripts
 #
 
+test_done() {
+    n=$((n+1))
+    if [ "$ret" -ne 0 ]; then echo_i "failed"; fi
+    status=$((status+ret))
+    ret=0
+}
+
 # keyfile_to_keys_section: helper function for keyfile_to_*_keys() which
 # converts keyfile data into a configuration section using the supplied
 # parameters

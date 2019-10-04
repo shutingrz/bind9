@@ -19,13 +19,6 @@ status=0
 n=1
 ret=0
 
-test_done() {
-    n=$((n+1))
-    if [ "$ret" -ne 0 ]; then echo_i "failed"; fi
-    status=$((status+ret))
-    ret=0
-}
-
 dig_with_opts() {
     "$DIG" +tcp +noadd +nosea +nostat +nocmd +dnssec -p "$PORT" "$@"
 }

@@ -22,7 +22,8 @@ rndccmd() {
 }
 
 status=0
-n=0
+n=1
+ret=0
 
 emptyzones="
 10.IN-ADDR.ARPA
@@ -125,8 +126,6 @@ B.E.F.IP6.ARPA
 EMPTY.AS112.ARPA
 HOME.ARPA"
 
-n=$((n+1))
-ret=0
 count=0
 echo_i "Checking expected empty zones were configured ($n)"
 for zone in ${emptyzones}
@@ -141,111 +140,85 @@ lines=$(grep -c "automatic empty zone: " ns1/named.run)
 if test "$count" -ne "$lines" -o "$count" -ne 99; then
 	ret=1; echo_i "failed (count mismatch)";
 fi
-status=$((status+ret))
+test_done
 
-n=$((n+1))
 echo_i "Checking that reconfiguring empty zones is silent ($n)"
 rndccmd 10.53.0.1 reconfig
-ret=0
 grep "automatic empty zone" ns1/named.run > /dev/null || ret=1
 grep "received control channel command 'reconfig'" ns1/named.run > /dev/null || ret=1
 grep "reloading configuration succeeded" ns1/named.run > /dev/null || ret=1
 sleep 1
 grep "zone serial (0) unchanged." ns1/named.run > /dev/null && ret=1
-status=$((status+ret))
+test_done
 
-n=$((n+1))
 echo_i "Checking that reloading empty zones is silent ($n)"
 rndc_reload ns1 10.53.0.1
-ret=0
 grep "automatic empty zone" ns1/named.run > /dev/null || ret=1
 grep "received control channel command 'reload'" ns1/named.run > /dev/null || ret=1
 grep "reloading configuration succeeded" ns1/named.run > /dev/null || ret=1
 sleep 1
 grep "zone serial (0) unchanged." ns1/named.run > /dev/null && ret=1
-status=$((status+ret))
+test_done
 
 HOSTNAME=$($FEATURETEST --gethostname)
 BIND_VERSION_STRING=$($NAMED -V | head -1)
 BIND_VERSION=$($NAMED -V | sed -ne 's/^BIND \([^ ]*\).*/\1/p')
 
-n=$((n+1))
-ret=0
 echo_i "Checking that default version works for rndc ($n)"
 rndccmd 10.53.0.1 status > rndc.status.ns1.$n 2>&1
 grep -F "version: $BIND_VERSION_STRING" rndc.status.ns1.$n > /dev/null || ret=1
-status=$((status+ret))
+test_done
 
-n=$((n+1))
-ret=0
 echo_i "Checking that custom version works for rndc ($n)"
 rndccmd 10.53.0.3 status > rndc.status.ns3.$n 2>&1
 grep -F "version: $BIND_VERSION_STRING (this is a test of version)" rndc.status.ns3.$n > /dev/null || ret=1
-status=$((status+ret))
+test_done
 
-n=$((n+1))
-ret=0
 echo_i "Checking that default version works for query ($n)"
 dig_with_opts +short version.bind txt ch @10.53.0.1 > dig.out.ns1.$n
 grep "^\"$BIND_VERSION\"$" dig.out.ns1.$n > /dev/null || ret=1
-status=$((status+ret))
+test_done
 
-n=$((n+1))
-ret=0
 echo_i "Checking that custom version works for query ($n)"
 dig_with_opts +short version.bind txt ch @10.53.0.3 > dig.out.ns3.$n
 grep "^\"this is a test of version\"$" dig.out.ns3.$n > /dev/null || ret=1
-status=$((status+ret))
+test_done
 
-n=$((n+1))
-ret=0
 echo_i "Checking that default hostname works for query ($n)"
 dig_with_opts +short hostname.bind txt ch @10.53.0.1 > dig.out.ns1.$n
 grep "^\"$HOSTNAME\"$" dig.out.ns1.$n > /dev/null || ret=1
-status=$((status+ret))
+test_done
 
-n=$((n+1))
-ret=0
 echo_i "Checking that custom hostname works for query ($n)"
 dig_with_opts +short hostname.bind txt ch @10.53.0.3 > dig.out.ns3.$n
 grep "^\"this.is.a.test.of.hostname\"$" dig.out.ns3.$n > /dev/null || ret=1
-status=$((status+ret))
+test_done
 
-n=$((n+1))
-ret=0
 echo_i "Checking that default server-id is none for query ($n)"
 dig_with_opts id.server txt ch @10.53.0.1 > dig.out.ns1.$n
 grep "status: NOERROR" dig.out.ns1.$n > /dev/null || ret=1
 grep "ANSWER: 0" dig.out.ns1.$n > /dev/null || ret=1
-status=$((status+ret))
+test_done
 
-n=$((n+1))
-ret=0
 echo_i "Checking that server-id hostname works for query ($n)"
 dig_with_opts +short id.server txt ch @10.53.0.2 > dig.out.ns2.$n
 grep "^\"$HOSTNAME\"$" dig.out.ns2.$n > /dev/null || ret=1
-status=$((status+ret))
+test_done
 
-n=$((n+1))
-ret=0
 echo_i "Checking that server-id hostname works for EDNS name server ID request ($n)"
 dig_with_opts +norec +nsid foo @10.53.0.2 > dig.out.ns2.$n
 grep "^; NSID: .* (\"$HOSTNAME\")$" dig.out.ns2.$n > /dev/null || ret=1
-status=$((status+ret))
+test_done
 
-n=$((n+1))
-ret=0
 echo_i "Checking that custom server-id works for query ($n)"
 dig_with_opts +short id.server txt ch @10.53.0.3 > dig.out.ns3.$n
 grep "^\"this.is.a.test.of.server-id\"$" dig.out.ns3.$n > /dev/null || ret=1
-status=$((status+ret))
+test_done
 
-n=$((n+1))
-ret=0
 echo_i "Checking that custom server-id works for EDNS name server ID request ($n)"
 dig_with_opts +norec +nsid foo @10.53.0.3 > dig.out.ns3.$n
 grep "^; NSID: .* (\"this.is.a.test.of.server-id\")$" dig.out.ns3.$n > /dev/null || ret=1
-status=$((status+ret))
+test_done
 
 echo_i "exit status: $status"
 [ $status -eq 0 ] || exit 1
