@@ -20,7 +20,8 @@ SYSTEMTESTTOP=..
 . $SYSTEMTESTTOP/conf.sh
 
 status=0
-n=0
+n=1
+ret=0
 
 dig_with_opts() {
     "$DIG" +tcp +noadd +nosea +nostat +noquest +nocomm +nocmd -p "${PORT}" "$@"
@@ -30,7 +31,6 @@ sendcmd() {
     "$PERL" ../send.pl 10.53.0.2 "${EXTRAPORT1}"
 }
 
-n=$((n+1))
 echo_i "testing initial AXFR ($n)"
 
 sendcmd <<EOF
@@ -70,12 +70,9 @@ do
 	sleep 1
 done
 
-dig_with_opts @10.53.0.1 nil. TXT | grep 'initial AXFR' >/dev/null || {
-    echo_i "failed"
-    status=1
-}
+dig_with_opts @10.53.0.1 nil. TXT | grep 'initial AXFR' >/dev/null || ret=1
+test_done
 
-n=$((n+1))
 echo_i "testing successful IXFR ($n)"
 
 # We change the IP address of a.nil., and the TXT record at the apex.
@@ -103,12 +100,9 @@ rndc_refresh ns1 10.53.0.1 nil
 
 sleep 2
 
-dig_with_opts @10.53.0.1 nil. TXT | grep 'successful IXFR' >/dev/null || {
-    echo_i "failed"
-    status=1
-}
+dig_with_opts @10.53.0.1 nil. TXT | grep 'successful IXFR' >/dev/null || ret=1
+test_done
 
-n=$((n+1))
 echo_i "testing AXFR fallback after IXFR failure ($n)"
 
 # Provide a broken IXFR response and a working fallback AXFR response
@@ -138,12 +132,9 @@ rndc_refresh ns1 10.53.0.1 nil
 
 sleep 2
 
-dig_with_opts @10.53.0.1 nil. TXT | grep 'fallback AXFR' >/dev/null || {
-    echo_i "failed"
-    status=1
-}
+dig_with_opts @10.53.0.1 nil. TXT | grep 'fallback AXFR' >/dev/null || ret=1
+test_done
 
-n=$((n+1))
 echo_i "testing ixfr-from-differences option ($n)"
 # ns3 is master; ns4 is slave
 if ! $CHECKZONE test. ns3/mytest.db > /dev/null 2>&1; then
@@ -196,13 +187,9 @@ do
 	[ "$INCR" -eq 1 ] && break
 	sleep 1
 done
-if [ "$INCR" -ne 1 ]
-then
-    echo_i "failed to get incremental response"
-    status=1
-fi
+[ "$INCR" -ne 1 ] && ret=1
+test_done
 
-n=$((n+1))
 echo_i "testing request-ixfr option in view vs zone ($n)"
 # There's a view with 2 zones. In the view, "request-ixfr yes"
 # but in the zone "sub.test", request-ixfr no"
@@ -238,16 +225,14 @@ echo_i " this result should be AXFR"
 for i in 0 1 2 3 4 5 6 7 8 9
 do
 	NONINCR=$(grep 'sub\.test/IN/primary' ns4/named.run | grep -c "got nonincremental")
-	[ "$NONINCR" -eq 2 ] && break
+	if [ "$NONINCR" -eq 2 ]; then
+	    echo_i "  success: AXFR it was"
+	    break;
+	fi
 	sleep 1
 done
-if [ "$NONINCR" -ne 2 ]
-then
-    echo_i "failed to get nonincremental response in 2nd AXFR test"
-    status=1
-else
-    echo_i "  success: AXFR it was"
-fi
+[ "$NONINCR" -ne 2 ] && ret=1
+test_done
 
 echo_i " this result should be IXFR"
 cp ns3/mytest2.db ns3/mytest.db # change to test zone, should be IXFR
@@ -277,18 +262,14 @@ done
 for i in 0 1 2 3 4 5 6 7 8 9
 do
 	INCR=$(grep "test/IN/primary" ns4/named.run | grep -c "got incremental")
-	[ "$INCR" -eq 2 ] && break
+	if [ "$INCR" -eq 2 ]; then
+	    echo_i "  success: IXFR it was"
+	    break
+	fi
 	sleep 1
 done
-if [ "$INCR" -ne 2 ]
-then
-    echo_i "failed to get incremental response in 2nd IXFR test"
-    status=1
-else
-    echo_i "  success: IXFR it was"
-fi
+[ "$INCR" -ne 2 ] && ret=1
 
-n=$((n+1))
 echo_i "testing DiG's handling of a multi message AXFR style IXFR response ($n)"
 (
 (sleep 10 && kill $$) 2>/dev/null &
@@ -297,13 +278,12 @@ $DIG -p "${PORT}" ixfr=0 large @10.53.0.3 > dig.out.test$n
 kill $sub
 )
 lines=$(grep -c hostmaster.large dig.out.test$n)
-test "${lines:-0}" -eq 2 || { echo_i "failed"; status=1; }
+test "${lines:-0}" -eq 2 || ret=1
 messages=$(sed -n 's/^;;.*messages \([0-9]*\),.*/\1/p' dig.out.test$n)
-test "${messages:-0}" -gt 1 || { echo_i "failed"; status=1; }
+test "${messages:-0}" -gt 1 || ret=1
+test_done
 
-n=$((n+1))
 echo_i "test 'dig +notcp ixfr=<value>' vs 'dig ixfr=<value> +notcp' vs 'dig ixfr=<value>' ($n)"
-ret=0
 # Should be "switch to TCP" response
 dig_with_opts +notcp ixfr=1 test @10.53.0.4 > dig.out1.test$n || ret=1
 dig_with_opts ixfr=1 +notcp test @10.53.0.4 > dig.out2.test$n || ret=1
@@ -313,10 +293,7 @@ awk '$4 == "SOA" { if ($7 == 4) exit(0); else exit(1);}' dig.out1.test$n || ret=
 # Should be incremental transfer.
 dig_with_opts ixfr=1 test @10.53.0.4 > dig.out3.test$n || ret=1
 awk '$4 == "SOA" { soacnt++} END { if (soacnt == 6) exit(0); else exit(1);}' dig.out3.test$n || ret=1
-if [ ${ret} != 0 ]; then
-	echo_i "failed";
-	status=1;
-fi
+test_done
 
 # wait for slave to transfer zone
 for i in 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14
@@ -331,41 +308,29 @@ do
 	sleep 1
 done
 
-n=$((n+1))
 echo_i "test 'provide-ixfr no;' ($n)"
-ret=0
 # Should be "AXFR style" response
 dig_with_opts ixfr=1 test @10.53.0.5 > dig.out1.test$n || ret=1
 # Should be "switch to TCP" response
 dig_with_opts ixfr=1 +notcp test @10.53.0.5 > dig.out2.test$n || ret=1
 awk '$4 == "SOA" { soacnt++} END {if (soacnt == 2) exit(0); else exit(1);}' dig.out1.test$n || ret=1
 awk '$4 == "SOA" { soacnt++} END {if (soacnt == 1) exit(0); else exit(1);}' dig.out2.test$n || ret=1
-if [ ${ret} != 0 ]; then
-	echo_i "failed";
-	status=1;
-fi
+test_done
 
-n=$((n+1))
 echo_i "checking whether dig calculates IXFR statistics correctly ($n)"
-ret=0
 dig_with_opts +noedns +stat -b 10.53.0.4 @10.53.0.4 test. ixfr=2 > dig.out1.test$n
 get_dig_xfer_stats dig.out1.test$n > stats.dig
 diff ixfr-stats.good stats.dig || ret=1
-if [ $ret != 0 ]; then echo_i "failed"; fi
-status=$((status+ret))
+test_done
 
 # Note: in the next two tests, we use ns4 logs for checking both incoming and
 # outgoing transfer statistics as ns4 is both a secondary server (for ns3) and a
 # primary server (for dig queries from the previous test) for "test".
-n=$((n+1))
 echo_i "checking whether named calculates incoming IXFR statistics correctly ($n)"
-ret=0
 get_named_xfer_stats ns4/named.run 10.53.0.3 test "Transfer completed" > stats.incoming
 diff ixfr-stats.good stats.incoming || ret=1
-if [ $ret != 0 ]; then echo_i "failed"; fi
-status=$((status+ret))
+test_done
 
-n=$((n+1))
 echo_i "checking whether named calculates outgoing IXFR statistics correctly ($n)"
 ret=1
 for i in 0 1 2 3 4 5 6 7 8 9; do
@@ -376,8 +341,7 @@ for i in 0 1 2 3 4 5 6 7 8 9; do
 	fi
 	sleep 1
 done
-if [ $ret != 0 ]; then echo_i "failed"; fi
-status=$((status+ret))
+test_done
 
 echo_i "exit status: $status"
 [ $status -eq 0 ] || exit 1
