@@ -215,7 +215,7 @@ stripns () {
 echo_i "checking that additional glue is returned for unsigned delegation ($n)"
 $DIG +tcp +dnssec -p "$PORT" a.insecure.example. @10.53.0.4 a > dig.out.ns4.test$n || ret=1
 grep "ANSWER: 1, AUTHORITY: 1, ADDITIONAL: 2" dig.out.ns4.test$n > /dev/null || ret=1
-grep "ns\\.insecure\\.example\\..*A.10\\.53\\.0\\.3" dig.out.ns4.test$n > /dev/null || ret=1
+grep "ns[.]insecure[.]example[.].*A.10[.]53[.]0[.]3" dig.out.ns4.test$n > /dev/null || ret=1
 test_done
 
 # Check the example. domain
@@ -272,8 +272,8 @@ test_done
 if [ -x "${DELV}" ] ; then
    echo_i "checking positive validation NSEC using dns_client ($n)"
    delv_with_opts @10.53.0.4 a a.example > delv.out.$n || ret=1
-   grep "a\\.example\\..*10.0.0.1" delv.out.$n > /dev/null || ret=1
-   grep "a\\.example\\..*.RRSIG.A [0-9][0-9]* 2 300 .*" delv.out.$n > /dev/null || ret=1
+   grep "a[.]example[.].*10.0.0.1" delv.out.$n > /dev/null || ret=1
+   grep "a[.]example[.].*.RRSIG.A [0-9][0-9]* 2 300 .*" delv.out.$n > /dev/null || ret=1
    test_done
 fi
 
@@ -289,8 +289,8 @@ test_done
 if [ -x "${DELV}" ] ; then
    echo_i "checking positive validation NSEC3 using dns_client ($n)"
    delv_with_opts @10.53.0.4 a a.nsec3.example > delv.out.$n || ret=1
-   grep "a\\.nsec3\\.example\\..*10.0.0.1" delv.out.$n > /dev/null || ret=1
-   grep "a\\.nsec3\\.example\\..*RRSIG.A [0-9][0-9]* 3 300.*" delv.out.$n > /dev/null || ret=1
+   grep "a[.]nsec3[.]example[.].*10.0.0.1" delv.out.$n > /dev/null || ret=1
+   grep "a[.]nsec3[.]example[.].*RRSIG.A [0-9][0-9]* 3 300.*" delv.out.$n > /dev/null || ret=1
    test_done
 fi
 
@@ -308,8 +308,8 @@ SP="[[:space:]]+"
 if [ -x "${DELV}" ]; then
    echo_i "checking positive validation OPTOUT using dns_client ($n)"
    delv_with_opts @10.53.0.4 a a.optout.example > delv.out.$n || ret=1
-   grep -Eq "^a\\.optout\\.example\\.""$SP""[0-9]+""$SP""IN""$SP""A""$SP""10.0.0.1" delv.out.$n || ret=1
-   grep -Eq "^a\\.optout\\.example\\.""$SP""[0-9]+""$SP""IN""$SP""RRSIG""$SP""A""$SP""$DEFAULT_ALGORITHM_NUMBER""$SP""3""$SP""300" delv.out.$n || ret=1
+   grep -Eq "^a[.]optout[.]example[.]""$SP""[0-9]+""$SP""IN""$SP""A""$SP""10.0.0.1" delv.out.$n || ret=1
+   grep -Eq "^a[.]optout[.]example[.]""$SP""[0-9]+""$SP""IN""$SP""RRSIG""$SP""A""$SP""$DEFAULT_ALGORITHM_NUMBER""$SP""3""$SP""300" delv.out.$n || ret=1
    test_done
 fi
 
@@ -319,8 +319,8 @@ dig_with_opts a.wild.example. @10.53.0.4 a > dig.out.ns4.test$n || ret=1
 stripns dig.out.ns3.test$n > dig.out.ns3.stripped.test$n
 stripns dig.out.ns4.test$n > dig.out.ns4.stripped.test$n
 digcomp dig.out.ns3.stripped.test$n dig.out.ns4.stripped.test$n || ret=1
-grep "\\*\\.wild\\.example\\..*RRSIG	NSEC" dig.out.ns4.test$n > /dev/null || ret=1
-grep "\\*\\.wild\\.example\\..*NSEC	z\\.example" dig.out.ns4.test$n > /dev/null || ret=1
+grep "\\*[.]wild[.]example[.].*RRSIG	NSEC" dig.out.ns4.test$n > /dev/null || ret=1
+grep "\\*[.]wild[.]example[.].*NSEC	z[.]example" dig.out.ns4.test$n > /dev/null || ret=1
 grep "flags:.*ad.*QUERY" dig.out.ns4.test$n > /dev/null || ret=1
 grep "status: NOERROR" dig.out.ns4.test$n > /dev/null || ret=1
 test_done
@@ -328,8 +328,8 @@ test_done
 if [ -x "${DELV}" ] ; then
    echo_i "checking positive wildcard validation NSEC using dns_client ($n)"
    delv_with_opts @10.53.0.4 a a.wild.example > delv.out.$n || ret=1
-   grep "a\\.wild\\.example\\..*10.0.0.27" delv.out.$n > /dev/null || ret=1
-   grep -E "a\\.wild\\.example\\..*RRSIG.A [0-9]+ 2 300.*" delv.out.$n > /dev/null || ret=1
+   grep "a[.]wild[.]example[.].*10.0.0.27" delv.out.$n > /dev/null || ret=1
+   grep -E "a[.]wild[.]example[.].*RRSIG.A [0-9]+ 2 300.*" delv.out.$n > /dev/null || ret=1
    test_done
 fi
 
@@ -358,8 +358,8 @@ test_done
 if [ -x "${DELV}" ] ; then
    echo_i "checking positive wildcard validation NSEC3 using dns_client ($n)"
    delv_with_opts @10.53.0.4 a a.wild.nsec3.example > delv.out.$n || ret=1
-   grep -E "a\\.wild\\.nsec3\\.example\\..*10.0.0.6" delv.out.$n > /dev/null || ret=1
-   grep -E "a\\.wild\\.nsec3\\.example\\..*RRSIG.A [0-9][0-9]* 3 300.*" delv.out.$n > /dev/null || ret=1
+   grep -E "a[.]wild[.]nsec3[.]example[.].*10.0.0.6" delv.out.$n > /dev/null || ret=1
+   grep -E "a[.]wild[.]nsec3[.]example[.].*RRSIG.A [0-9][0-9]* 3 300.*" delv.out.$n > /dev/null || ret=1
    test_done
 fi
 
@@ -378,8 +378,8 @@ test_done
 if [ -x "${DELV}" ] ; then
    echo_i "checking positive wildcard validation OPTOUT using dns_client ($n)"
    delv_with_opts @10.53.0.4 a a.wild.optout.example > delv.out.$n || ret=1
-   grep "a\\.wild\\.optout\\.example\\..*10.0.0.6" delv.out.$n > /dev/null || ret=1
-   grep "a\\.wild\\.optout\\.example\\..*RRSIG.A [0-9][0-9]* 3 300.*" delv.out.$n > /dev/null || ret=1
+   grep "a[.]wild[.]optout[.]example[.].*10.0.0.6" delv.out.$n > /dev/null || ret=1
+   grep "a[.]wild[.]optout[.]example[.].*RRSIG.A [0-9][0-9]* 3 300.*" delv.out.$n > /dev/null || ret=1
    test_done
 fi
 
@@ -546,7 +546,7 @@ test_done
 if [ -x "${DELV}" ] ; then
    echo_i "checking 1-server insecurity proof NSEC using dns_client ($n)"
    delv_with_opts @10.53.0.4 a a.insecure.example > delv.out.$n || ret=1
-   grep "a\\.insecure\\.example\\..*10.0.0.1" delv.out.$n > /dev/null || ret=1
+   grep "a[.]insecure[.]example[.].*10.0.0.1" delv.out.$n > /dev/null || ret=1
    test_done
 fi
 
@@ -562,7 +562,7 @@ test_done
 if [ -x "${DELV}" ] ; then
    echo_i "checking 1-server insecurity proof NSEC3 using dns_client ($n)"
    delv_with_opts @10.53.0.4 a a.insecure.nsec3.example > delv.out.$n || ret=1
-   grep "a\\.insecure\\.nsec3\\.example\\..*10.0.0.1" delv.out.$n > /dev/null || ret=1
+   grep "a[.]insecure[.]nsec3[.]example[.].*10.0.0.1" delv.out.$n > /dev/null || ret=1
    test_done
 fi
 
@@ -578,7 +578,7 @@ test_done
 if [ -x "${DELV}" ] ; then
    echo_i "checking 1-server insecurity proof OPTOUT using dns_client ($n)"
    delv_with_opts @10.53.0.4 a a.insecure.optout.example > delv.out.$n || ret=1
-   grep "a\\.insecure\\.optout\\.example\\..*10.0.0.1" delv.out.$n > /dev/null || ret=1
+   grep "a[.]insecure[.]optout[.]example[.].*10.0.0.1" delv.out.$n > /dev/null || ret=1
    test_done
 fi
 
@@ -1347,8 +1347,8 @@ echo "\$INCLUDE \"example2.db.signed\"" >> example2.db
 touch example2.db.signed
 dnssec_signzone -DS -O full -f example2.db.signed -o example example2.db > /dev/null
 ) || ret=1
-grep "^sub1\\.example\\..*RRSIG[ 	]A[ 	]" signer/example2.db.signed > /dev/null 2>&1 || ret=1
-grep "^ns\\.sub2\\.example\\..*RRSIG[ 	]A[ 	]" signer/example2.db.signed > /dev/null 2>&1 || ret=1
+grep "^sub1[.]example[.].*RRSIG[ 	]A[ 	]" signer/example2.db.signed > /dev/null 2>&1 || ret=1
+grep "^ns[.]sub2[.]example[.].*RRSIG[ 	]A[ 	]" signer/example2.db.signed > /dev/null 2>&1 || ret=1
 (
 cd signer || exit 1
 cp -f example.db.in example2.db
@@ -1361,8 +1361,8 @@ EOF
 echo "\$INCLUDE \"example2.db.signed\"" >> example2.db
 dnssec_signzone -DS -O full -f example2.db.signed -o example example2.db > /dev/null
 ) || ret=1
-grep "^sub1\\.example\\..*RRSIG[ 	]A[ 	]" signer/example2.db.signed > /dev/null 2>&1 && ret=1
-grep "^ns\\.sub2\\.example\\..*RRSIG[ 	]A[ 	]" signer/example2.db.signed > /dev/null 2>&1 && ret=1
+grep "^sub1[.]example[.].*RRSIG[ 	]A[ 	]" signer/example2.db.signed > /dev/null 2>&1 && ret=1
+grep "^ns[.]sub2[.]example[.].*RRSIG[ 	]A[ 	]" signer/example2.db.signed > /dev/null 2>&1 && ret=1
 test_done
 
 echo_i "checking dnssec-signzone purges RRSIGs from formerly-owned glue (nsec3) ($n)"
@@ -1378,8 +1378,8 @@ echo "\$INCLUDE \"example2.db.signed\"" >> example2.db
 touch example2.db.signed
 dnssec_signzone -DS -3 feedabee -O full -f example2.db.signed -o example example2.db > /dev/null
 ) || ret=1
-grep "^sub1\\.example\\..*RRSIG[ 	]A[ 	]" signer/example2.db.signed > /dev/null 2>&1 || ret=1
-grep "^ns\\.sub2\\.example\\..*RRSIG[ 	]A[ 	]" signer/example2.db.signed > /dev/null 2>&1 || ret=1
+grep "^sub1[.]example[.].*RRSIG[ 	]A[ 	]" signer/example2.db.signed > /dev/null 2>&1 || ret=1
+grep "^ns[.]sub2[.]example[.].*RRSIG[ 	]A[ 	]" signer/example2.db.signed > /dev/null 2>&1 || ret=1
 (
 cd signer || exit 1
 cp -f example.db.in example2.db
@@ -1392,8 +1392,8 @@ EOF
 echo "\$INCLUDE \"example2.db.signed\"" >> example2.db
 dnssec_signzone -DS -3 feedabee -O full -f example2.db.signed -o example example2.db > /dev/null
 ) || ret=1
-grep "^sub1\\.example\\..*RRSIG[ 	]A[ 	]" signer/example2.db.signed > /dev/null 2>&1 && ret=1
-grep "^ns\\.sub2\\.example\\..*RRSIG[ 	]A[ 	]" signer/example2.db.signed > /dev/null 2>&1 && ret=1
+grep "^sub1[.]example[.].*RRSIG[ 	]A[ 	]" signer/example2.db.signed > /dev/null 2>&1 && ret=1
+grep "^ns[.]sub2[.]example[.].*RRSIG[ 	]A[ 	]" signer/example2.db.signed > /dev/null 2>&1 && ret=1
 test_done
 
 echo_i "checking dnssec-signzone output format ($n)"
@@ -1572,10 +1572,10 @@ dig_with_opts a.fakenode.secure.example. a @10.53.0.4 > dig.out.ns4.test$n.7 || 
 grep "flags:[^;]* ad[^;]*;" dig.out.ns4.test$n.7 > /dev/null && ret=1
 echo_i "dumping secroots"
 rndccmd 10.53.0.4 secroots | sed 's/^/ns4 /' | cat_i
-grep "bogus.example: expiry" ns4/named.secroots > /dev/null || ret=1
-grep "badds.example: expiry" ns4/named.secroots > /dev/null || ret=1
-grep "secure.example: expiry" ns4/named.secroots > /dev/null || ret=1
-grep "fakenode.secure.example: expiry" ns4/named.secroots > /dev/null || ret=1
+grep "bogus[.]example: expiry" ns4/named.secroots > /dev/null || ret=1
+grep "badds[.]example: expiry" ns4/named.secroots > /dev/null || ret=1
+grep "secure[.]example: expiry" ns4/named.secroots > /dev/null || ret=1
+grep "fakenode[.]secure[.]example: expiry" ns4/named.secroots > /dev/null || ret=1
 
 if [ "$ret" -ne 0 ]; then echo_i "failed - with NTA's in place failed"; fi
 status=$((status+ret))
@@ -1615,8 +1615,8 @@ $PERL -e 'my $delay = '"$start"' + 13 - time(); select(undef, undef, undef, $del
 rndccmd 10.53.0.4 nta -d > rndc.out.ns4.test$n._11
 lines=$(grep -c " expiry " rndc.out.ns4.test$n._11 || true)
 [ "$lines" -le 2 ] || ret=1
-grep "bogus.example/_default: expiry" rndc.out.ns4.test$n._11 > /dev/null || ret=1
-grep "badds.example/_default: expiry" rndc.out.ns4.test$n._11 > /dev/null && ret=1
+grep "bogus[.]example/_default: expiry" rndc.out.ns4.test$n._11 > /dev/null || ret=1
+grep "badds[.]example/_default: expiry" rndc.out.ns4.test$n._11 > /dev/null && ret=1
 dig_with_opts b.bogus.example. a @10.53.0.4 > dig.out.ns4.test$n.11 || ret=1
 grep "status: SERVFAIL" dig.out.ns4.test$n.11 > /dev/null && ret=1
 dig_with_opts a.badds.example. a @10.53.0.4 > dig.out.ns4.test$n.12 || ret=1
@@ -1650,14 +1650,14 @@ status=$((status+ret))
 echo_i "testing NTA removals ($n)"
 rndccmd 10.53.0.4 nta badds.example 2>&1 | sed 's/^/ns4 /' | cat_i
 rndccmd 10.53.0.4 nta -d > rndc.out.ns4.test$n.1
-grep "badds.example/_default: expiry" rndc.out.ns4.test$n.1 > /dev/null || ret=1
+grep "badds[.]example/_default: expiry" rndc.out.ns4.test$n.1 > /dev/null || ret=1
 dig_with_opts a.badds.example. a @10.53.0.4 > dig.out.ns4.test$n.1 || ret=1
 grep "status: SERVFAIL" dig.out.ns4.test$n.1 > /dev/null && ret=1
-grep "^a\\.badds\\.example\\." dig.out.ns4.test$n.1 > /dev/null || ret=1
+grep "^a[.]badds[.]example[.]" dig.out.ns4.test$n.1 > /dev/null || ret=1
 rndccmd 10.53.0.4 nta -remove badds.example > rndc.out.ns4.test$n.2
-grep "Negative trust anchor removed: badds.example/_default" rndc.out.ns4.test$n.2 > /dev/null || ret=1
+grep "Negative trust anchor removed: badds[.]example/_default" rndc.out.ns4.test$n.2 > /dev/null || ret=1
 rndccmd 10.53.0.4 nta -d > rndc.out.ns4.test$n.3
-grep "badds.example/_default: expiry" rndc.out.ns4.test$n.3 > /dev/null && ret=1
+grep "badds[.]example/_default: expiry" rndc.out.ns4.test$n.3 > /dev/null && ret=1
 dig_with_opts a.badds.example. a @10.53.0.4 > dig.out.ns4.test$n.2 || ret=1
 grep "status: SERVFAIL" dig.out.ns4.test$n.2 > /dev/null || ret=1
 test_done
@@ -1736,13 +1736,13 @@ sleep 4
 rndccmd 10.53.0.4 nta -d > rndc.out.ns4.test$n.3
 lines=$(wc -l < rndc.out.ns4.test$n.3)
 [ "$lines" -eq 1 ] || ret=1
-grep "bogus.example/_default: expiry" rndc.out.ns4.test$n.3 > /dev/null || ret=1
+grep "bogus[.]example/_default: expiry" rndc.out.ns4.test$n.3 > /dev/null || ret=1
 dig_with_opts b.bogus.example. a @10.53.0.4 > dig.out.ns4.test$n.4 || ret=1
 grep "status: SERVFAIL" dig.out.ns4.test$n.4 > /dev/null && ret=1
 grep "flags:[^;]* ad[^;]*;" dig.out.ns4.test$n.4 > /dev/null && ret=1
 dig_with_opts a.badds.example. a @10.53.0.4 > dig.out.ns4.test$n.5 || ret=1
 grep "status: SERVFAIL" dig.out.ns4.test$n.5 > /dev/null || ret=1
-grep "ignoring expired NTA at badds.example" ns4/named.run > /dev/null || ret=1
+grep "ignoring expired NTA at badds[.]example" ns4/named.run > /dev/null || ret=1
 
 # cleanup
 rndccmd 10.53.0.4 nta -remove bogus.example > rndc.out.ns4.test$n.6
@@ -2035,7 +2035,7 @@ echo_i "checking expired signatures do not validate ($n)"
 dig_with_opts +noauth expired.example. +dnssec @10.53.0.4 soa > dig.out.ns4.test$n || ret=1
 grep "SERVFAIL" dig.out.ns4.test$n > /dev/null || ret=1
 grep "flags:.*ad.*QUERY" dig.out.ns4.test$n > /dev/null && ret=1
-grep "expired.example/.*: RRSIG has expired" ns4/named.run > /dev/null || ret=1
+grep "expired[.]example/.*: RRSIG has expired" ns4/named.run > /dev/null || ret=1
 test_done
 
 echo_i "checking that the NSEC3 record for the apex is properly signed when a DNSKEY is added via UPDATE ($n)"
@@ -2356,14 +2356,14 @@ echo_i "testing legacy upper case signer name validation ($n)"
 $DIG +tcp +noadd +noauth +dnssec -p "$PORT" soa upper.example @10.53.0.4 \
         > dig.out.ns4.test$n 2>&1
 grep "flags:.* ad;" dig.out.ns4.test$n > /dev/null || ret=1
-grep "RRSIG.*SOA.* UPPER\\.EXAMPLE\\. " dig.out.ns4.test$n > /dev/null || ret=1
+grep "RRSIG.*SOA.* UPPER[.]EXAMPLE[.] " dig.out.ns4.test$n > /dev/null || ret=1
 test_done
 
 echo_i "testing that we lower case signer name ($n)"
 $DIG +tcp +noadd +noauth +dnssec -p "$PORT" soa LOWER.EXAMPLE @10.53.0.4 \
         > dig.out.ns4.test$n 2>&1
 grep "flags:.* ad;" dig.out.ns4.test$n > /dev/null || ret=1
-grep "RRSIG.*SOA.* lower\\.example\\. " dig.out.ns4.test$n > /dev/null || ret=1
+grep "RRSIG.*SOA.* lower[.]example[.] " dig.out.ns4.test$n > /dev/null || ret=1
 test_done
 
 echo_i "testing TTL is capped at RRSIG expiry time ($n)"
@@ -2517,7 +2517,7 @@ grep "DNAME" dig.out.ns4.test$n > /dev/null || ret=1
 test_done
 
 echo_i "check that named doesn't loop when all private keys are not available ($n)"
-lines=$(grep -c "reading private key file expiring.example" ns3/named.run || true)
+lines=$(grep -c "reading private key file expiring[.]example" ns3/named.run || true)
 test "${lines:-1000}" -lt 15 || ret=1
 test_done
 
@@ -2876,7 +2876,7 @@ test_done
 echo_i "checking that unsupported DNSKEY algorithm is in DNSKEY RRset ($n)"
 dig_with_opts +noauth +noadd +nodnssec +adflag @10.53.0.3 dnskey-unsupported-2.example DNSKEY > dig.out.test$n
 grep "status: NOERROR," dig.out.test$n > /dev/null || ret=1
-grep "dnskey-unsupported-2\.example\..*IN.*DNSKEY.*257 3 255" dig.out.test$n > /dev/null || ret=1
+grep "dnskey-unsupported-2[.]example[.].*IN.*DNSKEY.*257 3 255" dig.out.test$n > /dev/null || ret=1
 test_done
 
 echo_i "check that a lone non matching CDNSKEY record is rejected ($n)"
@@ -3046,9 +3046,9 @@ test_done
 
 echo_i "check that DNSKEY and other occluded data are excluded from the delegating bitmap ($n)"
 dig_with_opts axfr occluded.example @10.53.0.3 > dig.out.ns3.test$n || ret=1
-grep "^delegation\\.occluded\\.example\\..*NSEC.*NS KEY DS RRSIG NSEC$" dig.out.ns3.test$n > /dev/null || ret=1
-grep "^delegation\\.occluded\\.example\\..*DNSKEY.*" dig.out.ns3.test$n > /dev/null || ret=1
-grep "^delegation\\.occluded\\.example\\..*AAAA.*" dig.out.ns3.test$n > /dev/null || ret=1
+grep "^delegation[.]occluded[.]example[.].*NSEC.*NS KEY DS RRSIG NSEC$" dig.out.ns3.test$n > /dev/null || ret=1
+grep "^delegation[.]occluded[.]example[.].*DNSKEY.*" dig.out.ns3.test$n > /dev/null || ret=1
+grep "^delegation[.]occluded[.]example[.].*AAAA.*" dig.out.ns3.test$n > /dev/null || ret=1
 test_done
 
 echo_i "checking DNSSEC records are occluded from ANY in an insecure zone ($n)"
@@ -3072,12 +3072,12 @@ test_done
 # trust anchors are ignored.  This is tested by looking for the corresponding
 # lines in the logfile.
 echo_i "checking that keys with unsupported algorithms and disabled algorithms are ignored ($n)"
-grep -q "ignoring static-key for 'disabled\.trusted\.': algorithm is disabled" ns8/named.run || ret=1
-grep -q "ignoring static-key for 'unsupported\.trusted\.': algorithm is unsupported" ns8/named.run || ret=1
-grep -q "ignoring static-key for 'revoked\.trusted\.': bad key type" ns8/named.run || ret=1
-grep -q "ignoring initial-key for 'disabled\.managed\.': algorithm is disabled" ns8/named.run || ret=1
-grep -q "ignoring initial-key for 'unsupported\.managed\.': algorithm is unsupported" ns8/named.run || ret=1
-grep -q "ignoring initial-key for 'revoked\.managed\.': bad key type" ns8/named.run || ret=1
+grep -q "ignoring static-key for 'disabled[.]trusted[.]': algorithm is disabled" ns8/named.run || ret=1
+grep -q "ignoring static-key for 'unsupported[.]trusted[.]': algorithm is unsupported" ns8/named.run || ret=1
+grep -q "ignoring static-key for 'revoked[.]trusted[.]': bad key type" ns8/named.run || ret=1
+grep -q "ignoring initial-key for 'disabled[.]managed[.]': algorithm is disabled" ns8/named.run || ret=1
+grep -q "ignoring initial-key for 'unsupported[.]managed[.]': algorithm is unsupported" ns8/named.run || ret=1
+grep -q "ignoring initial-key for 'revoked[.]managed[.]': bad key type" ns8/named.run || ret=1
 test_done
 
 # The next two tests are fairly normal DNSSEC queries to signed zones with a
