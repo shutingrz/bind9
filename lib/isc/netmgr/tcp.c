@@ -312,7 +312,7 @@ isc__nm_handle_startread(isc__networker_t *worker, isc__netievent_t *ievent0) {
 
 static void
 read_cb(uv_stream_t *stream, ssize_t nread, const uv_buf_t*buf) {
-	isc_nmsocket_t *socket = uv_handle_get_data((uv_handle_t*) stream);
+	isc_nmsocket_t *socket = stream->data;
 	INSIST(buf != NULL);
 	if (nread < 0) {
 		isc__nm_free_uvbuf(socket, buf);
@@ -389,7 +389,7 @@ accept_connection(isc_nmsocket_t *ssocket) {
 static void
 tcp_connection_cb(uv_stream_t *server, int status) {
 	(void) status;
-	isc_nmsocket_t *ssocket = uv_handle_get_data((uv_handle_t*) server);
+	isc_nmsocket_t *ssocket = server->data;
 	isc_result_t result = accept_connection(ssocket);
 	if (result != ISC_R_SUCCESS) {
 		if (result == ISC_R_QUOTA || result == ISC_R_SOFTQUOTA) {

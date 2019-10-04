@@ -503,7 +503,7 @@ isc__nmsocket_init(isc_nmsocket_t *socket,
 	};
 
 	isc_nm_attach(mgr, &socket->mgr);
-	uv_handle_set_data(&socket->uv_handle.handle, socket);
+	socket->uv_handle.handle.data = socket;
 
 	socket->inactivehandles = isc_hpstack_new(mgr->mctx, delhandle);
 	socket->inactivereqs = isc_hpstack_new(mgr->mctx, delreq);
@@ -749,7 +749,7 @@ isc__nm_uvreq_get(isc_nm_t *mgr, isc_nmsocket_t *socket) {
 		req = isc_mem_get(mgr->mctx, sizeof(isc__nm_uvreq_t));
 	}
 	*req = (isc__nm_uvreq_t) {};
-	uv_req_set_data(&req->uv_req.req, req);
+	req->uv_req.req.data = req;
 	isc_nm_attach(mgr, &req->mgr);
 	req->magic = UVREQ_MAGIC;
 	return (req);
