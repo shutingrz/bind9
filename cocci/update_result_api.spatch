@@ -1,0 +1,83 @@
+@@
+expression E;
+@@
+
+- (ISC_RESULTCLASS_DNS + E)
++ ISC_RESULTCODE_DNS(E)
+
+@@
+expression E;
+@@
+
+- (ISC_RESULTCLASS_DNSRCODE + E)
++ ISC_RESULTCODE_DNSRCODE(E)
+
+@@
+expression E;
+@@
+
+- (ISC_RESULTCLASS_DST + E)
++ ISC_RESULTCODE_DST(E)
+
+@@
+expression E;
+@@
+
+- (ISC_RESULTCLASS_ISCCC + E)
++ ISC_RESULTCODE_ISCCC(E)
+
+@@
+expression E;
+@@
+
+- (ISC_RESULTCLASS_ISC + E)
++ ISC_RESULTCODE_ISC(E)
+
+@@
+expression E;
+@@
+
+- (ISC_RESULTCLASS_PK11 + E)
++ ISC_RESULTCODE_PK11(E)
+
+@@
+expression E;
+@@
+
+- ISC_RESULTCLASS_DNS + E
++ ISC_RESULTCODE_DNS(E)
+
+@@
+expression E;
+@@
+
+- ISC_RESULTCLASS_DNSRCODE + E
++ ISC_RESULTCODE_DNSRCODE(E)
+
+@@
+expression E;
+@@
+
+- ISC_RESULTCLASS_DST + E
++ ISC_RESULTCODE_DST(E)
+
+@@
+expression E;
+@@
+
+- ISC_RESULTCLASS_ISCCC + E
++ ISC_RESULTCODE_ISCCC(E)
+
+@@
+expression E;
+@@
+
+- ISC_RESULTCLASS_ISC + E
++ ISC_RESULTCODE_ISC(E)
+
+@@
+expression E;
+@@
+
+- ISC_RESULTCLASS_PK11 + E
++ ISC_RESULTCODE_PK11(E)
