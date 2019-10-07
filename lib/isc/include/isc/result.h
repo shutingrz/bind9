@@ -18,6 +18,7 @@
 #include <isc/result_dns.h>
 #include <isc/result_dst.h>
 #include <isc/result_isccc.h>
+#include <isc/resultclass.h>
 #include <isc/types.h>
 
 #define ISC_R_SUCCESS	       0	    /*%< success */
@@ -107,14 +108,6 @@ const char *isc_result_toid(isc_result_t);
  * Convert an isc_result_t into a string identifier such as
  * "ISC_R_SUCCESS".
  */
-
-isc_result_t
-isc_result_register(unsigned int base, unsigned int nresults, const char **text,
-		    int set);
-
-isc_result_t
-isc_result_registerids(unsigned int base, unsigned int nresults,
-		       const char **ids, int set);
 
 ISC_LANG_ENDDECLS
 

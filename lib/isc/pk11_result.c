@@ -11,12 +11,9 @@
 
 #include <stddef.h>
 
-#include <isc/once.h>
-#include <isc/util.h>
-
 #include <pk11/result.h>
 
-static const char *text[PK11_R_NRESULTS] = {
+static const char *pk11_result_descriptions[PK11_R_NRESULTS] = {
 	"PKCS#11 initialization failed", /*%< 0 */
 	"no PKCS#11 provider",		 /*%< 1 */
 	"PKCS#11 no random service",	 /*%< 2 */
@@ -24,48 +21,10 @@ static const char *text[PK11_R_NRESULTS] = {
 	"PKCS#11 no AES service",	 /*%< 4 */
 };
 
-static const char *ids[PK11_R_NRESULTS] = {
-	"PK11_R_INITFAILED",	  "PK11_R_NOPROVIDER",
-	"PK11_R_NORANDOMSERVICE", "PK11_R_NODIGESTSERVICE",
-	"PK11_R_NOAESSERVICE",
+static const char *pk11_result_ids[PK11_R_NRESULTS] = {
+	"PK11_R_INITFAILED",	  /* 0 */
+	"PK11_R_NOPROVIDER",	  /* 1 */
+	"PK11_R_NORANDOMSERVICE", /* 2 */
+	"PK11_R_NODIGESTSERVICE", /* 3 */
+	"PK11_R_NOAESSERVICE",	  /* 4 */
 };
-
-#define PK11_RESULT_RESULTSET 2
-
-static isc_once_t once = ISC_ONCE_INIT;
-
-static void
-initialize_action(void) {
-	isc_result_t result;
-
-	result = isc_result_register(ISC_RESULTCLASS_PK11, PK11_R_NRESULTS,
-				     text, PK11_RESULT_RESULTSET);
-	if (result != ISC_R_SUCCESS) {
-		UNEXPECTED_ERROR(__FILE__, __LINE__,
-				 "isc_result_register() failed: %u", result);
-	}
-
-	result = isc_result_registerids(ISC_RESULTCLASS_PK11, PK11_R_NRESULTS,
-					ids, PK11_RESULT_RESULTSET);
-	if (result != ISC_R_SUCCESS) {
-		UNEXPECTED_ERROR(__FILE__, __LINE__,
-				 "isc_result_registerids() failed: %u", result);
-	}
-}
-
-static void
-initialize(void) {
-	RUNTIME_CHECK(isc_once_do(&once, initialize_action) == ISC_R_SUCCESS);
-}
-
-const char *
-pk11_result_totext(isc_result_t result) {
-	initialize();
-
-	return (isc_result_totext(result));
-}
-
-void
-pk11_result_register(void) {
-	initialize();
-}

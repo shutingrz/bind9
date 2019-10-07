@@ -45,7 +45,7 @@ WIN32OBJS = 	win32/condition.@O@ win32/dir.@O@ win32/errno.@O@ \
 		win32/stdtime.@O@ win32/thread.@O@ win32/time.@O@
 
 # Alphabetically
-OBJS =		pk11.@O@ pk11_result.@O@ \
+OBJS =		pk11.@O@ \
 		aes.@O@ app.@O@ assertions.@O@ astack.@O@ \
 		backtrace.@O@ base32.@O@ base64.@O@ \
 		bind9.@O@ buffer.@O@ bufferlist.@O@ \
@@ -67,7 +67,7 @@ OBJS =		pk11.@O@ pk11_result.@O@ \
 SYMTBLOBJS =	backtrace-emptytbl.@O@
 
 # Alphabetically
-SRCS =		pk11.c pk11_result.c \
+SRCS =		pk11.c \
 		aes.c app.c assertions.c astack.c \
 		backtrace.c base32.c base64.c bind9.c \
 		buffer.c bufferlist.c commandline.c counter.c crc64.c \

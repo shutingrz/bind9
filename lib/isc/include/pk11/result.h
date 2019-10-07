@@ -14,7 +14,6 @@
 
 /*! \file pk11/result.h */
 
-#include <isc/lang.h>
 #include <isc/resultclass.h>
 #include <isc/types.h>
 
@@ -34,13 +33,6 @@
 
 #define PK11_R_NRESULTS 5 /* Number of results */
 
-ISC_LANG_BEGINDECLS
-
-const char *pk11_result_totext(isc_result_t);
-
-void
-pk11_result_register(void);
-
-ISC_LANG_ENDDECLS
+#define pk11_result_totext isc_result_totext
 
 #endif /* PK11_RESULT_H */
