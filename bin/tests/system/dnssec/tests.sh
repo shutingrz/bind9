@@ -2310,7 +2310,7 @@ key=$(dnssec_keygen_errmsg "$msg" -a RSASHA1 -q example.) || ret=1
 mv "$key.key" "$key"
 msg="fatal: can't load .*: file not found"
 dnssec_dsfromkey_errmsg "$msg" "$key" > dsfromkey.out.$n && ret=1
-grep "$key.key: file not found" dsfromkey.err.$n > /dev/null || ret=1
+grep "${key}[.]key: file not found" dsfromkey.err.$n > /dev/null || ret=1
 test_done
 
 echo_i "testing soon-to-expire RRSIGs without a replacement private key ($n)"
