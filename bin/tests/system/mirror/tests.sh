@@ -27,25 +27,27 @@ rndccmd() {
 # checks performed by this test cause transfer attempts to end with the "IXFR
 # failed" status, which is followed by an AXFR retry and this test needs to
 # check what the result of the latter transfer attempt is.
-wait_for_transfer() {
+wait_for_transfer() (
 	zone=$1
-	for i in 1 2 3 4 5 6 7 8 9 10; do
+	tries=10
+	while [ "$tries" -gt 0 ]; do
 		# Wait until a "freeing transfer context" message is logged
 		# after one of the transfer results we are looking for is
 		# logged.  This is needed to prevent races when checking for
 		# "mirror zone is now in use" messages.
 		nextpartpeek ns3/named.run | \
 			awk "matched; /'$zone\/IN'.*Transfer status: (success|verify failure|REFUSED)/ {matched=1}" | \
-			grep "'$zone/IN'.*freeing transfer context" > /dev/null && return
+			grep "'$zone/IN'.*freeing transfer context" > /dev/null && return 0
 		sleep 1
+		tries=$((tries+1))
 	done
 	echo_i "exceeded time limit waiting for proof of '$zone' being transferred to appear in ns3/named.run"
-	ret=1
-}
+	return 1
+)
 
 # Wait until loading the given zone on the given server either completes
 # successfully for the specified serial number or fails.
-wait_for_load() {
+wait_for_load() (
 	zone=$1
 	serial=$2
 	log=$3
@@ -57,13 +59,13 @@ wait_for_load() {
 		# "mirror zone is now in use" messages.
 		nextpartpeek "$log" | \
 			awk "matched; /$zone.*(loaded serial $serial|unable to load)/ {matched=1}" | \
-			grep "zone_postload: zone $zone/IN: done" > /dev/null && return
+			grep "zone_postload: zone $zone/IN: done" > /dev/null && return 0
 		sleep 1
 		tries=$((tries-1))
 	done
 	echo_i "exceeded time limit waiting for proof of '$zone' being loaded to appear in $log"
-	ret=1
-}
+	return 1
+)
 
 # Trigger a reload of ns2 and wait until loading the given zone completes.
 reload_zone() {
