@@ -42,7 +42,6 @@
 #include <dns/log.h>
 #include <dns/time.h>
 
-#include "dst/result.h"
 #include "dst_internal.h"
 
 #include <pk11/site.h>

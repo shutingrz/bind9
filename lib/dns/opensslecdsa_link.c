@@ -26,7 +26,6 @@
 #include "dst_openssl.h"
 #include "dst_parse.h"
 
-#include <dst/result.h>
 #include <openssl/bn.h>
 #include <openssl/ecdsa.h>
 #include <openssl/err.h>

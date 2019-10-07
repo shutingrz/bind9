@@ -38,7 +38,6 @@
 
 #include "tsig_p.h"
 
-#include <dst/result.h>
 #include <pk11/site.h>
 
 #define TSIG_MAGIC	  ISC_MAGIC('T', 'S', 'I', 'G')

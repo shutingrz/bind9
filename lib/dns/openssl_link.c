@@ -36,8 +36,6 @@
 #include "dst_internal.h"
 #include "dst_openssl.h"
 
-#include <dst/result.h>
-
 static isc_mem_t *dst__mctx = NULL;
 
 #if !defined(OPENSSL_NO_ENGINE)

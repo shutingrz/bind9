@@ -30,7 +30,6 @@
 #include "../dst_internal.h"
 #include "dnstest.h"
 
-#include <dst/result.h>
 #include <pk11/site.h>
 
 #if USE_OPENSSL

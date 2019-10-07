@@ -36,9 +36,6 @@
     <ClCompile Include="..\ccmsg.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\result.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\sexpr.c">
       <Filter>Source Files</Filter>
     </ClCompile>

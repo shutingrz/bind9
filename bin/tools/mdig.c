@@ -45,12 +45,10 @@
 #include <dns/rdatatype.h>
 #include <dns/request.h>
 #include <dns/resolver.h>
-#include <dns/result.h>
 #include <dns/types.h>
 #include <dns/view.h>
 
 #include <bind9/getaddresses.h>
-#include <dst/result.h>
 
 #define CHECK(str, x)                                                       \
 	{                                                                   \

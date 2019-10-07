@@ -28,7 +28,6 @@
 #include "dst_parse.h"
 #include "openssl_shim.h"
 
-#include <dst/result.h>
 #include <openssl/err.h>
 #include <openssl/evp.h>
 #include <openssl/objects.h>

@@ -287,9 +287,6 @@
     <ClCompile Include="..\dst_parse.c">
       <Filter>Dst Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\dst_result.c">
-      <Filter>Dst Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\gssapi_link.c">
       <Filter>Dst Source Files</Filter>
     </ClCompile>
@@ -648,9 +645,6 @@
       <Filter>Dst Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\include\dst\gssapi.h">
-      <Filter>Dst Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\include\dst\result.h">
       <Filter>Dst Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\dst_internal.h">

@@ -38,7 +38,6 @@
 #include "dst_openssl.h"
 #include "dst_parse.h"
 
-#include <dst/result.h>
 #include <openssl/opensslv.h>
 #include <pk11/site.h>
 

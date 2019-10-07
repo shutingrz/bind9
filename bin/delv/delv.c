@@ -70,7 +70,6 @@
 #include <isccfg/namedconf.h>
 
 #include <dst/dst.h>
-#include <dst/result.h>
 #include <irs/netdb.h>
 #include <irs/resconf.h>
 

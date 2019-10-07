@@ -32,7 +32,6 @@
 #include "dnstest.h"
 
 #include <dst/dst.h>
-#include <dst/result.h>
 
 static int
 _setup(void **state) {

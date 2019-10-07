@@ -21,13 +21,13 @@
 #include <isc/once.h>
 #include <isc/platform.h>
 #include <isc/print.h>
+#include <isc/result_dst.h>
 #include <isc/stdio.h>
 #include <isc/strerr.h>
 #include <isc/string.h>
 #include <isc/thread.h>
 #include <isc/util.h>
 
-#include <dst/result.h>
 #include <pk11/internal.h>
 #include <pk11/pk11.h>
 #include <pk11/result.h>

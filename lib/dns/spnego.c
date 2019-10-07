@@ -81,7 +81,7 @@
  *
  * ----------------------------------------------------------------
  *
- * Copyright (c) 1997 - 2003 Kungliga Tekniska Högskolan
+ * Copyright (c) 1997 - 2003 Kungliga Tekniska Hï¿½gskolan
  * (Royal Institute of Technology, Stockholm, Sweden).
  * All rights reserved.
  *
@@ -155,7 +155,6 @@
 #include "dst_internal.h"
 
 #include <dst/gssapi.h>
-#include <dst/result.h>
 
 /*
  * The API we export

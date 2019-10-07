@@ -39,7 +39,6 @@
 #include <dns/stats.h>
 #include <dns/tsig.h> /* for DNS_TSIG_FUDGE */
 
-#include <dst/result.h>
 #include <pk11/site.h>
 
 LIBDNS_EXTERNAL_DATA isc_stats_t *dns_dnssec_stats;

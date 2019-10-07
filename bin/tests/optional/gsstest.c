@@ -42,8 +42,6 @@
 #include <dns/types.h>
 #include <dns/view.h>
 
-#include <dst/result.h>
-
 #ifdef GSSAPI
 #include ISC_PLATFORM_GSSAPIHEADER
 

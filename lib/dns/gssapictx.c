@@ -40,7 +40,6 @@
 #include "dst_internal.h"
 
 #include <dst/gssapi.h>
-#include <dst/result.h>
 
 /*
  * If we're using our own SPNEGO implementation (see configure.in),

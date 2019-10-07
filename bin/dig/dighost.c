@@ -77,7 +77,6 @@
 #include <bind9/getaddresses.h>
 #include <dig/dig.h>
 #include <dst/dst.h>
-#include <dst/result.h>
 #include <irs/resconf.h>
 #include <pk11/site.h>
 

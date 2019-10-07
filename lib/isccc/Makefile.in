@@ -36,11 +36,11 @@ SUBDIRS =	include
 
 # Alphabetically
 OBJS =		alist.@O@ base64.@O@ cc.@O@ ccmsg.@O@ \
-		result.@O@ sexpr.@O@ symtab.@O@ version.@O@
+		sexpr.@O@ symtab.@O@ version.@O@
 
 # Alphabetically
 SRCS =		alist.c base64.c cc.c ccmsg.c \
-		result.c sexpr.c symtab.c version.c
+		sexpr.c symtab.c version.c
 
 
 TARGETS = 	timestamp

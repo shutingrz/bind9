@@ -57,7 +57,6 @@
 
 #include <bind9/check.h>
 #include <dst/dst.h>
-#include <dst/result.h>
 #include <pk11/site.h>
 
 static isc_result_t

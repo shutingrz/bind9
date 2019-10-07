@@ -31,12 +31,10 @@
 #include <dns/message.h>
 #include <dns/name.h>
 #include <dns/request.h>
-#include <dns/result.h>
 #include <dns/tkey.h>
 #include <dns/tsig.h>
 #include <dns/view.h>
 
-#include <dst/result.h>
 #include <pk11/site.h>
 
 #define CHECK(str, x)                                        \

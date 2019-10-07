@@ -15,6 +15,8 @@
 /*! \file isc/result.h */
 
 #include <isc/lang.h>
+#include <isc/result_dst.h>
+#include <isc/result_isccc.h>
 #include <isc/types.h>
 
 #define ISC_R_SUCCESS	       0	    /*%< success */
