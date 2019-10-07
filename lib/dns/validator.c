@@ -559,7 +559,7 @@ fetch_callback_ds(isc_task_t *task, isc_event_t *event) {
 			 */
 			validator_log(val, ISC_LOG_DEBUG(3),
 				      "falling back to insecurity proof (%s)",
-				      dns_result_totext(eresult));
+				      isc_result_totext(eresult));
 			result = proveunsecure(val, false, false);
 			if (result != DNS_R_WAIT) {
 				validator_done(val, result);

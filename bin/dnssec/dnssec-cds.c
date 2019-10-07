@@ -476,7 +476,7 @@ match_key_dsset(keyinfo_t *ki, dns_rdataset_t *dsset, strictness_t strictness) {
 				 "dns_ds_buildrdata("
 				 "keytag=%d, algo=%d, digest=%d): %s\n",
 				 ds.key_tag, ds.algorithm, ds.digest_type,
-				 dns_result_totext(result));
+				 isc_result_totext(result));
 			continue;
 		}
 		/* allow for both DS and CDS */
@@ -553,7 +553,7 @@ match_keyset_dsset(dns_rdataset_t *keyset, dns_rdataset_t *dsset,
 			vbprintf(3,
 				 "dns_dnssec_keyfromrdata("
 				 "keytag=%d, algo=%d): %s\n",
-				 ki->tag, ki->algo, dns_result_totext(result));
+				 ki->tag, ki->algo, isc_result_totext(result));
 		}
 	}
 

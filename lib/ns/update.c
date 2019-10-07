@@ -1782,13 +1782,13 @@ check_mx(ns_client_t *client, dns_zone_t *zone, dns_db_t *db,
 		if (isaddress && (options & DNS_ZONEOPT_CHECKMXFAIL) != 0) {
 			update_log(client, zone, ISC_LOG_ERROR,
 				   "%s/MX: '%s': %s", ownerbuf, namebuf,
-				   dns_result_totext(DNS_R_MXISADDRESS));
+				   isc_result_totext(DNS_R_MXISADDRESS));
 			ok = false;
 		} else if (isaddress) {
 			update_log(client, zone, ISC_LOG_WARNING,
 				   "%s/MX: warning: '%s': %s", ownerbuf,
 				   namebuf,
-				   dns_result_totext(DNS_R_MXISADDRESS));
+				   isc_result_totext(DNS_R_MXISADDRESS));
 		}
 
 		/*
@@ -2679,7 +2679,7 @@ update_action(isc_task_t *task, isc_event_t *event) {
 				UNEXPECTED_ERROR(__FILE__, __LINE__,
 						 "temp entry creation failed: "
 						 "%s",
-						 dns_result_totext(result));
+						 isc_result_totext(result));
 				FAIL(ISC_R_UNEXPECTED);
 			}
 		} else {
@@ -3006,7 +3006,7 @@ update_action(isc_task_t *task, isc_event_t *event) {
 					snprintf(rdstr, sizeof(rdstr),
 						 "[dns_"
 						 "rdata_totext failed: %s]",
-						 dns_result_totext(result));
+						 isc_result_totext(result));
 					len = strlen(rdstr);
 				} else {
 					len = (int)isc_buffer_usedlength(&buf);
@@ -3354,7 +3354,7 @@ update_action(isc_task_t *task, isc_event_t *event) {
 			if (result != ISC_R_SUCCESS) {
 				update_log(client, zone, ISC_LOG_ERROR,
 					   "dns_zone_signwithkey failed: %s",
-					   dns_result_totext(result));
+					   isc_result_totext(result));
 			}
 		}
 
@@ -3389,7 +3389,7 @@ update_action(isc_task_t *task, isc_event_t *event) {
 			if (result != ISC_R_SUCCESS) {
 				update_log(client, zone, ISC_LOG_ERROR,
 					   "dns_zone_addnsec3chain failed: %s",
-					   dns_result_totext(result));
+					   isc_result_totext(result));
 			}
 		}
 	} else {

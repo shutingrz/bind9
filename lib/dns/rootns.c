@@ -484,7 +484,7 @@ dns_root_checkhints(dns_view_t *view, dns_db_t *hints, dns_db_t *db) {
 			      DNS_LOGMODULE_HINTS, ISC_LOG_WARNING,
 			      "checkhints%s%s: unable to get root NS rrset "
 			      "from hints: %s",
-			      sep, viewname, dns_result_totext(result));
+			      sep, viewname, isc_result_totext(result));
 		goto cleanup;
 	}
 
@@ -495,7 +495,7 @@ dns_root_checkhints(dns_view_t *view, dns_db_t *hints, dns_db_t *db) {
 			      DNS_LOGMODULE_HINTS, ISC_LOG_WARNING,
 			      "checkhints%s%s: unable to get root NS rrset "
 			      "from cache: %s",
-			      sep, viewname, dns_result_totext(result));
+			      sep, viewname, isc_result_totext(result));
 		goto cleanup;
 	}
 

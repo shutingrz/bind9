@@ -2627,7 +2627,7 @@ closeversion(dns_db_t *db, dns_dbversion_t **versionp, bool commit) {
 					      DNS_LOGMODULE_ZONE, ISC_LOG_ERROR,
 					      "Unable to reinsert header to "
 					      "re-signing heap: %s",
-					      dns_result_totext(result));
+					      isc_result_totext(result));
 			}
 		}
 		decrement_reference(rbtdb, header->node, least_serial,

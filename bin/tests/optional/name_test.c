@@ -57,7 +57,7 @@ print_name(dns_name_t *name) {
 			printf("<empty text name>\n");
 		}
 	} else {
-		printf("error: %s\n", dns_result_totext(result));
+		printf("error: %s\n", isc_result_totext(result));
 	}
 }
 
@@ -129,7 +129,7 @@ main(int argc, char *argv[]) {
 			if (result != 0) {
 				fprintf(stderr,
 					"dns_name_fromtext() failed: %s\n",
-					dns_result_totext(result));
+					isc_result_totext(result));
 				exit(1);
 			}
 			origin = dns_fixedname_name(&oname);
@@ -153,7 +153,7 @@ main(int argc, char *argv[]) {
 			if (result != 0) {
 				fprintf(stderr,
 					"dns_name_fromtext() failed: %s\n",
-					dns_result_totext(result));
+					isc_result_totext(result));
 				exit(1);
 			}
 		}
@@ -185,7 +185,7 @@ main(int argc, char *argv[]) {
 		}
 
 		if (result != ISC_R_SUCCESS) {
-			printf("%s\n", dns_result_totext(result));
+			printf("%s\n", isc_result_totext(result));
 			if (name == dns_fixedname_name(&wname)) {
 				dns_fixedname_init(&wname);
 			} else {
@@ -252,7 +252,7 @@ main(int argc, char *argv[]) {
 					}
 				} else {
 					printf("%s\n",
-					       dns_result_totext(result));
+					       isc_result_totext(result));
 				}
 				got_name = false;
 			} else {
@@ -276,7 +276,7 @@ main(int argc, char *argv[]) {
 				printf("%u bytes.\n", source.used);
 			}
 		} else {
-			printf("%s\n", dns_result_totext(result));
+			printf("%s\n", isc_result_totext(result));
 		}
 
 		if (test_downcase) {

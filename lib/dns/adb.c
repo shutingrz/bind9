@@ -4089,7 +4089,7 @@ fetch_callback(isc_task_t *task, isc_event_t *ev) {
 		dns_name_format(&name->name, buf, sizeof(buf));
 		DP(DEF_LEVEL, "adb: fetch of '%s' %s failed: %s", buf,
 		   address_type == DNS_ADBFIND_INET ? "A" : "AAAA",
-		   dns_result_totext(dev->result));
+		   isc_result_totext(dev->result));
 		/*
 		 * Don't record a failure unless this is the initial
 		 * fetch of a chain.

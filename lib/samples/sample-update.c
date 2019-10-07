@@ -295,7 +295,7 @@ main(int argc, char *argv[]) {
 				   auth_serversp, tsec, 0);
 	if (result != ISC_R_SUCCESS) {
 		fprintf(stderr, "update failed: %s\n",
-			dns_result_totext(result));
+			isc_result_totext(result));
 	} else {
 		fprintf(stderr, "update succeeded\n");
 	}
@@ -309,7 +309,7 @@ main(int argc, char *argv[]) {
 					   auth_serversp, tsec, 0);
 		if (result != ISC_R_SUCCESS) {
 			fprintf(stderr, "2nd update failed: %s\n",
-				dns_result_totext(result));
+				isc_result_totext(result));
 		} else {
 			fprintf(stderr, "2nd update succeeded\n");
 		}

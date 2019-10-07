@@ -448,7 +448,7 @@ configure_zone(const char *vclass, const char *view, const cfg_obj_t *zconfig,
 			   NULL);
 	if (result != ISC_R_SUCCESS) {
 		fprintf(stderr, "%s/%s/%s: %s\n", view, zname, zclass,
-			dns_result_totext(result));
+			isc_result_totext(result));
 	}
 	return (result);
 }

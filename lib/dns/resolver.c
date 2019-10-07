@@ -3377,7 +3377,7 @@ add_bad(fetchctx_t *fctx, dns_adbaddrinfo_t *addrinfo, isc_result_t reason,
 	isc_log_write(
 		dns_lctx, DNS_LOGCATEGORY_LAME_SERVERS, DNS_LOGMODULE_RESOLVER,
 		ISC_LOG_INFO, "%s%s%s resolving '%s/%s/%s': %s", code, spc,
-		dns_result_totext(reason), namebuf, typebuf, classbuf, addrbuf);
+		isc_result_totext(reason), namebuf, typebuf, classbuf, addrbuf);
 }
 
 /*

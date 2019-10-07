@@ -94,7 +94,7 @@ dumpmessage(dns_message_t *msg) {
 				 (char *)isc_buffer_base(&outbuf));
 		} else {
 			tkey_log("Warning: dns_message_totext: %s",
-				 dns_result_totext(result));
+				 isc_result_totext(result));
 		}
 		break;
 	}

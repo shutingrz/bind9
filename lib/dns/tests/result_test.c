@@ -38,8 +38,6 @@ ids(void **state) {
 
 	UNUSED(state);
 
-	dns_result_register();
-
 	for (result = ISC_RESULTCLASS_DNS;
 	     result < (ISC_RESULTCLASS_DNS + DNS_R_NRESULTS); result++)
 	{

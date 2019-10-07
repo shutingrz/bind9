@@ -616,7 +616,7 @@ dns_diff_print(dns_diff_t *diff, FILE *file) {
 		if (result != ISC_R_SUCCESS) {
 			UNEXPECTED_ERROR(__FILE__, __LINE__,
 					 "diff_tuple_tordataset failed: %s",
-					 dns_result_totext(result));
+					 isc_result_totext(result));
 			result = ISC_R_UNEXPECTED;
 			goto cleanup;
 		}

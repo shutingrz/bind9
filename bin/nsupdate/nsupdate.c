@@ -539,7 +539,7 @@ setup_keystr(void) {
 				    false, NULL, 0, 0, gmctx, NULL, &tsigkey);
 	if (result != ISC_R_SUCCESS) {
 		fprintf(stderr, "could not create key from %s: %s\n", keystr,
-			dns_result_totext(result));
+			isc_result_totext(result));
 	} else {
 		dst_key_setbits(tsigkey->key, digestbits);
 	}
@@ -1662,7 +1662,7 @@ evaluate_key(char *cmdline) {
 	isc_mem_free(gmctx, secret);
 	if (result != ISC_R_SUCCESS) {
 		fprintf(stderr, "could not create key from %s %s: %s\n",
-			namestr, secretstr, dns_result_totext(result));
+			namestr, secretstr, isc_result_totext(result));
 		return (STATUS_SYNTAX);
 	}
 	dst_key_setbits(tsigkey->key, digestbits);
@@ -3177,7 +3177,7 @@ recvgss(isc_task_t *task, isc_event_t *event) {
 		result = dns_message_settsigkey(rcvmsg, tsigkey);
 		check_result(result, "dns_message_settsigkey");
 		result = dns_message_checksig(rcvmsg, NULL);
-		ddebug("tsig verification: %s", dns_result_totext(result));
+		ddebug("tsig verification: %s", isc_result_totext(result));
 		check_result(result, "dns_message_checksig");
 #endif /* 0 */
 

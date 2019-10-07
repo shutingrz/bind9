@@ -1284,7 +1284,7 @@ xfrin_recv_done(isc_task_t *task, isc_event_t *ev) {
 				      xfr->mctx);
 	} else {
 		xfrin_log(xfr, ISC_LOG_DEBUG(10), "dns_message_parse: %s",
-			  dns_result_totext(result));
+			  isc_result_totext(result));
 	}
 
 	if (result != ISC_R_SUCCESS || msg->rcode != dns_rcode_noerror ||

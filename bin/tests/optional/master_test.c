@@ -40,7 +40,7 @@ print_dataset(void *arg, const dns_name_t *owner, dns_rdataset_t *dataset) {
 			(char *)target.base);
 	} else {
 		fprintf(stdout, "dns_rdataset_totext: %s\n",
-			dns_result_totext(result));
+			isc_result_totext(result));
 	}
 
 	return (ISC_R_SUCCESS);
@@ -69,7 +69,7 @@ main(int argc, char *argv[]) {
 					   &target);
 		if (result != ISC_R_SUCCESS) {
 			fprintf(stdout, "dns_name_fromtext: %s\n",
-				dns_result_totext(result));
+				isc_result_totext(result));
 			exit(1);
 		}
 
@@ -80,7 +80,7 @@ main(int argc, char *argv[]) {
 			argv[1], &origin, &origin, dns_rdataclass_in, 0, 0,
 			&callbacks, NULL, NULL, mctx, dns_masterformat_text, 0);
 		fprintf(stdout, "dns_master_loadfile: %s\n",
-			dns_result_totext(result));
+			isc_result_totext(result));
 	}
 	return (0);
 }

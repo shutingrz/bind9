@@ -70,7 +70,7 @@ main(int argc, char **argv) {
 
 	result = dns_journal_print(mctx, file, stdout);
 	if (result == DNS_R_NOJOURNAL) {
-		fprintf(stderr, "%s\n", dns_result_totext(result));
+		fprintf(stderr, "%s\n", isc_result_totext(result));
 	}
 	isc_log_destroy(&lctx);
 	isc_mem_detach(&mctx);

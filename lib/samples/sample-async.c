@@ -165,7 +165,7 @@ process_answer(isc_task_t *task, isc_event_t *event) {
 
 	if (rev->result != ISC_R_SUCCESS) {
 		printf("  failed: %u(%s)\n", rev->result,
-		       dns_result_totext(rev->result));
+		       isc_result_totext(rev->result));
 	}
 
 	for (name = ISC_LIST_HEAD(rev->answerlist); name != NULL;

@@ -2027,7 +2027,7 @@ dns_zoneverify_dnssec(dns_zone_t *zone, dns_db_t *db, dns_dbversion_t *ver,
 	result = vresult;
 	if (result != ISC_R_SUCCESS) {
 		report("DNSSEC completeness test failed (%s).\n",
-		       dns_result_totext(result));
+		       isc_result_totext(result));
 		goto done;
 	}
 

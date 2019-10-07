@@ -10787,7 +10787,7 @@ cleanup:
 		isc_log_write(named_g_lctx, NAMED_LOGCATEGORY_GENERAL,
 			      NAMED_LOGMODULE_SERVER, ISC_LOG_ERROR,
 			      "dumpstats failed: %s",
-			      dns_result_totext(result));
+			      isc_result_totext(result));
 	}
 	return (result);
 }
@@ -10922,7 +10922,7 @@ resume:
 			}
 			if (result == ISC_R_NOTIMPLEMENTED) {
 				fprintf(dctx->fp, "; %s\n",
-					dns_result_totext(result));
+					isc_result_totext(result));
 			} else if (result != ISC_R_SUCCESS) {
 				goto cleanup;
 			}
@@ -10970,7 +10970,7 @@ resume:
 			result = dns_zone_getdb(dctx->zone->zone, &dctx->db);
 			if (result != ISC_R_SUCCESS) {
 				fprintf(dctx->fp, "; %s\n",
-					dns_result_totext(result));
+					isc_result_totext(result));
 				goto nextzone;
 			}
 			dns_db_currentversion(dctx->db, &dctx->version);
@@ -10983,7 +10983,7 @@ resume:
 			}
 			if (result == ISC_R_NOTIMPLEMENTED) {
 				fprintf(dctx->fp, "; %s\n",
-					dns_result_totext(result));
+					isc_result_totext(result));
 				result = ISC_R_SUCCESS;
 				POST(result);
 				goto nextzone;
@@ -11011,7 +11011,7 @@ cleanup:
 	if (result != ISC_R_SUCCESS) {
 		isc_log_write(named_g_lctx, NAMED_LOGCATEGORY_GENERAL,
 			      NAMED_LOGMODULE_SERVER, ISC_LOG_ERROR,
-			      "dumpdb failed: %s", dns_result_totext(result));
+			      "dumpdb failed: %s", isc_result_totext(result));
 	}
 	dumpcontext_destroy(dctx);
 }
@@ -11245,7 +11245,7 @@ cleanup:
 		isc_log_write(named_g_lctx, NAMED_LOGCATEGORY_GENERAL,
 			      NAMED_LOGMODULE_SERVER, ISC_LOG_ERROR,
 			      "dumpsecroots failed: %s",
-			      dns_result_totext(result));
+			      isc_result_totext(result));
 	}
 	return (result);
 }
@@ -11284,7 +11284,7 @@ cleanup:
 		isc_log_write(named_g_lctx, NAMED_LOGCATEGORY_GENERAL,
 			      NAMED_LOGMODULE_SERVER, ISC_LOG_ERROR,
 			      "dumprecursing failed: %s",
-			      dns_result_totext(result));
+			      isc_result_totext(result));
 	}
 	return (result);
 }

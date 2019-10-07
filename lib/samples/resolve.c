@@ -453,7 +453,7 @@ main(int argc, char *argv[]) {
 				    resopt, &namelist);
 	if (result != ISC_R_SUCCESS) {
 		fprintf(stderr, "resolution failed: %s\n",
-			dns_result_totext(result));
+			isc_result_totext(result));
 	}
 	for (name = ISC_LIST_HEAD(namelist); name != NULL;
 	     name = ISC_LIST_NEXT(name, link))

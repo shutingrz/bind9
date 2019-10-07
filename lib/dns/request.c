@@ -851,7 +851,7 @@ cleanup:
 	}
 	req_destroy(request);
 	req_log(ISC_LOG_DEBUG(3), "dns_request_createraw: failed %s",
-		dns_result_totext(result));
+		isc_result_totext(result));
 	return (result);
 }
 
@@ -1036,7 +1036,7 @@ cleanup:
 	}
 	req_destroy(request);
 	req_log(ISC_LOG_DEBUG(3), "dns_request_createvia: failed %s",
-		dns_result_totext(result));
+		isc_result_totext(result));
 	return (result);
 }
 
@@ -1371,7 +1371,7 @@ req_response(isc_task_t *task, isc_event_t *event) {
 	UNUSED(task);
 
 	req_log(ISC_LOG_DEBUG(3), "req_response: request %p: %s", request,
-		dns_result_totext(devent->result));
+		isc_result_totext(devent->result));
 
 	LOCK(&request->requestmgr->locks[request->hash]);
 	result = devent->result;

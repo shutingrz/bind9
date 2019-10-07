@@ -233,7 +233,7 @@ main(int argc, char *argv[]) {
 				    60, 0, 3);
 	if (result != ISC_R_SUCCESS) {
 		fprintf(stderr, "failed to get a response: %s\n",
-			dns_result_totext(result));
+			isc_result_totext(result));
 	}
 
 	/* Dump the response */

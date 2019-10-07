@@ -57,7 +57,7 @@ static enum { progmode_check, progmode_compile } progmode;
 		if (result != ISC_R_SUCCESS) {                                \
 			if (!quiet)                                           \
 				fprintf(stderr, "%s() returned %s\n",         \
-					function, dns_result_totext(result)); \
+					function, isc_result_totext(result)); \
 			return (result);                                      \
 		}                                                             \
 	} while (0)

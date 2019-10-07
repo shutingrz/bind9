@@ -38,7 +38,7 @@ printmessage(dns_message_t *msg);
 static inline void
 CHECKRESULT(isc_result_t result, const char *msg) {
 	if (result != ISC_R_SUCCESS) {
-		printf("%s: %s\n", msg, dns_result_totext(result));
+		printf("%s: %s\n", msg, isc_result_totext(result));
 
 		exit(1);
 	}
