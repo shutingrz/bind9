@@ -278,7 +278,6 @@ main(int argc, char **argv) {
 	UNUSED(argc);
 	UNUSED(argv);
 
-	dns_result_register();
 	result = isc_app_start();
 	check_result(result, "isc_app_start()");
 

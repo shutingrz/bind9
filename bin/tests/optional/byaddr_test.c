@@ -83,8 +83,6 @@ main(int argc, char *argv[]) {
 
 	RUNTIME_CHECK(isc_app_start() == ISC_R_SUCCESS);
 
-	dns_result_register();
-
 	mctx = NULL;
 	isc_mem_create(&mctx);
 

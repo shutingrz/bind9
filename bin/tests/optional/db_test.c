@@ -370,8 +370,6 @@ main(int argc, char *argv[]) {
 	isc_log_t *lctx = NULL;
 	size_t n;
 
-	dns_result_register();
-
 	isc_mem_create(&mctx);
 	RUNTIME_CHECK(dns_dbtable_create(mctx, dns_rdataclass_in, &dbtable) ==
 		      ISC_R_SUCCESS);

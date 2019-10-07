@@ -453,8 +453,6 @@ main(int argc, char *argv[]) {
 
 	RUNCHECK(isc_app_start());
 
-	dns_result_register();
-
 	mctx = NULL;
 	isc_mem_create(&mctx);
 

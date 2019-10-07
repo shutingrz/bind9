@@ -131,8 +131,6 @@ main(int argc, char *argv[]) {
 		exit(1);
 	}
 
-	pk11_result_register();
-
 	/* Initialize the CRYPTOKI library */
 	if (lib_name != NULL) {
 		pk11_set_lib_name(lib_name);

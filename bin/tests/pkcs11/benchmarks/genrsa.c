@@ -166,8 +166,6 @@ main(int argc, char *argv[]) {
 		exit(1);
 	}
 
-	pk11_result_register();
-
 	/* Allocate hanles */
 	pubKey = (CK_SESSION_HANDLE *)malloc(count * sizeof(CK_SESSION_HANDLE));
 	if (pubKey == NULL) {

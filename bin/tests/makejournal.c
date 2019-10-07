@@ -114,8 +114,6 @@ main(int argc, char **argv) {
 				    ISC_LOG_DYNAMIC, &destination, 0));
 	CHECK(isc_log_usechannel(logconfig, "stderr", NULL, NULL));
 
-	dns_result_register();
-
 	result = loadzone(&olddb, origin, file1);
 	if (result != ISC_R_SUCCESS) {
 		fprintf(stderr, "Couldn't load %s: ", file1);

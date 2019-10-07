@@ -53,7 +53,7 @@ initialize(void) {
 	isc_refcount_init(&references, 0);
 
 	isc_mem_create(&dns_g_mctx);
-	dns_result_register();
+
 	result = dns_ecdb_register(dns_g_mctx, &dbimp);
 	if (result != ISC_R_SUCCESS) {
 		goto cleanup_mctx;

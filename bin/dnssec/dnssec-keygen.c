@@ -879,11 +879,6 @@ main(int argc, char **argv) {
 		usage();
 	}
 
-#if USE_PKCS11
-	pk11_result_register();
-#endif /* if USE_PKCS11 */
-	dns_result_register();
-
 	isc_commandline_errprint = false;
 
 	/*

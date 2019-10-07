@@ -526,8 +526,6 @@ main(int argc, char **argv) {
 			      ISC_R_SUCCESS);
 	}
 
-	dns_result_register();
-
 	origin = argv[isc_commandline_index++];
 	filename = argv[isc_commandline_index++];
 	result = load_zone(mctx, origin, filename, inputformat, classname,

@@ -197,8 +197,6 @@ int
 main(int argc, char *argv[]) {
 	int i;
 
-	dns_result_register();
-
 	isc_mem_create(&mctx);
 
 	argc--;

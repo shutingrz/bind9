@@ -44,7 +44,7 @@
 #include <dns/view.h>
 
 #include <dst/result.h>
-#include <isccc/result.h>
+
 #if USE_PKCS11
 #include <pk11/result.h>
 #endif /* if USE_PKCS11 */
@@ -1507,13 +1507,6 @@ main(int argc, char *argv[]) {
 	isc_error_setunexpected(library_unexpected_error);
 
 	named_os_init(program_name);
-
-	dns_result_register();
-	dst_result_register();
-	isccc_result_register();
-#if USE_PKCS11
-	pk11_result_register();
-#endif /* if USE_PKCS11 */
 
 #if !ISC_MEM_DEFAULTFILL
 	/*

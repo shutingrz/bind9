@@ -1000,8 +1000,6 @@ main(int argc, char **argv) {
 
 	parse_config(rndc_mctx, log, keyname, &pctx, &config);
 
-	isccc_result_register();
-
 	command = *argv;
 
 	isc_buffer_allocate(rndc_mctx, &databuf, 2048);

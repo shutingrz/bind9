@@ -306,8 +306,6 @@ ns_test_begin(FILE *logfile, bool start_managers) {
 		CHECK(isc_log_usechannel(logconfig, "stderr", NULL, NULL));
 	}
 
-	dns_result_register();
-
 	if (start_managers) {
 		CHECK(create_managers());
 	}
