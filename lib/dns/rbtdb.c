@@ -8664,10 +8664,6 @@ dns_rbtdb_create(isc_mem_t *mctx, const dns_name_t *origin, dns_dbtype_t type,
 	if (!IS_CACHE(rbtdb)) {
 		rbtdb->timeouts = isc_mem_get(
 			hmctx, rbtdb->node_lock_count * sizeof(isc_heap_t *));
-		if (rbtdb->timeouts == NULL) {
-			result = ISC_R_NOMEMORY;
-			goto cleanup_heaps;
-		}
 		for (i = 0; i < (int)rbtdb->node_lock_count; i++) {
 			rbtdb->timeouts[i] = NULL;
 		}
