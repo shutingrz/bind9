@@ -26,8 +26,6 @@
 #include <dns/lib.h>
 #include <dns/result.h>
 
-#include <dst/result.h>
-
 /*
  * Check ids array is populated.
  */
@@ -35,12 +33,13 @@ static void
 ids(void **state) {
 	const char *str;
 	isc_result_t result;
+	size_t i;
 
 	UNUSED(state);
 
-	for (result = ISC_RESULTCLASS_DNS;
-	     result < (ISC_RESULTCLASS_DNS + DNS_R_NRESULTS); result++)
-	{
+	for (i = 0; i < DNS_R_NRESULTS; i++) {
+		result = ISC_RESULTCODE_DNS(i);
+
 		str = isc_result_toid(result);
 		assert_non_null(str);
 		assert_string_not_equal(str, "(result code text not "
@@ -51,6 +50,8 @@ ids(void **state) {
 		assert_string_not_equal(str, "(result code text not "
 					     "available)");
 	}
+
+	result = ISC_RESULTCODE_DNS(i);
 
 	str = isc_result_toid(result);
 	assert_non_null(str);
@@ -60,9 +61,8 @@ ids(void **state) {
 	assert_non_null(str);
 	assert_string_equal(str, "(result code text not available)");
 
-	for (result = ISC_RESULTCLASS_DST;
-	     result < (ISC_RESULTCLASS_DST + DST_R_NRESULTS); result++)
-	{
+	for (i = 0; i < DST_R_NRESULTS; i++) {
+		result = ISC_RESULTCODE_DST(i);
 		str = isc_result_toid(result);
 		assert_non_null(str);
 		assert_string_not_equal(str, "(result code text not "
@@ -73,6 +73,8 @@ ids(void **state) {
 		assert_string_not_equal(str, "(result code text not "
 					     "available)");
 	}
+
+	result = ISC_RESULTCODE_DST(i);
 
 	str = isc_result_toid(result);
 	assert_non_null(str);
@@ -82,10 +84,8 @@ ids(void **state) {
 	assert_non_null(str);
 	assert_string_equal(str, "(result code text not available)");
 
-	for (result = ISC_RESULTCLASS_DNSRCODE;
-	     result < (ISC_RESULTCLASS_DNSRCODE + DNS_R_NRCODERESULTS);
-	     result++)
-	{
+	for (i = 0; i < DNS_R_NRCODERESULTS; i++) {
+		result = ISC_RESULTCODE_DNSRCODE(i);
 		str = isc_result_toid(result);
 		assert_non_null(str);
 		assert_string_not_equal(str, "(result code text not "
@@ -96,6 +96,8 @@ ids(void **state) {
 		assert_string_not_equal(str, "(result code text not "
 					     "available)");
 	}
+
+	result = ISC_RESULTCODE_DNSRCODE(i);
 
 	str = isc_result_toid(result);
 	assert_non_null(str);

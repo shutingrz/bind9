@@ -1293,7 +1293,7 @@ xfrin_recv_done(isc_task_t *task, isc_event_t *ev) {
 	{
 		if (result == ISC_R_SUCCESS && msg->rcode != dns_rcode_noerror)
 		{
-			result = ISC_RESULTCLASS_DNSRCODE + msg->rcode; /*XXX*/
+			result = ISC_RESULTCODE_DNSRCODE(msg->rcode); /*XXX*/
 		} else if (result == ISC_R_SUCCESS &&
 			   msg->opcode != dns_opcode_query) {
 			result = DNS_R_UNEXPECTEDOPCODE;
