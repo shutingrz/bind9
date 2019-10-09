@@ -6722,6 +6722,7 @@ zone_resigninc(dns_zone_t *zone) {
 	dns_diff_t _sig_diff;
 	dns__zonediff_t zonediff;
 	dns_fixedname_t fixed;
+	dns_kasp_t *kasp = dns_zone_getkasp(zone);
 	dns_name_t *name;
 	dns_rdataset_t rdataset;
 	dns_rdatatype_t covers;
@@ -6730,6 +6731,7 @@ zone_resigninc(dns_zone_t *zone) {
 	isc_result_t result;
 	isc_stdtime_t now, inception, soaexpire, expire, stop;
 	uint32_t jitter, sigvalidityinterval;
+	unsigned int inception_offset = 3600;
 	unsigned int i;
 	unsigned int nkeys = 0;
 	unsigned int resign;
@@ -6774,8 +6776,12 @@ zone_resigninc(dns_zone_t *zone) {
 		goto failure;
 	}
 
+	if (kasp != NULL) {
+		inception_offset = dns_kasp_siginceptionoffset(kasp);
+	}
+
 	sigvalidityinterval = zone->sigvalidityinterval;
-	inception = now - 3600;	/* Allow for clock skew. */
+	inception = now - inception_offset; /* Allow for clock skew. */
 	soaexpire = now + sigvalidityinterval;
 	/*
 	 * Spread out signatures over time if they happen to be
@@ -7827,6 +7833,7 @@ zone_nsec3chain(dns_zone_t *zone) {
 	dns__zonediff_t zonediff;
 	dns_fixedname_t fixed;
 	dns_fixedname_t nextfixed;
+	dns_kasp_t *kasp = dns_zone_getkasp(zone);
 	dns_name_t *name, *nextname;
 	dns_rdataset_t rdataset;
 	dns_nsec3chain_t *nsec3chain = NULL, *nextnsec3chain;
@@ -7839,6 +7846,7 @@ zone_nsec3chain(dns_zone_t *zone) {
 	isc_result_t result;
 	isc_stdtime_t now, inception, soaexpire, expire;
 	uint32_t jitter, sigvalidityinterval;
+	unsigned int inception_offset = 3600;
 	unsigned int i;
 	unsigned int nkeys = 0;
 	uint32_t nodes;
@@ -7907,8 +7915,11 @@ zone_nsec3chain(dns_zone_t *zone) {
 		goto failure;
 	}
 
+	if (kasp != NULL) {
+		inception_offset = dns_kasp_siginceptionoffset(kasp);
+	}
 	sigvalidityinterval = dns_zone_getsigvalidityinterval(zone);
-	inception = now - 3600;	/* Allow for clock skew. */
+	inception = now - inception_offset; /* Allow for clock skew. */
 	soaexpire = now + sigvalidityinterval;
 
 	/*
@@ -8830,6 +8841,7 @@ zone_sign(dns_zone_t *zone) {
 	isc_result_t result;
 	isc_stdtime_t now, inception, soaexpire, expire;
 	uint32_t jitter, sigvalidityinterval, expiryinterval;
+	unsigned int inception_offset = 3600;
 	unsigned int i, j;
 	unsigned int nkeys = 0;
 	uint32_t nodes;
@@ -8884,7 +8896,7 @@ zone_sign(dns_zone_t *zone) {
 	kasp = dns_zone_getkasp(zone);
 
 	sigvalidityinterval = dns_zone_getsigvalidityinterval(zone);
-	inception = now - 3600;	/* Allow for clock skew. */
+	inception = now - inception_offset; /* Allow for clock skew. */
 	soaexpire = now + sigvalidityinterval;
 	expiryinterval = dns_zone_getsigresigninginterval(zone);
 	if (expiryinterval > sigvalidityinterval) {
@@ -18322,7 +18334,9 @@ sign_apex(dns_zone_t *zone, dns_db_t *db, dns_dbversion_t *ver,
 	bool check_ksk, keyset_kskonly;
 	dst_key_t *zone_keys[DNS_MAXZONEKEYS];
 	unsigned int nkeys = 0, i;
+	unsigned int inception_offset = 3600;
 	dns_difftuple_t *tuple;
+	dns_kasp_t *kasp = dns_zone_getkasp(zone);
 
 	result = dns__zone_findkeys(zone, db, ver, now, zone->mctx,
 				    DNS_MAXZONEKEYS, zone_keys, &nkeys);
@@ -18333,7 +18347,11 @@ sign_apex(dns_zone_t *zone, dns_db_t *db, dns_dbversion_t *ver,
 		return (result);
 	}
 
-	inception = now - 3600;	/* Allow for clock skew. */
+	if (kasp != NULL) {
+		inception_offset = dns_kasp_siginceptionoffset(kasp);
+	}
+
+	inception = now - inception_offset; /* Allow for clock skew. */
 	soaexpire = now + dns_zone_getsigvalidityinterval(zone);
 
 	keyexpire = dns_zone_getkeyvalidityinterval(zone);

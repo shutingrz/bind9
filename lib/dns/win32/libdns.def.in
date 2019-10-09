@@ -432,6 +432,7 @@ dns_kasp_parentpropagationdelay
 dns_kasp_parentregistrationdelay
 dns_kasp_publishsafety
 dns_kasp_retiresafety
+dns_kasp_siginceptionoffset
 dns_kasp_signdelay
 dns_kasp_sigrefresh
 dns_kasp_sigvalidity

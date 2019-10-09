@@ -34,6 +34,7 @@
 #include <dns/events.h>
 #include <dns/fixedname.h>
 #include <dns/journal.h>
+#include <dns/kasp.h>
 #include <dns/keyvalues.h>
 #include <dns/log.h>
 #include <dns/message.h>
@@ -1466,6 +1467,9 @@ dns_update_signaturesinc(dns_update_log_t *log, dns_zone_t *zone, dns_db_t *db,
 	unsigned int maxsigs = dns_zone_getsignatures(zone);
 
 	if (statep == NULL || *statep == NULL) {
+		unsigned int inception_offset = 3600;
+		dns_kasp_t* kasp = dns_zone_getkasp(zone);
+
 		if (statep == NULL) {
 			state = &mystate;
 		} else {
@@ -1492,7 +1496,12 @@ dns_update_signaturesinc(dns_update_log_t *log, dns_zone_t *zone, dns_db_t *db,
 		}
 
 		isc_stdtime_get(&now);
-		state->inception = now - 3600; /* Allow for some clock skew. */
+		/* Set inception offset to allow for some clock skew. */
+		if (kasp != NULL) {
+			inception_offset = dns_kasp_siginceptionoffset(kasp);
+		}
+		state->inception = now - inception_offset;
+
 		state->expire = now + sigvalidityinterval;
 		state->keyexpire = dns_zone_getkeyvalidityinterval(zone);
 		if (state->keyexpire == 0) {
