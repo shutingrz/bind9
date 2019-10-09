@@ -145,6 +145,27 @@ dns_kasp_signdelay(dns_kasp_t *kasp) {
 }
 
 time_t
+dns_kasp_siginceptionoffset(dns_kasp_t *kasp) {
+	REQUIRE(DNS_KASP_VALID(kasp));
+	REQUIRE(kasp->frozen);
+	return kasp->signatures_inception_offset;
+}
+
+time_t
+dns_kasp_sigjitter(dns_kasp_t *kasp) {
+	REQUIRE(DNS_KASP_VALID(kasp));
+	REQUIRE(kasp->frozen);
+	return kasp->signatures_jitter;
+}
+
+time_t
+dns_kasp_sigresign(dns_kasp_t *kasp) {
+	REQUIRE(DNS_KASP_VALID(kasp));
+	REQUIRE(kasp->frozen);
+	return kasp->signatures_resign;
+}
+
+time_t
 dns_kasp_sigrefresh(dns_kasp_t *kasp) {
 	REQUIRE(DNS_KASP_VALID(kasp));
 	REQUIRE(kasp->frozen);

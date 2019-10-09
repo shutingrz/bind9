@@ -232,6 +232,34 @@ dns_kasp_signdelay(dns_kasp_t *kasp);
  */
 
 time_t
+dns_kasp_siginceptionoffset(dns_kasp_t *kasp);
+/*%<
+ * Get signature inception offset.
+ *
+ * Requires:
+ *
+ *\li   'kasp' is a valid, frozen kasp.
+ *
+ * Returns:
+ *
+ *\li   signature inception offset.
+ */
+
+time_t
+dns_kasp_sigjitter(dns_kasp_t *kasp);
+/*%<
+ * Get signature jitter.
+ *
+ * Requires:
+ *
+ *\li   'kasp' is a valid, frozen kasp.
+ *
+ * Returns:
+ *
+ *\li   signature jitter.
+ */
+
+time_t
 dns_kasp_sigrefresh(dns_kasp_t *kasp);
 /*%<
  * Get signature refresh interval.
@@ -243,6 +271,20 @@ dns_kasp_sigrefresh(dns_kasp_t *kasp);
  * Returns:
  *
  *\li   signature refresh interval.
+ */
+
+time_t
+dns_kasp_sigresign(dns_kasp_t *kasp);
+/*%<
+ * Get signature resign interval.
+ *
+ * Requires:
+ *
+ *\li   'kasp' is a valid, frozen kasp.
+ *
+ * Returns:
+ *
+ *\li   signature resign interval.
  */
 
 time_t
