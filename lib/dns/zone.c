@@ -6730,11 +6730,12 @@ zone_resigninc(dns_zone_t *zone) {
 	bool check_ksk, keyset_kskonly = false;
 	isc_result_t result;
 	isc_stdtime_t now, inception, soaexpire, expire, stop;
-	uint32_t jitter, sigvalidityinterval;
+	uint32_t sigvalidityinterval;
 	unsigned int inception_offset = 3600;
 	unsigned int i;
 	unsigned int nkeys = 0;
 	unsigned int resign;
+	int jitter;
 
 	ENTER;
 
@@ -6788,7 +6789,11 @@ zone_resigninc(dns_zone_t *zone) {
 	 * clumped.  We don't do this for each add_sigs() call as
 	 * we still want some clustering to occur.
 	 */
-	if (sigvalidityinterval >= 3600U) {
+	if (kasp != NULL) {
+		uint32_t j = dns_kasp_sigjitter(kasp);
+		jitter = isc_random_uniform((2*j)+1) - j;
+		expire = soaexpire - jitter - 1;
+	} else if (sigvalidityinterval >= 3600U) {
 		if (sigvalidityinterval > 7200U) {
 			jitter = isc_random_uniform(3600);
 		} else {
@@ -6798,6 +6803,7 @@ zone_resigninc(dns_zone_t *zone) {
 	} else {
 		expire = soaexpire - 1;
 	}
+
 	stop = now + 5;
 
 	check_ksk = DNS_ZONE_OPTION(zone, DNS_ZONEOPT_UPDATECHECKKSK);
@@ -7845,7 +7851,8 @@ zone_nsec3chain(dns_zone_t *zone) {
 	bool first;
 	isc_result_t result;
 	isc_stdtime_t now, inception, soaexpire, expire;
-	uint32_t jitter, sigvalidityinterval;
+	int jitter;
+	uint32_t sigvalidityinterval;
 	unsigned int inception_offset = 3600;
 	unsigned int i;
 	unsigned int nkeys = 0;
@@ -7927,7 +7934,11 @@ zone_nsec3chain(dns_zone_t *zone) {
 	 * clumped.  We don't do this for each add_sigs() call as
 	 * we still want some clustering to occur.
 	 */
-	if (sigvalidityinterval >= 3600U) {
+	if (kasp != NULL) {
+		uint32_t j = dns_kasp_sigjitter(kasp);
+		jitter = isc_random_uniform((2*j)+1) - j;
+		expire = soaexpire - jitter - 1;
+	} else if (sigvalidityinterval >= 3600U) {
 		if (sigvalidityinterval > 7200U) {
 			jitter = isc_random_uniform(3600);
 		} else {
@@ -8840,7 +8851,8 @@ zone_sign(dns_zone_t *zone) {
 	bool first;
 	isc_result_t result;
 	isc_stdtime_t now, inception, soaexpire, expire;
-	uint32_t jitter, sigvalidityinterval, expiryinterval;
+	int jitter;
+	uint32_t sigvalidityinterval, expiryinterval;
 	unsigned int inception_offset = 3600;
 	unsigned int i, j;
 	unsigned int nkeys = 0;
@@ -8910,7 +8922,11 @@ zone_sign(dns_zone_t *zone) {
 	 * clumped.  We don't do this for each add_sigs() call as
 	 * we still want some clustering to occur.
 	 */
-	if (sigvalidityinterval >= 3600U) {
+	if (kasp != NULL) {
+		uint32_t jit = dns_kasp_sigjitter(kasp);
+		jitter = isc_random_uniform((2*jit)+1) - jit;
+		expire = soaexpire - jitter - 1;
+	} else if (sigvalidityinterval >= 3600U) {
 		if (sigvalidityinterval > 7200U) {
 			jitter = isc_random_uniform(expiryinterval);
 		} else {

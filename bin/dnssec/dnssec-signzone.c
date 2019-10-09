@@ -284,6 +284,7 @@ signwithkey(dns_name_t *name, dns_rdataset_t *rdataset, dst_key_t *key,
 	unsigned char array[BUFSIZE];
 	isc_buffer_t b;
 	dns_difftuple_t *tuple;
+	int jitter_value = isc_random_uniform((2*jitter)+1) - jitter;
 
 	dst_key_format(key, keystr, sizeof(keystr));
 	vbprintf(1, "\t%s %s\n", logmsg, keystr);
@@ -293,7 +294,7 @@ signwithkey(dns_name_t *name, dns_rdataset_t *rdataset, dst_key_t *key,
 	else
 		expiry = endtime;
 
-	jendtime = (jitter != 0) ? expiry - isc_random_uniform(jitter) : expiry;
+	jendtime = expiry + jitter_value;
 	isc_buffer_init(&b, array, sizeof(array));
 	result = dns_dnssec_sign(name, rdataset, key, &starttime, &jendtime,
 				 mctx, &b, &trdata);

@@ -386,8 +386,8 @@
             a previously-signed zone is passed as input to the signer,
             all expired signatures have to be regenerated at about the
             same time.  The <option>jitter</option> option specifies a
-            jitter window that will be used to randomize the signature
-            expire time, thus spreading incremental signature
+            jitter window [-j, j] that will be used to randomize the
+            signature expire time, thus spreading incremental signature
             regeneration over time.
           </para>
           <para>
