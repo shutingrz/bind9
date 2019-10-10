@@ -15,11 +15,7 @@
 
 #include <isc/mem.h>
 #include <isc/result.h>
-
-typedef struct isc_nm isc_nm_t;
-typedef struct isc_nmsocket isc_nmsocket_t;
-typedef struct isc_nmiface isc_nmiface_t;
-typedef struct isc_nmhandle isc_nmhandle_t;
+#include <isc/types.h>
 
 typedef enum {
 	NMEV_READ,
@@ -28,19 +24,19 @@ typedef enum {
 	NMEV_CONNECTED,
 	NMEV_CANCELLED,
 	NMEV_SHUTDOWN
-} isc_nmev_type;
+} isc_nm_eventtype;
 
 /*
  * isc_nm_start creates and starts a netmgr
  */
-isc_nm_t*
+isc_nm_t *
 isc_nm_start(isc_mem_t *mctx, int workers);
 
 /*
  * isc_nm_shutdown shutdowns netmgr, freeing all the resources
  */
 void
-isc_nm_shutdown(isc_nm_t**mgr);
+isc_nm_shutdown(isc_nm_t **mgr);
 
 void
 isc_nm_attach(isc_nm_t *mgr, isc_nm_t **dst);
@@ -58,20 +54,21 @@ isc_nm_tid(void);
 void
 isc_nm_freehandle(isc_nmhandle_t *handle);
 
-/*
- * isc_nmsocket_attach attaches to a socket, increasing refcount
- */
 void
 isc_nmsocket_attach(isc_nmsocket_t *socket, isc_nmsocket_t **target);
+/*%<
+ * isc_nmsocket_attach attaches to a socket, increasing refcount
+ */
 
 void
 isc_nmsocket_close(isc_nmsocket_t *socket);
-/*
+
+void
+isc_nmsocket_detach(isc_nmsocket_t **socketp);
+/*%<
  * isc_nmsocket_detach detaches from socket, decreasing refcount
  * and possibly destroying the socket if it's no longer referenced.
  */
-void
-isc_nmsocket_detach(isc_nmsocket_t **socketp);
 
 void
 isc_nmhandle_attach(isc_nmhandle_t *handle, isc_nmhandle_t **handlep);
@@ -98,10 +95,8 @@ isc_nmhandle_is_stream(isc_nmhandle_t *handle);
  * - dofree frees everything associated with `opaque`
  */
 void
-isc_nmhandle_setdata(isc_nmhandle_t *handle,
-		     void *arg,
-		     isc_nm_opaquecb doreset,
-		     isc_nm_opaquecb dofree);
+isc_nmhandle_setdata(isc_nmhandle_t *handle, void *arg,
+		     isc_nm_opaquecb doreset, isc_nm_opaquecb dofree);
 
 isc_sockaddr_t
 isc_nmhandle_peeraddr(isc_nmhandle_t *handle);
@@ -121,12 +116,9 @@ typedef void (*isc_nm_recv_cb_t)(void *arg, isc_nmhandle_t*handle,
  * When a packet is received cb is called with cbarg as its first argument
  */
 isc_result_t
-isc_nm_udp_listen(isc_nm_t *mgr,
-		  isc_nmiface_t *iface,
-		  isc_nm_recv_cb_t cb,
-		  size_t extrasize,
-		  void *cbarg,
-		  isc_nmsocket_t **rv);
+isc_nm_listenudp(isc_nm_t *mgr, isc_nmiface_t *iface,
+		 isc_nm_recv_cb_t cb, void *cbarg,
+		 size_t extrasize, isc_nmsocket_t **rv);
 
 void
 isc_nm_udp_stoplistening(isc_nmsocket_t *socket);
@@ -139,12 +131,6 @@ typedef void (*isc_nm_connect_cb_t)(isc_nmhandle_t *handle,
 				    isc_result_t result, void *cbarg);
 typedef void (*isc_nm_accept_cb_t)(isc_nmhandle_t *handle, isc_result_t result,
 				   void *cbarg);
-
-isc_result_t
-isc_nm_listen_tcp(isc_nm_t *mgr, isc_nm_accept_cb_t *cb);
-
-void
-isc_nm_tcp_stoplistening(isc_nmsocket_t *socket);
 
 /*
  * isc_nm_pause pauses all processing, equivalent to taskmgr exclusive tasks.
@@ -161,11 +147,8 @@ void
 isc_nm_resume(isc_nm_t *mgr);
 
 isc_result_t
-isc_nm_tcp_connect(isc_nm_t*mgr,
-		   isc_nmiface_t *iface,
-		   isc_sockaddr_t *peer,
-		   isc_nm_connect_cb_t cb,
-		   void *cbarg);
+isc_nm_tcp_connect(isc_nm_t*mgr, isc_nmiface_t *iface, isc_sockaddr_t *peer,
+		   isc_nm_connect_cb_t cb, void *cbarg);
 
 isc_nmsocket_t*
 isc_nm_udp_socket();
@@ -183,28 +166,22 @@ isc_nm_read(isc_nmhandle_t *handle, isc_nm_recv_cb_t cb, void*cbarg);
  * Callback can be invoked directly from the calling thread, or called later.
  */
 isc_result_t
-isc_nm_send(isc_nmhandle_t *handle,
-	    isc_region_t *region,
-	    isc_nm_send_cb_t cb,
-	    void *cbarg);
+isc_nm_send(isc_nmhandle_t *handle, isc_region_t *region,
+	    isc_nm_send_cb_t cb, void *cbarg);
 
 isc_result_t
-isc_nm_tcp_listen(isc_nm_t *mgr,
-		  isc_nmiface_t *iface,
-		  isc_nm_accept_cb_t cb,
-		  size_t extrahandlesize,
-		  void *cbarg,
-		  isc_quota_t *quota,
-		  isc_nmsocket_t **rv);
+isc_nm_listentcp(isc_nm_t *mgr, isc_nmiface_t *iface,
+		 isc_nm_accept_cb_t cb, void *cbarg,
+		 size_t extrahandlesize, isc_quota_t *quota,
+		 isc_nmsocket_t **rv);
 
+void
+isc_nm_tcp_stoplistening(isc_nmsocket_t *socket);
 
 isc_result_t
-isc_nm_tcp_dnslisten(isc_nm_t *mgr,
-		     isc_nmiface_t *iface,
-		     isc_nm_recv_cb_t cb,
-		     size_t extrahandlesize,
-		     void *arg,
-		     isc_quota_t *quota,
+isc_nm_listentcpdns(isc_nm_t *mgr, isc_nmiface_t *iface,
+		     isc_nm_recv_cb_t cb, void *arg,
+		     size_t extrahandlesize, isc_quota_t *quota,
 		     isc_nmsocket_t **rv);
 
 void

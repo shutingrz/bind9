@@ -52,20 +52,17 @@ udp_send_cb(uv_udp_send_t *req, int status);
 
 
 isc_result_t
-isc_nm_udp_listen(isc_nm_t *mgr,
-		  isc_nmiface_t *iface,
-		  isc_nm_recv_cb_t cb,
-		  size_t extrahandlesize,
-		  void *arg,
-		  isc_nmsocket_t **rv) {
+isc_nm_listenudp(isc_nm_t *mgr, isc_nmiface_t *iface,
+		 isc_nm_recv_cb_t cb, void *arg,
+		 size_t extrahandlesize, isc_nmsocket_t **rv)
+{
 	isc_nmsocket_t *nsocket;
 	int res;
 
 	/*
-	 * We are creating nworkers duplicated sockets, one for each worker
-	 * thread
+	 * We are creating mgr->nworkers duplicated sockets, one
+	 * socket for each worker thread.
 	 */
-
 	nsocket = isc_mem_get(mgr->mctx, sizeof(*nsocket));
 	isc__nmsocket_init(nsocket, mgr, isc_nm_udplistener);
 	nsocket->iface = iface;
@@ -92,11 +89,8 @@ isc_nm_udp_listen(isc_nm_t *mgr,
 		csocket->rcbarg = arg;
 		csocket->fd = socket(AF_INET, SOCK_DGRAM, 0);
 		INSIST(csocket->fd >= 0);
-		res = setsockopt(csocket->fd,
-				 SOL_SOCKET,
-				 SO_REUSEPORT,
-				 &(int){1},
-				 sizeof(int));
+		res = setsockopt(csocket->fd, SOL_SOCKET, SO_REUSEPORT,
+				 &(int){1}, sizeof(int));
 		INSIST(res == 0);
 		ievent = isc__nm_get_ievent(mgr, netievent_udplisten);
 		ievent->socket = csocket;

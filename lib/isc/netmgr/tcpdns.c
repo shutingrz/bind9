@@ -85,18 +85,15 @@ dnslisten_readcb(void *arg, isc_nmhandle_t *handle, isc_region_t *region) {
 }
 
 /*
- * isc_nm_tcp_dnslistens listens for connections and accepts
+ * isc_nm_listentcpdns listens for connections and accepts
  * them immediately, then calls the cb for each incoming DNS packet
  * (with 2-byte length stripped) - just like for UDP packet.
  */
 isc_result_t
-isc_nm_tcp_dnslisten(isc_nm_t *mgr,
-		     isc_nmiface_t *iface,
-		     isc_nm_recv_cb_t cb,
-		     size_t extrahandlesize,
-		     void *cbarg,
-		     isc_quota_t *quota,
-		     isc_nmsocket_t **rv)
+isc_nm_listentcpdns(isc_nm_t *mgr, isc_nmiface_t *iface,
+		    isc_nm_recv_cb_t cb, void *cbarg,
+		    size_t extrahandlesize, isc_quota_t *quota,
+		    isc_nmsocket_t **rv)
 {
 	isc_result_t result;
 
@@ -110,13 +107,9 @@ isc_nm_tcp_dnslisten(isc_nm_t *mgr,
 	dnslistensocket->extrahandlesize = extrahandlesize;
 
 	/* We set dnslistensocket->outer to a true listening socket */
-	result = isc_nm_tcp_listen(mgr,
-				   iface,
-				   dnslisten_acceptcb,
-				   extrahandlesize,
-				   dnslistensocket,
-				   quota,
-				   &dnslistensocket->outer);
+	result = isc_nm_listentcp(mgr, iface, dnslisten_acceptcb,
+				  dnslistensocket, extrahandlesize,
+				  quota, &dnslistensocket->outer);
 	dnslistensocket->listening = true;
 	*rv = dnslistensocket;
 	return (result);

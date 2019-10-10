@@ -167,13 +167,10 @@ tcp_connect_cb(uv_connect_t *uvreq, int status) {
 }
 
 isc_result_t
-isc_nm_tcp_listen(isc_nm_t *mgr,
-		  isc_nmiface_t *iface,
-		  isc_nm_accept_cb_t cb,
-		  size_t extrahandlesize,
-		  void *cbarg,
-		  isc_quota_t *quota,
-		  isc_nmsocket_t **rv)
+isc_nm_listentcp(isc_nm_t *mgr, isc_nmiface_t *iface,
+		 isc_nm_accept_cb_t cb, void *cbarg,
+		 size_t extrahandlesize, isc_quota_t *quota,
+		 isc_nmsocket_t **rv)
 {
 	isc__netievent_tcplisten_t *ievent;
 	INSIST(VALID_NM(mgr));
@@ -405,14 +402,12 @@ tcp_connection_cb(uv_stream_t *server, int status) {
  * isc__nm_tcp_send sends buf to a peer on a socket.
  */
 isc_result_t
-isc__nm_tcp_send(isc_nmhandle_t *handle,
-		 isc_region_t *region,
-		 isc_nm_send_cb_t cb,
-		 void *cbarg)
+isc__nm_tcp_send(isc_nmhandle_t *handle, isc_region_t *region,
+		 isc_nm_send_cb_t cb, void *cbarg)
 {
 	isc_nmsocket_t *socket = handle->socket;
-	isc__netievent_udpsend_t *ievent;
-	isc__nm_uvreq_t *uvreq;
+	isc__netievent_tcpsend_t *ievent = NULL;
+	isc__nm_uvreq_t *uvreq = NULL;
 
 	INSIST(socket->type == isc_nm_tcpsocket);
 
@@ -466,8 +461,7 @@ isc__nm_handle_tcpsend(isc__networker_t *worker, isc__netievent_t *ievent0) {
 	isc__netievent_tcpsend_t *ievent =
 		(isc__netievent_tcpsend_t *) ievent0;
 	INSIST(worker->id == ievent->socket->tid);
-	isc_result_t result = tcp_send_direct(ievent->socket,
-					      ievent->req);
+	isc_result_t result = tcp_send_direct(ievent->socket, ievent->req);
 	if (result != ISC_R_SUCCESS) {
 		ievent->req->cb.send(NULL, result, ievent->req->cbarg);
 		isc__nm_uvreq_put(&ievent->req, ievent->req->handle->socket);

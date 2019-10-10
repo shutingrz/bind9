@@ -77,9 +77,7 @@ isc__nm_in_netthread() {
  */
 isc_nm_t*
 isc_nm_start(isc_mem_t *mctx, int workers) {
-	int i;
 	isc_nm_t*mgr;
-	int r;
 	char name[32];
 
 	mgr = isc_mem_get(mctx, sizeof(*mgr));
@@ -89,7 +87,8 @@ isc_nm_start(isc_mem_t *mctx, int workers) {
 	isc_condition_init(&mgr->wkstatecond);
 	isc_refcount_init(&mgr->references, 1);
 	mgr->workers = isc_mem_get(mctx, workers * sizeof(isc__networker_t));
-	for (i = 0; i < workers; i++) {
+	for (size_t i = 0; i < workers; i++) {
+		int r;
 		isc__networker_t *worker = &mgr->workers[i];
 		*worker = (isc__networker_t) {
 			.mgr = mgr,
@@ -113,7 +112,7 @@ isc_nm_start(isc_mem_t *mctx, int workers) {
 		isc_thread_create(nm_thread, &mgr->workers[i],
 				  &worker->thread);
 
-		snprintf(name, sizeof(name), "isc-net-%04u", i);
+		snprintf(name, sizeof(name), "isc-net-%04zu", i);
 		isc_thread_setname(worker->thread, name);
 	}
 	mgr->magic = NM_MAGIC;
