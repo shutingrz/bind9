@@ -3655,6 +3655,11 @@ set_resigntime(dns_zone_t *zone) {
 	uint32_t nanosecs;
 	dns_db_t *db = NULL;
 	dns_kasp_t *kasp = dns_zone_getkasp(zone);
+	isc_time_t timenow;
+	isc_stdtime_t now;
+
+	TIME_NOW(&timenow);
+	now = isc_time_seconds(&timenow);
 
 	/*
 	 * We only re-sign zones that can be dynamically updated, or that
@@ -3688,7 +3693,13 @@ set_resigntime(dns_zone_t *zone) {
 		goto cleanup;
 	}
 
-	resign = rdataset.resign - dns_zone_getsigresigninginterval(zone);
+	if (kasp != NULL) {
+		resign = now + dns_kasp_sigresign(kasp);
+	} else {
+		resign = rdataset.resign -
+			 dns_zone_getsigresigninginterval(zone);
+	}
+
 	dns_rdataset_disassociate(&rdataset);
 	nanosecs = isc_random_uniform(1000000000);
 	isc_time_set(&zone->resigntime, resign, nanosecs);

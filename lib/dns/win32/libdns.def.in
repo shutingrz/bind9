@@ -436,6 +436,7 @@ dns_kasp_siginceptionoffset
 dns_kasp_sigjitter
 dns_kasp_signdelay
 dns_kasp_sigrefresh
+dns_kasp_sigresign
 dns_kasp_sigvalidity
 dns_kasp_sigvalidity_denial
 dns_kasp_sigvalidity_dnskey
