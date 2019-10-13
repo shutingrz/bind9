@@ -75,7 +75,7 @@ isc__nm_in_netthread() {
 /*
  * isc_nm_start creates and starts a network manager, with `workers` workers.
  */
-isc_nm_t*
+isc_nm_t *
 isc_nm_start(isc_mem_t *mctx, int workers) {
 	isc_nm_t*mgr;
 	char name[32];
@@ -93,11 +93,12 @@ isc_nm_start(isc_mem_t *mctx, int workers) {
 		*worker = (isc__networker_t) {
 			.mgr = mgr,
 			.id = i,
-			.loop.data = &mgr->workers[i]
 		};
 
 		r = uv_loop_init(&worker->loop);
 		RUNTIME_CHECK(r == 0);
+
+		worker->loop.data = &mgr->workers[i];
 
 		r = uv_async_init(&worker->loop,
 				  &worker->async, async_cb);
