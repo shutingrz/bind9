@@ -123,6 +123,7 @@ struct ns_clientmgr {
 	isc_taskmgr_t *			taskmgr;
 	isc_timermgr_t *		timermgr;
 	isc_task_t *			excl;
+	isc_refcount_t			references;
 
 	/* Attached by clients, needed for e.g. recursion */
 	isc_task_t **			taskpool;
@@ -132,10 +133,6 @@ struct ns_clientmgr {
 	/* Lock covers manager state. */
 	isc_mutex_t			lock;
 	bool			exiting;
-
-	/* Lock covers the clients list */
-	isc_mutex_t			listlock;
-	client_list_t			clients;      /*%< All active clients */
 
 	/* Lock covers the recursing list */
 	isc_mutex_t			reclock;

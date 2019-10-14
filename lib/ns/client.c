@@ -172,6 +172,8 @@
 
 LIBNS_EXTERNAL_DATA unsigned int ns_client_requests;
 
+static void clientmgr_attach(ns_clientmgr_t *source, ns_clientmgr_t **targetp);
+static void clientmgr_detach(ns_clientmgr_t **mp);
 static void clientmgr_destroy(ns_clientmgr_t *manager);
 static void ns_client_endrequest(ns_client_t *client);
 static void ns_client_dumpmessage(ns_client_t *client, const char *reason);
@@ -1587,6 +1589,10 @@ client_put_cb(void *client0) {
 	if (client->handle != NULL) {
 		isc_nmhandle_detach(&client->handle);
 	}
+
+	if (client->manager != NULL) {
+		clientmgr_detach(&client->manager);
+	}
 }
 
 /*
@@ -1639,7 +1645,7 @@ ns__client_request(void *arg,
 		if (result != ISC_R_SUCCESS) {
 			return;
 		}
-		client->manager = mgr;
+		clientmgr_attach(mgr, &client->manager);
 		client->state = NS_CLIENTSTATE_READY;
 		INSIST(client->recursionquota == NULL);
 
@@ -2362,7 +2368,8 @@ ns_client_attach(ns_client_t *source, ns_client_t **targetp) {
 	oldrefs = isc_refcount_increment(&source->references);
 	ns_client_log(source, NS_LOGCATEGORY_CLIENT,
 		      NS_LOGMODULE_CLIENT, ISC_LOG_DEBUG(10),
-		      "ns_client_attach: ref = %d", oldrefs+1);
+		      "ns_client_attach: ref = %d", oldrefs + 1);
+
 	*targetp = source;
 }
 
@@ -2373,10 +2380,15 @@ ns_client_detach(ns_client_t **clientp) {
 	oldrefs = isc_refcount_decrement(&client->references);
 	INSIST(oldrefs > 0);
 
-	*clientp = NULL;
 	ns_client_log(client, NS_LOGCATEGORY_CLIENT,
 		      NS_LOGMODULE_CLIENT, ISC_LOG_DEBUG(10),
-		      "ns_client_detach: ref = %d", oldrefs-1);
+		      "ns_client_detach: ref = %d", oldrefs - 1);
+
+	if (oldrefs == 1 && client->handle != NULL) {
+		isc_nmhandle_detach(&client->handle);
+	}
+
+	*clientp = NULL;
 }
 
 bool
@@ -2387,6 +2399,38 @@ ns_client_shuttingdown(ns_client_t *client) {
 /***
  *** Client Manager
  ***/
+
+static void
+clientmgr_attach(ns_clientmgr_t *source, ns_clientmgr_t **targetp) {
+	int32_t oldrefs;
+
+	REQUIRE(VALID_MANAGER(source));
+	REQUIRE(targetp != NULL && *targetp == NULL);
+
+	oldrefs = isc_refcount_increment(&source->references);
+	isc_log_write(ns_lctx, NS_LOGCATEGORY_CLIENT,
+		      NS_LOGMODULE_CLIENT, ISC_LOG_DEBUG(3),
+		      "clientmgr @%p attach: %d", source, oldrefs + 1);
+
+	*targetp = source;
+}
+
+static void
+clientmgr_detach(ns_clientmgr_t **mp) {
+	ns_clientmgr_t *mgr = *mp;
+	int32_t oldrefs;
+	oldrefs = isc_refcount_decrement(&mgr->references);
+	INSIST(oldrefs > 0);
+
+	isc_log_write(ns_lctx, NS_LOGCATEGORY_CLIENT,
+		      NS_LOGMODULE_CLIENT, ISC_LOG_DEBUG(3),
+		      "clientmgr @%p detach: %d", mgr, oldrefs - 1);
+	if (oldrefs == 1) {
+		clientmgr_destroy(mgr);
+	}
+
+	*mp = NULL;
+}
 
 static void
 clientmgr_destroy(ns_clientmgr_t *manager) {
@@ -2405,7 +2449,6 @@ clientmgr_destroy(ns_clientmgr_t *manager) {
 
 	ISC_QUEUE_DESTROY(manager->inactive);
 	isc_mutex_destroy(&manager->lock);
-	isc_mutex_destroy(&manager->listlock);
 	isc_mutex_destroy(&manager->reclock);
 
 	if (manager->excl != NULL)
@@ -2416,7 +2459,8 @@ clientmgr_destroy(ns_clientmgr_t *manager) {
 			isc_task_detach(&manager->taskpool[i]);
 		}
 	}
-	isc_mem_put(manager->mctx, manager->taskpool, CLIENT_NTASKS * sizeof(isc_task_t*));
+	isc_mem_put(manager->mctx, manager->taskpool,
+		    CLIENT_NTASKS * sizeof(isc_task_t*));
 	ns_server_detach(&manager->sctx);
 
 	manager->magic = 0;
@@ -2437,7 +2481,6 @@ ns_clientmgr_create(isc_mem_t *mctx, ns_server_t *sctx, isc_taskmgr_t *taskmgr,
 	manager = isc_mem_get(mctx, sizeof(*manager));
 
 	isc_mutex_init(&manager->lock);
-	isc_mutex_init(&manager->listlock);
 	isc_mutex_init(&manager->reclock);
 
 	manager->excl = NULL;
@@ -2451,11 +2494,13 @@ ns_clientmgr_create(isc_mem_t *mctx, ns_server_t *sctx, isc_taskmgr_t *taskmgr,
 	manager->timermgr = timermgr;
 	manager->interface = interface;
 	manager->exiting = false;
-	manager->taskpool = isc_mem_get(mctx, CLIENT_NTASKS*sizeof(isc_task_t*));
-	for (i=0; i < CLIENT_NTASKS; i++) {
+	manager->taskpool =
+		isc_mem_get(mctx, CLIENT_NTASKS*sizeof(isc_task_t*));
+	for (i = 0; i < CLIENT_NTASKS; i++) {
 		manager->taskpool[i] = NULL;
 		isc_task_create(manager->taskmgr, 20, &manager->taskpool[i]);
 	}
+	isc_refcount_init(&manager->references, 1);
 	manager->sctx = NULL;
 	ns_server_attach(sctx, &manager->sctx);
 
@@ -2476,7 +2521,6 @@ ns_clientmgr_create(isc_mem_t *mctx, ns_server_t *sctx, isc_taskmgr_t *taskmgr,
 
  cleanup_reclock:
 	isc_mutex_destroy(&manager->reclock);
-	isc_mutex_destroy(&manager->listlock);
 	isc_mutex_destroy(&manager->lock);
 
 	isc_mem_put(manager->mctx, manager, sizeof(*manager));
@@ -2489,6 +2533,7 @@ ns_clientmgr_destroy(ns_clientmgr_t **managerp) {
 	isc_result_t result;
 	ns_clientmgr_t *manager;
 	bool unlock = false;
+	int32_t oldrefs;
 
 	REQUIRE(managerp != NULL);
 	manager = *managerp;
@@ -2503,8 +2548,9 @@ ns_clientmgr_destroy(ns_clientmgr_t **managerp) {
 	 * lock now will we need to relinquish it later.
 	 */
 	result = isc_task_beginexclusive(manager->excl);
-	if (result == ISC_R_SUCCESS)
+	if (result == ISC_R_SUCCESS) {
 		unlock = true;
+	}
 
 	manager->exiting = true;
 
@@ -2512,7 +2558,10 @@ ns_clientmgr_destroy(ns_clientmgr_t **managerp) {
 		isc_task_endexclusive(manager->excl);
 	}
 
-	clientmgr_destroy(manager);
+	oldrefs = isc_refcount_decrement(&manager->references);
+	if (oldrefs == 1) {
+		clientmgr_destroy(manager);
+	}
 
 	*managerp = NULL;
 }
@@ -2532,7 +2581,8 @@ ns_client_checkaclsilent(ns_client_t *client, isc_netaddr_t *netaddr,
 			 dns_acl_t *acl, bool default_allow)
 {
 	isc_result_t result;
-	dns_aclenv_t *env = ns_interfacemgr_getaclenv(client->manager->interface->mgr);
+	dns_aclenv_t *env =
+		ns_interfacemgr_getaclenv(client->manager->interface->mgr);
 	isc_netaddr_t tmpnetaddr;
 	int match;
 

@@ -708,10 +708,8 @@ isc_nmhandle_getdata(isc_nmhandle_t *handle) {
 }
 
 void
-isc_nmhandle_setdata(isc_nmhandle_t *handle,
-		     void *arg,
-		     isc_nm_opaquecb doreset,
-		     isc_nm_opaquecb dofree)
+isc_nmhandle_setdata(isc_nmhandle_t *handle, void *arg,
+		     isc_nm_opaquecb doreset, isc_nm_opaquecb dofree)
 {
 	INSIST(VALID_NMHANDLE(handle));
 	handle->opaque = arg;
