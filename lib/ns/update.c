@@ -1566,7 +1566,7 @@ respond(ns_client_t *client, isc_result_t result) {
 		      ISC_LOG_ERROR,
 		      "could not create update response message: %s",
 		      isc_result_totext(msg_result));
-	ns_client_next(client, msg_result);
+	ns_client_drop(client, msg_result);
 }
 
 void
@@ -2518,7 +2518,8 @@ update_action(isc_task_t *task, isc_event_t *event) {
 	dns_ttl_t maxttl = 0;
 	uint32_t maxrecords;
 	uint64_t records;
-	dns_aclenv_t *env = ns_interfacemgr_getaclenv(client->manager->interface->mgr);
+	dns_aclenv_t *env =
+		ns_interfacemgr_getaclenv(client->manager->interface->mgr);
 
 	INSIST(event->ev_type == DNS_EVENT_UPDATE);
 

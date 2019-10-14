@@ -114,10 +114,6 @@
  * have more dynamically allocated data, outstanding events, etc.
  * In the list below, any such properties listed for state N
  * also apply to any state > N.
- *
- * To force the client into a less active state, set client->newstate
- * to that state and call exit_check().  This will cause any
- * activities defined for higher-numbered states to be aborted.
  */
 
 #define NS_CLIENTSTATE_FREED    0
@@ -177,7 +173,6 @@
 LIBNS_EXTERNAL_DATA unsigned int ns_client_requests;
 
 static void clientmgr_destroy(ns_clientmgr_t *manager);
-static bool exit_check(ns_client_t *client);
 static void ns_client_endrequest(ns_client_t *client);
 static void ns_client_dumpmessage(ns_client_t *client, const char *reason);
 static void compute_cookie(ns_client_t *client, uint32_t when,
@@ -221,273 +216,6 @@ ns_client_settimeout(ns_client_t *client, unsigned int seconds) {
 	// XXXWPK TODO use netmgr to set timeout
 }
 
-
-/*%
- * Check for a deactivation or shutdown request and take appropriate
- * action.  Returns true if either is in progress; in this case
- * the caller must no longer use the client object as it may have been
- * freed.
- */
-static bool
-exit_check(ns_client_t *client) {
-	bool destroy_manager = false;
-	ns_clientmgr_t *manager = NULL;
-
-	REQUIRE(NS_CLIENT_VALID(client));
-	manager = client->manager;
-
-	if (client->state <= client->newstate)
-		return (false); /* Business as usual. */
-
-	INSIST(client->newstate < NS_CLIENTSTATE_RECURSING);
-
-	/*
-	 * We need to detach from the view early when shutting down
-	 * the server to break the following vicious circle:
-	 *
-	 *  - The resolver will not shut down until the view refcount is zero
-	 *  - The view refcount does not go to zero until all clients detach
-	 *  - The client does not detach from the view until references is zero
-	 *  - references does not go to zero until the resolver has shut down
-	 *
-	 * Keep the view attached until any outstanding updates complete.
-	 */
-	if (client->nupdates == 0 &&
-	    client->newstate == NS_CLIENTSTATE_FREED && client->view != NULL)
-		dns_view_detach(&client->view);
-
-	if (client->state == NS_CLIENTSTATE_WORKING ||
-	    client->state == NS_CLIENTSTATE_RECURSING)
-	{
-		INSIST(client->newstate <= NS_CLIENTSTATE_READY);
-		/*
-		 * Let the update processing complete.
-		 */
-		if (client->nupdates > 0)
-			return (true);
-
-		/*
-		 * We are trying to abort request processing.
-		 */
-		if (client->nsends > 0) {
-			/* XXXWPK TODO cancel ? */
-		}
-
-		if (! (client->nsends == 0 && client->nrecvs == 0 &&
-		       isc_refcount_current(&client->references) == 0))
-		{
-			/*
-			 * Still waiting for I/O cancel completion.
-			 * or lingering references.
-			 */
-			return (true);
-		}
-
-		/*
-		 * I/O cancel is complete.  Burn down all state
-		 * related to the current request.  Ensure that
-		 * the client is no longer on the recursing list.
-		 *
-		 * We need to check whether the client is still linked,
-		 * because it may already have been removed from the
-		 * recursing list by ns_client_killoldestquery()
-		 */
-		if (client->state == NS_CLIENTSTATE_RECURSING) {
-			LOCK(&manager->reclock);
-			if (ISC_LINK_LINKED(client, rlink))
-				ISC_LIST_UNLINK(manager->recursing,
-						client, rlink);
-			UNLOCK(&manager->reclock);
-		}
-		ns_client_endrequest(client);
-
-		client->state = NS_CLIENTSTATE_READY;
-		INSIST(client->recursionquota == NULL);
-		return (true);
-
-	}
-
-
-	if (client->state == NS_CLIENTSTATE_READY) {
-		INSIST(client->newstate <= NS_CLIENTSTATE_INACTIVE);
-
-		/* Accept cancel is complete. */
-		if (client->nrecvs > 0) {
-			isc_socket_cancel(client->udpsocket, client->task,
-					  ISC_SOCKCANCEL_RECV);
-		}
-
-		/* Still waiting for recv cancel completion. */
-		if (! (client->nrecvs == 0)) {
-			return (true);
-		}
-
-		/* Still waiting for control event to be delivered */
-		if (client->nctls > 0) {
-			return (true);
-		}
-
-		INSIST(client->naccepts == 0);
-		INSIST(client->recursionquota == NULL);
-		if (client->tcplistener != NULL) {
-			isc_socket_detach(&client->tcplistener);
-		}
-		if (client->udpsocket != NULL) {
-			isc_socket_detach(&client->udpsocket);
-		}
-
-		if (client->dispatch != NULL) {
-			dns_dispatch_detach(&client->dispatch);
-		}
-
-		client->attributes = 0;
-		client->mortal = false;
-		client->sendcb = NULL;
-
-		if (client->keytag != NULL) {
-			isc_mem_put(client->mctx, client->keytag,
-				    client->keytag_len);
-			client->keytag_len = 0;
-		}
-
-		/*
-		 * Put the client on the inactive list.  If we are aiming for
-		 * the "freed" state, it will be removed from the inactive
-		 * list shortly, and we need to keep the manager locked until
-		 * that has been done, lest the manager decide to reactivate
-		 * the dying client inbetween.
-		 */
-		client->state = NS_CLIENTSTATE_INACTIVE;
-		INSIST(client->recursionquota == NULL);
-
-		if (client->state == client->newstate) {
-			client->newstate = NS_CLIENTSTATE_MAX;
-			if (manager != NULL && !manager->exiting)
-			{
-				ISC_QUEUE_PUSH(manager->inactive, client,
-					       ilink);
-			}
-			return (true);
-		}
-	}
-
-	if (client->state == NS_CLIENTSTATE_INACTIVE) {
-		INSIST(client->newstate == NS_CLIENTSTATE_FREED);
-		/*
-		 * We are trying to free the client.
-		 *
-		 * When "shuttingdown" is true, either the task has received
-		 * its shutdown event or no shutdown event has ever been
-		 * set up.  Thus, we have no outstanding shutdown
-		 * event at this point.
-		 */
-		REQUIRE(client->state == NS_CLIENTSTATE_INACTIVE);
-		INSIST(!ISC_QLINK_LINKED(client, ilink));
-
-		INSIST(client->recursionquota == NULL);
-
-		if (manager != NULL) {
-			LOCK(&manager->listlock);
-			ISC_LIST_UNLINK(manager->clients, client, link);
-			LOCK(&manager->lock);
-			if (manager->exiting &&
-			    ISC_LIST_EMPTY(manager->clients))
-				destroy_manager = true;
-			UNLOCK(&manager->lock);
-			UNLOCK(&manager->listlock);
-		}
-
-		ns_query_free(client);
-		isc_mem_put(client->mctx, client->recvbuf,
-			    NS_CLIENT_RECV_BUFFER_SIZE);
-		if (client->delaytimer != NULL)
-			isc_timer_detach(&client->delaytimer);
-
-		if (client->tcpbuf != NULL)
-			isc_mem_put(client->mctx, client->tcpbuf,
-				    NS_CLIENT_TCP_BUFFER_SIZE);
-		if (client->opt != NULL) {
-			INSIST(dns_rdataset_isassociated(client->opt));
-			dns_rdataset_disassociate(client->opt);
-			dns_message_puttemprdataset(client->message,
-						    &client->opt);
-		}
-		if (client->keytag != NULL) {
-			isc_mem_put(client->mctx, client->keytag,
-				    client->keytag_len);
-			client->keytag_len = 0;
-		}
-
-		dns_message_destroy(&client->message);
-
-		/*
-		 * Detaching the task must be done after unlinking from
-		 * the manager's lists because the manager accesses
-		 * client->task.
-		 */
-		if (client->task != NULL)
-			isc_task_detach(&client->task);
-
-		CTRACE("free");
-		client->magic = 0;
-
-		/*
-		 * Destroy the fetchlock mutex that was created in
-		 * ns_query_init().
-		 */
-		isc_mutex_destroy(&client->query.fetchlock);
-
-		if (client->sctx != NULL)
-			ns_server_detach(&client->sctx);
-		if (client->allocated) {
-			isc_mem_putanddetach(&client->mctx, client, sizeof(*client));
-		} else {
-			isc_mem_detach(&client->mctx);
-		}
-	}
-
-	if (destroy_manager && manager != NULL)
-		clientmgr_destroy(manager);
-
-	return (true);
-}
-
-/*%
- * The client's task has received a shutdown event.
- */
-/* static void
-client_shutdown(isc_task_t *task, isc_event_t *event) {
-	ns_client_t *client;
-
-	REQUIRE(event != NULL);
-	REQUIRE(event->ev_type == ISC_TASKEVENT_SHUTDOWN);
-	client = event->ev_arg;
-	REQUIRE(NS_CLIENT_VALID(client));
-	REQUIRE(task == client->task);
-
-	UNUSED(task);
-
-	CTRACE("shutdown");
-
-	isc_event_free(&event);
-
-	if (client->shutdown != NULL) {
-		(client->shutdown)(client->shutdown_arg, ISC_R_SHUTTINGDOWN);
-		client->shutdown = NULL;
-		client->shutdown_arg = NULL;
-	}
-
-	if (ISC_QLINK_LINKED(client, ilink)) {
-		ISC_QUEUE_UNLINK(client->manager->inactive, client, ilink);
-	}
-
-	client->newstate = NS_CLIENTSTATE_FREED;
-	if (client->handle != NULL) {
-		isc_nmhandle_detach(&client->handle);
-	}
-	(void)exit_check(client);
-}
-*/
 static void
 ns_client_endrequest(ns_client_t *client) {
 	INSIST(client->naccepts == 0);
@@ -554,31 +282,17 @@ ns_client_endrequest(ns_client_t *client) {
 }
 
 void
-ns_client_next(ns_client_t *client, isc_result_t result) {
-	int newstate;
-
+ns_client_drop(ns_client_t *client, isc_result_t result) {
 	REQUIRE(NS_CLIENT_VALID(client));
 	REQUIRE(client->state == NS_CLIENTSTATE_WORKING ||
 		client->state == NS_CLIENTSTATE_RECURSING);
 
-	CTRACE("next");
-
-	if (result != ISC_R_SUCCESS)
+	CTRACE("fail");
+	if (result != ISC_R_SUCCESS) {
 		ns_client_log(client, DNS_LOGCATEGORY_SECURITY,
 			      NS_LOGMODULE_CLIENT, ISC_LOG_DEBUG(3),
 			      "request failed: %s", isc_result_totext(result));
-
-	/*
-	 * An error processing a TCP request may have left
-	 * the connection out of sync.  To be safe, we always
-	 * sever the connection when result != ISC_R_SUCCESS.
-	 */
-
-	newstate = NS_CLIENTSTATE_READY;
-
-	if (client->newstate > newstate)
-		client->newstate = newstate;
-	(void)exit_check(client);
+	}
 }
 
 static void
@@ -707,7 +421,7 @@ ns_client_sendraw(ns_client_t *client, dns_message_t *message) {
 			    NS_CLIENT_TCP_BUFFER_SIZE);
 		client->tcpbuf = NULL;
 	}
-	ns_client_next(client, result);
+	ns_client_drop(client, result);
 }
 
 static void
@@ -982,7 +696,7 @@ client_send(ns_client_t *client) {
 	if (cleanup_cctx)
 		dns_compress_invalidate(&cctx);
 
-	ns_client_next(client, result);
+	ns_client_drop(client, result);
 }
 
 void
@@ -1058,7 +772,7 @@ ns_client_error(ns_client_t *client, isc_result_t result) {
 			      NS_LOGMODULE_CLIENT, ISC_LOG_DEBUG(10),
 			      "dropped error (%.*s) response: suspicious port",
 			      (int)isc_buffer_usedlength(&b), buf);
-		ns_client_next(client, ISC_R_SUCCESS);
+		ns_client_drop(client, ISC_R_SUCCESS);
 		return;
 	}
 #endif
@@ -1108,7 +822,7 @@ ns_client_error(ns_client_t *client, isc_result_t result) {
 						   ns_statscounter_ratedropped);
 				ns_stats_increment(client->sctx->nsstats,
 						   ns_statscounter_dropped);
-				ns_client_next(client, DNS_R_DROP);
+				ns_client_drop(client, DNS_R_DROP);
 				return;
 			}
 		}
@@ -1133,7 +847,7 @@ ns_client_error(ns_client_t *client, isc_result_t result) {
 		 */
 		result = dns_message_reply(message, false);
 		if (result != ISC_R_SUCCESS) {
-			ns_client_next(client, result);
+			ns_client_drop(client, result);
 			return;
 		}
 	}
@@ -1160,7 +874,7 @@ ns_client_error(ns_client_t *client, isc_result_t result) {
 				      NS_LOGMODULE_CLIENT, ISC_LOG_DEBUG(1),
 				      "possible error packet loop, "
 				      "FORMERR dropped");
-			ns_client_next(client, result);
+			ns_client_drop(client, result);
 			return;
 		}
 		client->formerrcache.addr = client->peeraddr;
@@ -1833,11 +1547,18 @@ client_reset_cb(void *client_) {
 	ns_client_t *client = client_;
 	client->newstate = NS_CLIENTSTATE_READY;
 	if (client->state == NS_CLIENTSTATE_RECURSING) {
+		ns_client_log(client, DNS_LOGCATEGORY_SECURITY,
+			      NS_LOGMODULE_CLIENT, ISC_LOG_DEBUG(3),
+			      "reset recursing client");
 		LOCK(&client->manager->reclock);
 		if (ISC_LINK_LINKED(client, rlink))
 			ISC_LIST_UNLINK(client->manager->recursing,
 					client, rlink);
 		UNLOCK(&client->manager->reclock);
+	} else {
+		ns_client_log(client, DNS_LOGCATEGORY_SECURITY,
+			      NS_LOGMODULE_CLIENT, ISC_LOG_DEBUG(3),
+			      "reset client");
 	}
 	ns_client_endrequest(client);
 
@@ -1847,17 +1568,25 @@ client_reset_cb(void *client_) {
 
 
 static void
-client_put_cb(void *client_) {
-	ns_client_t *client = client_;
+client_put_cb(void *client0) {
+	ns_client_t *client = client0;
+
+	ns_client_log(client, DNS_LOGCATEGORY_SECURITY,
+		      NS_LOGMODULE_CLIENT, ISC_LOG_DEBUG(3),
+		      "freeing client");
+
 	if (ISC_QLINK_LINKED(client, ilink)) {
 		ISC_QUEUE_UNLINK(client->manager->inactive, client, ilink);
+	}
+
+	if (client->task != NULL) {
+		isc_task_shutdown(client->task);
 	}
 
 	client->newstate = NS_CLIENTSTATE_FREED;
 	if (client->handle != NULL) {
 		isc_nmhandle_detach(&client->handle);
 	}
-	INSIST(exit_check(client) == true);
 }
 
 /*
@@ -1915,14 +1644,16 @@ ns__client_request(void *arg,
 		INSIST(client->recursionquota == NULL);
 
 		client->dscp = ifp->dscp;
-		client->references++;
-		LOCK(&mgr->listlock);
-		ISC_LIST_APPEND(mgr->clients, client, link);
-		UNLOCK(&mgr->listlock);
+		isc_refcount_increment0(&client->references);
+
+		ns_client_log(client, DNS_LOGCATEGORY_SECURITY,
+			      NS_LOGMODULE_CLIENT, ISC_LOG_DEBUG(3),
+			      "allocate new client");
 	}
 	isc_task_pause(client->task);
 	if (client->handle == NULL) {
-		isc_nmhandle_setdata(handle, client, client_reset_cb, client_put_cb);
+		isc_nmhandle_setdata(handle, client,
+				     client_reset_cb, client_put_cb);
 		isc_nmhandle_attach(handle, &client->handle);
 	}
 	if (isc_nmhandle_is_stream(handle)) {
@@ -1945,14 +1676,8 @@ ns__client_request(void *arg,
 
 	reqsize = isc_buffer_usedlength(buffer);
 
-	if (exit_check(client)) {
-		isc_nmhandle_detach(&client->handle);
-		isc_task_unpause(client->task);
-		return;
-	}
 	client->state = client->newstate = NS_CLIENTSTATE_WORKING;
 
-//	isc_task_getcurrenttimex(task, &client->requesttime);
 	isc_time_now(&client->requesttime);
 	client->tnow = client->requesttime;
 	client->now = isc_time_seconds(&client->tnow);
@@ -2159,7 +1884,7 @@ ns__client_request(void *arg,
 		 * Are we dropping all EDNS queries?
 		 */
 		if ((client->sctx->options & NS_SERVER_DROPEDNS) != 0) {
-			ns_client_next(client, ISC_R_SUCCESS);
+			ns_client_drop(client, ISC_R_SUCCESS);
 			isc_task_unpause(client->task);
 			return;
 		}
@@ -2241,7 +1966,7 @@ ns__client_request(void *arg,
 					 "failed to get request's "
 					 "destination: %s",
 					 isc_result_totext(result));
-			ns_client_next(client, ISC_R_SUCCESS);
+			ns_client_drop(client, ISC_R_SUCCESS);
 			isc_task_unpause(client->task);
 			return;
 		}
@@ -2652,7 +2377,6 @@ ns_client_detach(ns_client_t **clientp) {
 	ns_client_log(client, NS_LOGCATEGORY_CLIENT,
 		      NS_LOGMODULE_CLIENT, ISC_LOG_DEBUG(10),
 		      "ns_client_detach: ref = %d", oldrefs-1);
-	(void)exit_check(client);
 }
 
 bool
@@ -2669,8 +2393,6 @@ clientmgr_destroy(ns_clientmgr_t *manager) {
 #if CLIENT_NMCTXS > 0
 	int i;
 #endif
-
-	REQUIRE(ISC_LIST_EMPTY(manager->clients));
 
 	MTRACE("clientmgr_destroy");
 
@@ -2737,7 +2459,6 @@ ns_clientmgr_create(isc_mem_t *mctx, ns_server_t *sctx, isc_taskmgr_t *taskmgr,
 	manager->sctx = NULL;
 	ns_server_attach(sctx, &manager->sctx);
 
-	ISC_LIST_INIT(manager->clients);
 	ISC_LIST_INIT(manager->recursing);
 	ISC_QUEUE_INIT(manager->inactive, ilink);
 #if CLIENT_NMCTXS > 0
@@ -2767,8 +2488,7 @@ void
 ns_clientmgr_destroy(ns_clientmgr_t **managerp) {
 	isc_result_t result;
 	ns_clientmgr_t *manager;
-	ns_client_t *client;
-	bool need_destroy = false, unlock = false;
+	bool unlock = false;
 
 	REQUIRE(managerp != NULL);
 	manager = *managerp;
@@ -2788,21 +2508,11 @@ ns_clientmgr_destroy(ns_clientmgr_t **managerp) {
 
 	manager->exiting = true;
 
-	for (client = ISC_LIST_HEAD(manager->clients);
-	     client != NULL;
-	     client = ISC_LIST_NEXT(client, link)) {
-		     if (client->task != NULL)
-		isc_task_shutdown(client->task);
+	if (unlock) {
+		isc_task_endexclusive(manager->excl);
 	}
 
-	if (ISC_LIST_EMPTY(manager->clients))
-		need_destroy = true;
-
-	if (unlock)
-		isc_task_endexclusive(manager->excl);
-
-	if (need_destroy)
-		clientmgr_destroy(manager);
+	clientmgr_destroy(manager);
 
 	*managerp = NULL;
 }

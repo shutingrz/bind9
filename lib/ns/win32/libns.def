@@ -15,6 +15,7 @@ ns_client_attach
 ns_client_checkacl
 ns_client_checkaclsilent
 ns_client_detach
+ns_client_drop
 ns_client_dumprecursing
 ns_client_error
 ns_client_findversion
@@ -29,7 +30,6 @@ ns_client_newdbversion
 ns_client_newname
 ns_client_newnamebuf
 ns_client_newrdataset
-ns_client_next
 ns_client_putrdataset
 ns_client_qnamereplace
 ns_client_recursing

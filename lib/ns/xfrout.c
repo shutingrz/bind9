@@ -683,18 +683,15 @@ typedef struct {
 	struct xfr_stats	stats;		/*%< Transfer statistics */
 } xfrout_ctx_t;
 
-static isc_result_t
+static void
 xfrout_ctx_create(isc_mem_t *mctx, ns_client_t *client,
 		  unsigned int id, dns_name_t *qname, dns_rdatatype_t qtype,
 		  dns_rdataclass_t qclass, dns_zone_t *zone,
 		  dns_db_t *db, dns_dbversion_t *ver, isc_quota_t *quota,
 		  rrstream_t *stream, dns_tsigkey_t *tsigkey,
-		  isc_buffer_t *lasttsig,
-		  bool verified_tsig,
-		  unsigned int maxtime,
-		  unsigned int idletime,
-		  bool many_answers,
-		  xfrout_ctx_t **xfrp);
+		  isc_buffer_t *lasttsig, bool verified_tsig,
+		  unsigned int maxtime, unsigned int idletime,
+		  bool many_answers, xfrout_ctx_t **xfrp);
 
 static void
 sendstream(xfrout_ctx_t *xfr);
@@ -1068,29 +1065,26 @@ ns_xfr_start(ns_client_t *client, dns_rdatatype_t reqtype) {
 
 
 	if (is_dlz) {
-		CHECK(xfrout_ctx_create(mctx, client, request->id,
-					question_name, reqtype, question_class,
-					zone, db, ver, quota, stream,
-					dns_message_gettsigkey(request),
-					tsigbuf,
-					request->verified_sig,
-					3600,
-					3600,
-					(format == dns_many_answers) ?
-					true : false,
-					&xfr));
+		xfrout_ctx_create(mctx, client, request->id,
+				  question_name, reqtype, question_class,
+				  zone, db, ver, quota, stream,
+				  dns_message_gettsigkey(request),
+				  tsigbuf, request->verified_sig,
+				  3600, 3600,
+				  (format == dns_many_answers)
+				   ? true : false,
+				  &xfr);
 	} else {
-		CHECK(xfrout_ctx_create(mctx, client, request->id,
-					question_name, reqtype, question_class,
-					zone, db, ver, quota, stream,
-					dns_message_gettsigkey(request),
-					tsigbuf,
-					request->verified_sig,
-					dns_zone_getmaxxfrout(zone),
-					dns_zone_getidleout(zone),
-					(format == dns_many_answers) ?
-					true : false,
-					&xfr));
+		xfrout_ctx_create(mctx, client, request->id,
+				  question_name, reqtype, question_class,
+				  zone, db, ver, quota, stream,
+				  dns_message_gettsigkey(request),
+				  tsigbuf, request->verified_sig,
+				  dns_zone_getmaxxfrout(zone),
+				  dns_zone_getidleout(zone),
+				  (format == dns_many_answers)
+				   ?  true : false,
+				  &xfr);
 	}
 
 	xfr->mnemonic = mnemonic;
@@ -1193,7 +1187,7 @@ ns_xfr_start(ns_client_t *client, dns_rdatatype_t reqtype) {
 	}
 }
 
-static isc_result_t
+static void
 xfrout_ctx_create(isc_mem_t *mctx, ns_client_t *client, unsigned int id,
 		  dns_name_t *qname, dns_rdatatype_t qtype,
 		  dns_rdataclass_t qclass, dns_zone_t *zone,
@@ -1203,14 +1197,15 @@ xfrout_ctx_create(isc_mem_t *mctx, ns_client_t *client, unsigned int id,
 		  unsigned int maxtime, unsigned int idletime,
 		  bool many_answers, xfrout_ctx_t **xfrp)
 {
-	(void) maxtime;
-	(void) idletime;
 	xfrout_ctx_t *xfr;
-	isc_result_t result;
 	unsigned int len;
 	void *mem;
 
-	INSIST(xfrp != NULL && *xfrp == NULL);
+	REQUIRE(xfrp != NULL && *xfrp == NULL);
+
+	UNUSED(maxtime);
+	UNUSED(idletime);
+
 	xfr = isc_mem_get(mctx, sizeof(*xfr));
 	xfr->mctx = NULL;
 	isc_mem_attach(mctx, &xfr->mctx);
@@ -1292,12 +1287,7 @@ xfrout_ctx_create(isc_mem_t *mctx, ns_client_t *client, unsigned int id,
 	xfr->stream = stream;
 
 	*xfrp = xfr;
-	return (ISC_R_SUCCESS);
-
-	xfrout_ctx_destroy(&xfr);
-	return (result);
 }
-
 
 /*
  * Arrange to send as much as we can of "stream" without blocking.
@@ -1320,7 +1310,6 @@ sendstream(xfrout_ctx_t *xfr) {
 	dns_compress_t cctx;
 	bool cleanup_cctx = false;
 	bool is_tcp;
-
 	int n_rrs;
 
 	isc_buffer_clear(&xfr->buf);
@@ -1652,9 +1641,10 @@ xfrout_ctx_destroy(xfrout_ctx_t **xfrp) {
 static void
 xfrout_senddone(isc_nmhandle_t *handle, isc_result_t result, void* arg) {
 	xfrout_ctx_t *xfr = (xfrout_ctx_t *)arg;
-	(void) handle;
 
-	INSIST((xfr->client->attributes & NS_CLIENTATTR_TCP) != 0);
+	REQUIRE((xfr->client->attributes & NS_CLIENTATTR_TCP) != 0);
+
+	UNUSED(handle);
 
 	xfr->sends--;
 	INSIST(xfr->sends == 0);
@@ -1699,7 +1689,7 @@ xfrout_senddone(isc_nmhandle_t *handle, isc_result_t result, void* arg) {
 			   (unsigned int) (msecs % 1000),
 			   (unsigned int) persec);
 
-		ns_client_next(xfr->client, ISC_R_SUCCESS);
+		ns_client_drop(xfr->client, ISC_R_SUCCESS);
 		xfrout_ctx_destroy(&xfr);
 	}
 }
@@ -1723,7 +1713,7 @@ xfrout_maybe_destroy(xfrout_ctx_t *xfr) {
 		isc_socket_cancel(xfr->client->tcpsocket, xfr->client->task,
 				  ISC_SOCKCANCEL_SEND);
 	} else {
-		ns_client_next(xfr->client, ISC_R_CANCELED);
+		ns_client_drop(xfr->client, ISC_R_CANCELED);
 		xfrout_ctx_destroy(&xfr);
 	}
 }

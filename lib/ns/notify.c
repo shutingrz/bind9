@@ -52,7 +52,7 @@ respond(ns_client_t *client, isc_result_t result) {
 	if (msg_result != ISC_R_SUCCESS)
 		msg_result = dns_message_reply(message, false);
 	if (msg_result != ISC_R_SUCCESS) {
-		ns_client_next(client, msg_result);
+		ns_client_drop(client, msg_result);
 		return;
 	}
 	message->rcode = rcode;

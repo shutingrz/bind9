@@ -440,6 +440,7 @@ void
 isc__nmsocket_prep_destroy(isc_nmsocket_t *socket) {
 	INSIST(socket->parent == NULL);
 	atomic_store(&socket->active, false);
+
 	/*
 	 * XXXWPK if we're here we already stopped listening, otherwise
 	 * we'd have a hanging reference from the listening process.
@@ -526,6 +527,7 @@ isc__nmsocket_init(isc_nmsocket_t *socket,
 	isc_refcount_init(&socket->references, 1);
 	atomic_init(&socket->active, true);
 }
+
 /*
  * alloc_cb for recv operations. XXXWPK TODO use a pool
  */

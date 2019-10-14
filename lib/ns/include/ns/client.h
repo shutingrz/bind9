@@ -36,10 +36,10 @@
  * notified of this by calling one of the following functions
  * exactly once in the context of its task:
  * \code
- *   ns_client_send()	(sending a non-error response)
+ *   ns_client_send()	 (sending a non-error response)
  *   ns_client_sendraw() (sending a raw response)
- *   ns_client_error()	(sending an error response)
- *   ns_client_next()	(sending no response)
+ *   ns_client_error()	 (sending an error response)
+ *   ns_client_drop() (sending no response, logging the reason)
  *\endcode
  * This will release any resources used by the request and
  * and allow the ns_client_t to listen for the next request.
@@ -311,10 +311,10 @@ ns_client_error(ns_client_t *client, isc_result_t result);
  */
 
 void
-ns_client_next(ns_client_t *client, isc_result_t result);
+ns_client_drop(ns_client_t *client, isc_result_t result);
 /*%<
- * Finish processing the current client request,
- * return no response to the client.
+ * Log the reason the current client request has failed; no response
+ * will be sent.
  */
 
 bool
