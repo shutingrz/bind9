@@ -52,7 +52,7 @@ wait_for_load() (
 	serial=$2
 	log=$3
 	tries=10
-	while [ "$tries" -gt 10 ]; do
+	while [ "$tries" -gt 0 ]; do
 		# Wait until a "zone_postload: (...): done" message is logged
 		# after one of the loading-related messages we are looking for
 		# is logged.  This is needed to prevent races when checking for
