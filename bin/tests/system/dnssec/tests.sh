@@ -118,9 +118,9 @@ dnssec_dsfromkey_errmsg() (
 	exit 1
     fi
     if test -n "$msg"; then
-	grep -E -v "$msg" dsfromkey.err.$n >&2 || true
+	grep -E -v "$msg" dsfromkey.err.$n >&2 && r=1
     else
-	cat < dsfromkey.err.$n >&2
+	grep . dsfromkey.err.$n >&2 && r=1
     fi
     exit "$r"
 )
