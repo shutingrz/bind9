@@ -39,7 +39,7 @@ wait_for_transfer() (
 			awk "matched; /'$zone\/IN'.*Transfer status: (success|verify failure|REFUSED)/ {matched=1}" | \
 			grep "'$zone/IN'.*freeing transfer context" > /dev/null && return 0
 		sleep 1
-		tries=$((tries+1))
+		tries=$((tries-1))
 	done
 	echo_i "exceeded time limit waiting for proof of '$zone' being transferred to appear in ns3/named.run"
 	return 1
