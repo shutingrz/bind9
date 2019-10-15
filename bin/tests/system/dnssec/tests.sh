@@ -60,7 +60,7 @@ cleanup_dnssec_signzone_output() (
     if [ ! -r dnssec-signzone.expected ]; then
 	prepare_dnssec_signzone_expected
     fi
-    grep -Ev -f dnssec-signzone.expected "$@" || true
+    grep -Ev -f dnssec-signzone.expected "$@"
 )
 
 dnssec_signzone_errmsg() (
@@ -74,9 +74,9 @@ dnssec_signzone_errmsg() (
 	exit 1
     fi
     if test -n "$msg"; then
-	cleanup_dnssec_signzone_output signer.err.$n | grep -E -v "$msg" >&2 || true
+	cleanup_dnssec_signzone_output signer.err.$n | grep -E -v "$msg" >&2 && r=1
     else
-	cleanup_dnssec_signzone_output signer.err.$n >&2
+	cleanup_dnssec_signzone_output signer.err.$n >&2 && r=1
     fi
     exit "$r"
 )
@@ -96,9 +96,9 @@ dnssec_keygen_errmsg() (
 	exit 1
     fi
     if test -n "$msg"; then
-	grep -E -v "$msg" keygen.err.$n >&2 || true
+	grep -E -v "$msg" keygen.err.$n >&2 && r=1
     else
-	cat < keygen.err.$n >&2
+	grep . keygen.err.$n >&2 && r=1
     fi
     exit "$r"
 )
