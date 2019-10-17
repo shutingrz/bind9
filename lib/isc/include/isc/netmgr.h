@@ -30,7 +30,7 @@ typedef enum {
  * isc_nm_start creates and starts a netmgr
  */
 isc_nm_t *
-isc_nm_start(isc_mem_t *mctx, int workers);
+isc_nm_start(isc_mem_t *mctx, uint32_t workers);
 
 /*
  * isc_nm_shutdown shutdowns netmgr, freeing all the resources
