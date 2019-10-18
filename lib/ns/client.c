@@ -1649,8 +1649,7 @@ client_put_cb(void *client0) {
  * or tcpmsg (TCP case).
  */
 void
-ns__client_request(void *arg,
-		   struct isc_nmhandle *handle,
+ns__client_request(void *arg, struct isc_nmhandle *handle,
 		   struct isc_region *region)
 {
 	ns_client_t *client;
@@ -1674,7 +1673,7 @@ ns__client_request(void *arg,
 #ifdef HAVE_DNSTAP
 	dns_dtmsgtype_t dtmsgtype;
 #endif
-	ifp = (ns_interface_t*)arg;
+	ifp = (ns_interface_t *) arg;
 
 	mgr = ifp->clientmgr;
 	REQUIRE(VALID_MANAGER(mgr));
@@ -1682,18 +1681,22 @@ ns__client_request(void *arg,
 	client = isc_nmhandle_getdata(handle);
 	if (client == NULL) {
 		isc_mem_t *mctx = NULL;
+
 		LOCK(&mgr->lock);
 		get_clientmctx(mgr, &mctx);
 		UNLOCK(&mgr->lock);
+
 		if (mctx == NULL) {
 			return;
 		}
+
 		client = isc_nmhandle_getextra(handle);
 
 		result = client_setup(mgr, mctx, client);
 		if (result != ISC_R_SUCCESS) {
 			return;
 		}
+
 		clientmgr_attach(mgr, &client->manager);
 		client->state = NS_CLIENTSTATE_READY;
 		INSIST(client->recursionquota == NULL);
@@ -1705,6 +1708,7 @@ ns__client_request(void *arg,
 			      NS_LOGMODULE_CLIENT, ISC_LOG_DEBUG(3),
 			      "allocate new client");
 	}
+
 	isc_task_pause(client->task);
 	if (client->handle == NULL) {
 		isc_nmhandle_setdata(handle, client,

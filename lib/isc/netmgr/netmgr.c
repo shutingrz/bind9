@@ -698,10 +698,13 @@ isc__nmhandle_get(isc_nmsocket_t *socket, isc_sockaddr_t *peer) {
 
 void
 isc_nmhandle_attach(isc_nmhandle_t *handle, isc_nmhandle_t **handlep) {
+	int refs;
+
 	REQUIRE(VALID_NMHANDLE(handle));
 	REQUIRE(handlep != NULL && *handlep == NULL);
 
-	INSIST(isc_refcount_increment(&handle->references) > 0);
+	refs = isc_refcount_increment(&handle->references);
+	INSIST(refs > 0);
 
 	*handlep = handle;
 }

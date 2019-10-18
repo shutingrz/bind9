@@ -69,7 +69,6 @@ dnslisten_readcb(void *arg, isc_nmhandle_t *handle, isc_region_t *region) {
 	if (region == NULL) {
 		/* Connection closed */
 		atomic_store(&dnssocket->closed, true);
-		isc_nmhandle_detach(&handle);
 		isc_nmsocket_detach(&dnssocket->outer);
 		isc_nmsocket_detach(&dnssocket);
 		return;
