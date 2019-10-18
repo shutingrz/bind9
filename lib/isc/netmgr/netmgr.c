@@ -712,8 +712,9 @@ isc_nmhandle_detach(isc_nmhandle_t **handlep) {
 	isc_nmhandle_t *handle = *handlep;
 
 	REQUIRE(VALID_NMHANDLE(handle));
-
-	if (isc_refcount_decrement(&handle->references) == 1) {
+	int refs = isc_refcount_decrement(&handle->references);
+	INSIST(refs > 0);
+	if (refs == 1) {
 		isc_nmsocket_t *socket = handle->socket;
 		bool reuse = false;
 
