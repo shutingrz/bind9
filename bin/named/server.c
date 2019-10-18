@@ -9463,8 +9463,10 @@ shutdown_server(isc_task_t *task, isc_event_t *event) {
 	UNUSED(task);
 	INSIST(task == server->task);
 
-	/* We need to shutdown the interface before going exclusive (and
-	 * pausing netmgr. */
+	/*
+	 * We need to shut down the interface before going exclusive
+	 * (and pausing netmgr).
+	 */
 	ns_interfacemgr_shutdown(server->interfacemgr);
 
 	result = isc_task_beginexclusive(server->task);

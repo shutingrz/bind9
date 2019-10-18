@@ -1269,8 +1269,10 @@ xfrout_ctx_create(isc_mem_t *mctx, ns_client_t *client, unsigned int id,
 	xfr->txmem = mem;
 	xfr->txmemlen = len;
 
-//	CHECK(dns_timer_setidle(xfr->client->timer,
-//				maxtime, idletime, false));
+#if 0
+	CHECK(dns_timer_setidle(xfr->client->timer,
+				maxtime, idletime, false));
+#endif
 
 	/*
 	 * Register a shutdown callback with the client, so that we
@@ -1658,7 +1660,10 @@ xfrout_senddone(isc_nmhandle_t *handle, isc_result_t result, void* arg) {
 		xfr->stats.nbytes += xfr->cbytes;
 	}
 
-//	(void)isc_timer_touch(xfr->client->timer);
+#if 0
+	(void)isc_timer_touch(xfr->client->timer);
+#endif
+
 	if (xfr->shuttingdown == true) {
 		xfrout_maybe_destroy(xfr);
 	} else if (result != ISC_R_SUCCESS) {

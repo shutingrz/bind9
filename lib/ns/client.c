@@ -213,9 +213,9 @@ ns_client_killoldestquery(ns_client_t *client) {
 
 void
 ns_client_settimeout(ns_client_t *client, unsigned int seconds) {
-	(void) client;
-	(void) seconds;
-	// XXXWPK TODO use netmgr to set timeout
+	UNUSED(client);
+	UNUSED(seconds);
+	/* XXXWPK TODO use netmgr to set timeout */
 }
 
 static void
@@ -295,13 +295,17 @@ ns_client_drop(ns_client_t *client, isc_result_t result) {
 			      NS_LOGMODULE_CLIENT, ISC_LOG_DEBUG(3),
 			      "request failed: %s", isc_result_totext(result));
 	}
+	isc_nmhandle_detach(&client->handle);
 }
 
 static void
 client_senddone(isc_nmhandle_t *handle, isc_result_t result, void *cbarg) {
-	(void) result;
 	ns_client_t *client = cbarg;
-	INSIST(client->handle == handle);
+
+	REQUIRE(client->handle == handle);
+
+	UNUSED(result);
+
 	isc_nmhandle_detach(&client->handle);
 }
 
@@ -322,9 +326,9 @@ client_allocsendbuf(ns_client_t *client, isc_buffer_t *buffer,
 	uint32_t bufsize;
 	isc_result_t result;
 
-	INSIST(datap != NULL);
-	INSIST((tcpbuffer == NULL && length != 0) ||
-	       (tcpbuffer != NULL && length == 0));
+	REQUIRE(datap != NULL);
+	REQUIRE((tcpbuffer == NULL && length != 0) ||
+		(tcpbuffer != NULL && length == 0));
 
 	if (TCP_CLIENT(client)) {
 		INSIST(client->tcpbuf == NULL);
@@ -378,6 +382,7 @@ client_sendpkg(ns_client_t *client, isc_buffer_t *buffer) {
 	isc_buffer_usedregion(buffer, &r);
 
 	INSIST(client->handle != NULL);
+
 	return (isc_nm_send(client->handle, &r, client_senddone, client));
 }
 

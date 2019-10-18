@@ -519,10 +519,11 @@ isc_result_t
 ns_test_getclient(ns_interface_t *ifp0, bool tcp,
 		  ns_client_t **clientp)
 {
-	(void) tcp;
-	(void) clientp;
 	isc_result_t result;
 	ns_interface_t *ifp = ifp0;
+
+	UNUSED(tcp);
+	UNUSED(clientp);
 
 	if (ifp == NULL) {
 		ifp = ns__interfacemgr_getif(interfacemgr);
@@ -531,8 +532,11 @@ ns_test_getclient(ns_interface_t *ifp0, bool tcp,
 		return (ISC_R_FAILURE);
 	}
 
-//	result = ns__clientmgr_getclient(clientmgr, tcp, clientp);
+#if 0
+	result = ns__clientmgr_getclient(clientmgr, tcp, clientp);
+#endif
 	result = ISC_R_SUCCESS;
+
 	return (result);
 }
 

@@ -602,7 +602,7 @@ parse_T_opt(char *option) {
 	/*
 	 * force the server to behave (or misbehave) in
 	 * specified ways for testing purposes.
-	 *	 * delay=xxxx: delay client responses by xxxx ms to
+	 * delay=xxxx: delay client responses by xxxx ms to
 	 *	       simulate remote servers.
 	 * dscp=x:     check that dscp values are as
 	 * 	       expected and assert otherwise.

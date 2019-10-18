@@ -30,13 +30,14 @@
 #include <isc/util.h>
 
 #include "netmgr-int.h"
+
 /*
- * libuv is not thread safe but has mechanisms to pass messages
+ * libuv is not thread safe, but has mechanisms to pass messages
  * between threads. Each socket is owned by a thread. For UDP
  * sockets we have a set of sockets for each interface and we can
- * choose a sibling and send the message directly. For TCP or if
- * we're calling from a not networking thread we need to pass the
- * request using async_cb
+ * choose a sibling and send the message directly. For TCP, or if
+ * we're calling from a non-networking thread, we need to pass the
+ * request using async_cb.
  */
 
 #if defined(HAVE_TLS)
@@ -126,7 +127,6 @@ isc_nm_start(isc_mem_t *mctx, uint32_t workers) {
  */
 void
 isc_nm_shutdown(isc_nm_t **mgr0) {
-	REQUIRE(*mgr0 != NULL);
 	REQUIRE(VALID_NM(*mgr0));
 	REQUIRE(!isc__nm_in_netthread());
 
@@ -143,7 +143,7 @@ isc_nm_shutdown(isc_nm_t **mgr0) {
 
 	LOCK(&mgr->lock);
 	while (mgr->workers_running > 0) {
-		isc_condition_wait(&mgr->wkstatecond, &mgr->lock);
+		WAIT(&mgr->wkstatecond, &mgr->lock);
 	}
 	for (size_t i = 0; i < mgr->nworkers; i++) {
 		isc_faaa_queue_destroy(mgr->workers[i].ievents);
@@ -179,7 +179,7 @@ isc_nm_pause(isc_nm_t *mgr) {
 	while (atomic_load_relaxed(&mgr->workers_paused) !=
 	       atomic_load_relaxed(&mgr->workers_running))
 	{
-		isc_condition_wait(&mgr->wkstatecond, &mgr->lock);
+		WAIT(&mgr->wkstatecond, &mgr->lock);
 	}
 	UNLOCK(&mgr->lock);
 }
@@ -192,13 +192,13 @@ isc_nm_resume(isc_nm_t *mgr) {
 	for (size_t i = 0; i < mgr->nworkers; i++) {
 		LOCK(&mgr->workers[i].lock);
 		mgr->workers[i].paused = false;
-		isc_condition_signal(&mgr->workers[i].cond);
+		SIGNAL(&mgr->workers[i].cond);
 		UNLOCK(&mgr->workers[i].lock);
 	}
 
 	/*
-	 * We're not waiting for all the workers to come back to life, they
-	 * eventually will, we don't care
+	 * We're not waiting for all the workers to come back to life;
+	 * they eventually will, we don't care.
 	 */
 }
 
@@ -237,10 +237,12 @@ isc_nm_detach(isc_nm_t **mgr0) {
 static void *
 nm_thread(void *worker0) {
 	isc__networker_t *worker = (isc__networker_t *) worker0;
+
 	atomic_fetch_add_explicit(&worker->mgr->workers_running, 1,
 				  memory_order_relaxed);
 	isc__nm_tid_v = worker->id;
 	isc_thread_setaffinity(isc__nm_tid_v);
+
 	while (true) {
 		int r = uv_run(&worker->loop, UV_RUN_DEFAULT);
 		bool pausing = false;
@@ -258,9 +260,11 @@ nm_thread(void *worker0) {
 						  1, memory_order_acquire);
 				pausing = true;
 			}
-			isc_condition_signal(&worker->mgr->wkstatecond);
+
+			SIGNAL(&worker->mgr->wkstatecond);
 			UNLOCK(&worker->mgr->lock);
-			isc_condition_wait(&worker->cond, &worker->lock);
+
+			WAIT(&worker->cond, &worker->lock);
 		}
 		if (pausing) {
 			atomic_fetch_sub_explicit(&worker->mgr->workers_paused,
@@ -281,10 +285,10 @@ nm_thread(void *worker0) {
 
 	atomic_fetch_sub_explicit(&worker->mgr->workers_running, 1,
 				  memory_order_relaxed);
-	isc_condition_signal(&worker->mgr->wkstatecond);
+	SIGNAL(&worker->mgr->wkstatecond);
+
 	return (NULL);
 }
-
 
 /*
  * async_cb is an universal callback for 'async' events sent to event loop.
@@ -348,9 +352,10 @@ async_cb(uv_async_t *handle) {
 			    sizeof(isc__netievent_storage_t));
 	}
 }
+
 /*
  * isc__nm_get_ievent allocates an ievent and sets the type
- * xxxwpk: use pool?
+ * XXXWPK: use pool?
  */
 void *
 isc__nm_get_ievent(isc_nm_t *mgr, isc__netievent_type type) {
@@ -375,9 +380,9 @@ static bool
 isc__nmsocket_active(isc_nmsocket_t *socket) {
 	if (socket->parent != NULL) {
 		return (atomic_load(&socket->parent->active));
-	} else {
-		return (atomic_load(&socket->active));
 	}
+
+	return (atomic_load(&socket->active));
 }
 
 void
@@ -401,6 +406,8 @@ isc_nmsocket_attach(isc_nmsocket_t *socket, isc_nmsocket_t **target) {
  */
 static void
 isc__nmsocket_destroy(isc_nmsocket_t *socket, bool dofree) {
+	isc_hpstack_link_t *se = NULL;
+
 	REQUIRE(VALID_NMSOCK(socket));
 	REQUIRE(socket->ah_cpos == 0);  /* We don't have active handles */
 	REQUIRE(!isc__nmsocket_active(socket));
@@ -419,12 +426,15 @@ isc__nmsocket_destroy(isc_nmsocket_t *socket, bool dofree) {
 		isc_quota_detach(&socket->quota);
 	}
 
-	isc_hpstack_link_t *se;
 	while ((se = isc_hpstack_pop(socket->inactivehandles)) != NULL) {
+		isc_nmhandle_t *handle = NULL;
+
 		isc_hpstack_delelem(se); /* XXXWPK TODO is it safe? */
-		isc_nmhandle_t *handle = nm_handle_is_get(se);
+
+		handle = nm_handle_is_get(se);
 		isc__nmhandle_free(socket, handle);
 	}
+
 	isc_hpstack_destroy(socket->inactivehandles);
 
 	while ((se = isc_hpstack_pop(socket->inactivereqs)) != NULL) {
@@ -432,10 +442,12 @@ isc__nmsocket_destroy(isc_nmsocket_t *socket, bool dofree) {
 		isc__nm_uvreq_t *uvreq = uvreq_is_get(se);
 		isc_mem_put(mgr->mctx, uvreq, sizeof(*uvreq));
 	}
+
 	isc_hpstack_destroy(socket->inactivereqs);
 
 	isc_mem_free(mgr->mctx, socket->ah_frees);
 	isc_mem_free(mgr->mctx, socket->ah_handles);
+
 	if (dofree) {
 		isc_mem_put(mgr->mctx, socket, sizeof(*socket));
 	}
@@ -469,8 +481,11 @@ isc__nmsocket_maybe_destroy(isc_nmsocket_t *socket) {
 	}
 }
 
-/* The final external reference to the socket is gone, we can try destroying the
- * socket, but we have to wait for all the inflight handles to finish first. */
+/*
+ * The final external reference to the socket is gone, we can try
+ * destroying the socket, but we have to wait for all the inflight handles
+ * to finish first.
+ */
 void
 isc__nmsocket_prep_destroy(isc_nmsocket_t *socket) {
 	REQUIRE(socket->parent == NULL);
@@ -524,6 +539,7 @@ isc_nmsocket_detach(isc_nmsocket_t **socketp) {
 	if (references == 1) {
 		isc__nmsocket_prep_destroy(rsocket);
 	}
+
 	*socketp = NULL;
 }
 
@@ -556,9 +572,9 @@ isc__nmsocket_init(isc_nmsocket_t *socket, isc_nm_t *mgr,
 
 	isc_mutex_init(&socket->lock);
 	isc_condition_init(&socket->cond);
-	socket->magic = NMSOCK_MAGIC;
 	isc_refcount_init(&socket->references, 1);
 	atomic_init(&socket->active, true);
+	socket->magic = NMSOCK_MAGIC;
 }
 
 /*
@@ -575,7 +591,7 @@ isc__nm_alloc_cb(uv_handle_t *handle, size_t size, uv_buf_t *buf) {
 
 	/* TODO that's for UDP only! */
 	worker = &socket->mgr->workers[socket->tid];
-	REQUIRE(!worker->udprecvbuf_inuse);
+	INSIST(!worker->udprecvbuf_inuse);
 
 	buf->base = worker->udprecvbuf;
 #if 0
@@ -646,7 +662,7 @@ isc__nmhandle_get(isc_nmsocket_t *socket, isc_sockaddr_t *peer) {
 	handle->socket = socket;
 	memcpy(&handle->peer, peer, sizeof(isc_sockaddr_t));
 
-	isc_mutex_lock(&socket->lock);
+	LOCK(&socket->lock);
 	if (socket->ah_cpos == socket->ah_size) {
 		socket->ah_frees =
 			isc_mem_reallocate(socket->mgr->mctx, socket->ah_frees,
@@ -670,7 +686,7 @@ isc__nmhandle_get(isc_nmsocket_t *socket, isc_sockaddr_t *peer) {
 	INSIST(socket->ah_handles[pos] == NULL);
 	socket->ah_handles[pos] = handle;
 	handle->ah_pos = pos;
-	isc_mutex_unlock(&socket->lock);
+	UNLOCK(&socket->lock);
 
 	if (socket->type == isc_nm_tcpsocket) {
 		INSIST(socket->tcphandle == NULL);
@@ -684,6 +700,7 @@ void
 isc_nmhandle_attach(isc_nmhandle_t *handle, isc_nmhandle_t **handlep) {
 	REQUIRE(VALID_NMHANDLE(handle));
 	REQUIRE(handlep != NULL && *handlep == NULL);
+
 	INSIST(isc_refcount_increment(&handle->references) > 0);
 
 	*handlep = handle;
@@ -710,9 +727,11 @@ isc__nmhandle_free(isc_nmsocket_t *socket, isc_nmhandle_t *handle) {
 void
 isc_nmhandle_detach(isc_nmhandle_t **handlep) {
 	isc_nmhandle_t *handle = *handlep;
+	int refs;
 
 	REQUIRE(VALID_NMHANDLE(handle));
-	int refs = isc_refcount_decrement(&handle->references);
+
+	refs = isc_refcount_decrement(&handle->references);
 	INSIST(refs > 0);
 	if (refs == 1) {
 		isc_nmsocket_t *socket = handle->socket;
@@ -727,7 +746,7 @@ isc_nmhandle_detach(isc_nmhandle_t **handlep) {
 		 * We do it all under lock to avoid races with socket
 		 * destruction.
 		 */
-		isc_mutex_lock(&socket->lock);
+		LOCK(&socket->lock);
 		INSIST(socket->ah_handles[handle->ah_pos] == handle);
 		INSIST(socket->ah_size > handle->ah_pos);
 		INSIST(socket->ah_cpos > 0);
@@ -739,8 +758,7 @@ isc_nmhandle_detach(isc_nmhandle_t **handlep) {
 			reuse = isc_hpstack_trypush(socket->inactivehandles,
 						    &handle->ilink);
 		}
-
-		isc_mutex_unlock(&socket->lock);
+		UNLOCK(&socket->lock);
 
 		if (!reuse) {
 			isc__nmhandle_free(socket, handle);
@@ -870,5 +888,4 @@ isc_nm_send(isc_nmhandle_t *handle, isc_region_t *region,
 		INSIST(0);
 		ISC_UNREACHABLE();
 	}
-	return (ISC_R_FAILURE);
 }
