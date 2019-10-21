@@ -62,7 +62,6 @@
 #include <isc/netmgr.h>
 #include <isc/stdtime.h>
 #include <isc/quota.h>
-#include <isc/queue.h>
 #include <isc/platform.h>
 
 #include <dns/db.h>
@@ -107,16 +106,12 @@ typedef struct ns_tcpconn {
  * Number of tasks to be used by clients - those are used only when recursing
  */
 
-typedef ISC_QUEUE(ns_client_t) client_queue_t;
 typedef ISC_LIST(ns_client_t) client_list_t;
 
 /*% nameserver client manager structure */
 struct ns_clientmgr {
 	/* Unlocked. */
 	unsigned int			magic;
-
-	/* The queue object has its own locks */
-	client_queue_t			inactive;     /*%< To be recycled */
 
 	isc_mem_t *			mctx;
 	ns_server_t *			sctx;
@@ -227,7 +222,6 @@ struct ns_client {
 
 	ISC_LINK(ns_client_t)	link;
 	ISC_LINK(ns_client_t)	rlink;
-	ISC_QLINK(ns_client_t)	ilink;
 	unsigned char		cookie[8];
 	uint32_t		expire;
 	unsigned char		*keytag;

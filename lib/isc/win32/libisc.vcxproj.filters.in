@@ -173,9 +173,6 @@
     <ClInclude Include="..\include\isc\print.h">
       <Filter>Library Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\isc\queue.h">
-      <Filter>Library Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\include\isc\quota.h">
       <Filter>Library Header Files</Filter>
     </ClInclude>

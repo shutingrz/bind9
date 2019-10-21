@@ -21,7 +21,6 @@
 #include <isc/nonce.h>
 #include <isc/platform.h>
 #include <isc/print.h>
-#include <isc/queue.h>
 #include <isc/random.h>
 #include <isc/safe.h>
 #include <isc/serial.h>
@@ -125,7 +124,6 @@
 /*%<
  * The client object exists and has a task and timer.
  * Its "query" struct and sendbuf are initialized.
- * It is on the client manager's list of inactive clients.
  * It has a message and OPT, both in the reset state.
  */
 
@@ -1582,10 +1580,6 @@ client_put_cb(void *client0) {
 		      NS_LOGMODULE_CLIENT, ISC_LOG_DEBUG(3),
 		      "freeing client");
 
-	if (ISC_QLINK_LINKED(client, ilink)) {
-		ISC_QUEUE_UNLINK(client->manager->inactive, client, ilink);
-	}
-
 	client->newstate = NS_CLIENTSTATE_FREED;
 	if (client->handle != NULL) {
 		isc_nmhandle_detach(&client->handle);
@@ -2380,7 +2374,6 @@ client_setup(ns_clientmgr_t *manager, isc_mem_t *mctx, ns_client_t *client) {
 	client->formerrcache.id = 0;
 	ISC_LINK_INIT(client, link);
 	ISC_LINK_INIT(client, rlink);
-	ISC_QLINK_INIT(client, ilink);
 	client->keytag = NULL;
 	client->keytag_len = 0;
 	client->rcode_override = -1; 	/* not set */
@@ -2500,7 +2493,6 @@ clientmgr_destroy(ns_clientmgr_t *manager) {
 	}
 #endif
 
-	ISC_QUEUE_DESTROY(manager->inactive);
 	isc_mutex_destroy(&manager->lock);
 	isc_mutex_destroy(&manager->reclock);
 
@@ -2558,7 +2550,6 @@ ns_clientmgr_create(isc_mem_t *mctx, ns_server_t *sctx, isc_taskmgr_t *taskmgr,
 	ns_server_attach(sctx, &manager->sctx);
 
 	ISC_LIST_INIT(manager->recursing);
-	ISC_QUEUE_INIT(manager->inactive, ilink);
 #if CLIENT_NMCTXS > 0
 	manager->nextmctx = 0;
 	for (i = 0; i < CLIENT_NMCTXS; i++)

@@ -335,7 +335,6 @@ copy InstallFiles ..\Build\Release\
     <ClInclude Include="..\include\isc\pool.h" />
     <ClInclude Include="..\include\isc\portset.h" />
     <ClInclude Include="..\include\isc\print.h" />
-    <ClInclude Include="..\include\isc\queue.h" />
     <ClInclude Include="..\include\isc\quota.h" />
     <ClInclude Include="..\include\isc\radix.h" />
     <ClInclude Include="..\include\isc\random.h" />
