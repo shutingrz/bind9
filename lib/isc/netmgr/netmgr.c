@@ -108,7 +108,7 @@ isc_nm_start(isc_mem_t *mctx, uint32_t workers) {
 		isc_condition_init(&worker->cond);
 
 		isc_mempool_create(mgr->mctx, 65536, &worker->mpool_bufs);
-		worker->ievents = isc_faaa_queue_new(mgr->mctx, 128);
+		worker->ievents = isc_queue_new(mgr->mctx, 128);
 
 		isc_thread_create(nm_thread, &mgr->workers[i], &worker->thread);
 
@@ -146,7 +146,7 @@ isc_nm_shutdown(isc_nm_t **mgr0) {
 		WAIT(&mgr->wkstatecond, &mgr->lock);
 	}
 	for (size_t i = 0; i < mgr->nworkers; i++) {
-		isc_faaa_queue_destroy(mgr->workers[i].ievents);
+		isc_queue_destroy(mgr->workers[i].ievents);
 		isc_mempool_destroy(&mgr->workers[i].mpool_bufs);
 	}
 	UNLOCK(&mgr->lock);
@@ -307,7 +307,7 @@ async_cb(uv_async_t *handle) {
 	 * then async_cb will be called again, we won't loose any signals.
 	 */
 	while ((ievent = (isc__netievent_t *)
-		isc_faaa_queue_dequeue(worker->ievents)) != NULL)
+		isc_queue_dequeue(worker->ievents)) != NULL)
 	{
 		switch (ievent->type) {
 		case netievent_stop:
@@ -372,7 +372,7 @@ isc__nm_get_ievent(isc_nm_t *mgr, isc__netievent_type type) {
  */
 void
 isc__nm_enqueue_ievent(isc__networker_t *worker, isc__netievent_t *event) {
-	isc_faaa_queue_enqueue(worker->ievents, (uintptr_t)event);
+	isc_queue_enqueue(worker->ievents, (uintptr_t)event);
 	uv_async_send(&worker->async);
 }
 

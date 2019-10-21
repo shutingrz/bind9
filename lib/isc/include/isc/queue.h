@@ -12,16 +12,16 @@
 #pragma once
 #include <isc/mem.h>
 
-typedef struct isc_faaa_queue isc_faaa_queue_t;
+typedef struct isc_queue isc_queue_t;
 
-isc_faaa_queue_t *
-isc_faaa_queue_new(isc_mem_t *mctx, int max_threads);
+isc_queue_t *
+isc_queue_new(isc_mem_t *mctx, int max_threads);
 
 uintptr_t
-isc_faaa_queue_dequeue(isc_faaa_queue_t *queue);
+isc_queue_dequeue(isc_queue_t *queue);
 
 void
-isc_faaa_queue_enqueue(isc_faaa_queue_t *queue, uintptr_t item);
+isc_queue_enqueue(isc_queue_t *queue, uintptr_t item);
 
 void
-isc_faaa_queue_destroy(isc_faaa_queue_t *queue);
+isc_queue_destroy(isc_queue_t *queue);

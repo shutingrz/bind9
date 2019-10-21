@@ -13,7 +13,7 @@
 #include <stdalign.h>
 
 #include <isc/atomic.h>
-#include <isc/faaa_queue.h>
+#include <isc/queue.h>
 #include <isc/string.h>
 #include <isc/mem.h>
 #include <isc/hp.h>
@@ -36,7 +36,7 @@ typedef struct node {
 #define HP_TAIL 0
 #define HP_HEAD 0
 
-struct isc_faaa_queue {
+struct isc_queue {
 	alignas(128) atomic_uintptr_t head;
 	alignas(128) atomic_uintptr_t tail;
 	isc_mem_t *mctx;
@@ -72,29 +72,29 @@ node_cas_next(node_t *node, node_t *cmp, const node_t *val) {
 }
 
 static bool
-queue_cas_tail(isc_faaa_queue_t *queue, node_t *cmp, const node_t *val) {
+queue_cas_tail(isc_queue_t *queue, node_t *cmp, const node_t *val) {
 	return (atomic_compare_exchange_strong(&queue->tail,
 					       (uintptr_t *)&cmp,
 					       (uintptr_t)val));
 }
 
 static bool
-queue_cas_head(isc_faaa_queue_t *queue, node_t *cmp, const node_t *val) {
+queue_cas_head(isc_queue_t *queue, node_t *cmp, const node_t *val) {
 	return (atomic_compare_exchange_strong(&queue->head,
 					       (uintptr_t *)&cmp,
 					       (uintptr_t)val));
 }
 
-isc_faaa_queue_t *
-isc_faaa_queue_new(isc_mem_t *mctx, int max_threads) {
-	isc_faaa_queue_t *queue = isc_mem_get(mctx, sizeof(*queue));
+isc_queue_t *
+isc_queue_new(isc_mem_t *mctx, int max_threads) {
+	isc_queue_t *queue = isc_mem_get(mctx, sizeof(*queue));
 	node_t *sentinel = node_new(mctx, nulluintptr);
 
 	if (max_threads == 0) {
 		max_threads = MAX_THREADS;
 	}
 
-	*queue = (isc_faaa_queue_t){
+	*queue = (isc_queue_t){
 		.max_threads = max_threads,
 	};
 
@@ -110,7 +110,7 @@ isc_faaa_queue_new(isc_mem_t *mctx, int max_threads) {
 }
 
 void
-isc_faaa_queue_enqueue(isc_faaa_queue_t *queue, uintptr_t item) {
+isc_queue_enqueue(isc_queue_t *queue, uintptr_t item) {
 	INSIST(item != nulluintptr);
 
 	while (true) {
@@ -151,7 +151,7 @@ isc_faaa_queue_enqueue(isc_faaa_queue_t *queue, uintptr_t item) {
 }
 
 uintptr_t
-isc_faaa_queue_dequeue(isc_faaa_queue_t *queue) {
+isc_queue_dequeue(isc_queue_t *queue) {
 	while (true) {
 		node_t *lh = NULL;
 		atomic_uint_fast32_t idx;
@@ -192,10 +192,10 @@ isc_faaa_queue_dequeue(isc_faaa_queue_t *queue) {
 }
 
 void
-isc_faaa_queue_destroy(isc_faaa_queue_t *queue) {
+isc_queue_destroy(isc_queue_t *queue) {
 	node_t *last;
 
-	while (isc_faaa_queue_dequeue(queue) != nulluintptr) {
+	while (isc_queue_dequeue(queue) != nulluintptr) {
 		/* do nothing */
 	}
 

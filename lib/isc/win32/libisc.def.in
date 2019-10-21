@@ -194,10 +194,6 @@ isc_error_unexpected
 isc_event_allocate
 isc_event_constallocate
 isc_event_free
-isc_faaa_queue_dequeue
-isc_faaa_queue_destroy
-isc_faaa_queue_enqueue
-isc_faaa_queue_new
 isc_file_absolutepath
 isc_file_basename
 isc_file_bopenunique
@@ -453,6 +449,10 @@ isc_portset_isset
 isc_portset_nports
 isc_portset_remove
 isc_portset_removerange
+isc_queue_dequeue
+isc_queue_destroy
+isc_queue_enqueue
+isc_queue_new
 isc_quota_attach
 isc_quota_destroy
 isc_quota_detach

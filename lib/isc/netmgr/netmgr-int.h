@@ -12,14 +12,14 @@
 #include <unistd.h>
 #include <uv.h>
 
+#include <isc/astack.h>
 #include <isc/atomic.h>
 #include <isc/buffer.h>
 #include <isc/condition.h>
-#include <isc/faaa_queue.h>
-#include <isc/astack.h>
 #include <isc/magic.h>
 #include <isc/mem.h>
 #include <isc/netmgr.h>
+#include <isc/queue.h>
 #include <isc/random.h>
 #include <isc/refcount.h>
 #include <isc/region.h>
@@ -46,7 +46,7 @@ typedef struct isc__networker {
 	bool			   paused;
 	bool			   finished;
 	isc_thread_t		   thread;
-	isc_faaa_queue_t	   *ievents;     /* incoming async events */
+	isc_queue_t		   *ievents;     /* incoming async events */
 	isc_refcount_t		   references;
 	atomic_int_fast64_t	   pktcount;
 	char			   udprecvbuf[65536];
