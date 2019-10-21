@@ -93,7 +93,7 @@ isc_nm_listenudp(isc_nm_t *mgr, isc_nmiface_t *iface,
 		ievent = isc__nm_get_ievent(mgr, netievent_udplisten);
 		ievent->socket = csocket;
 		isc__nm_enqueue_ievent(&mgr->workers[i],
-				       (isc__netievent_t*) ievent);
+				       (isc__netievent_t *) ievent);
 	}
 
 	*rv = nsocket;
@@ -113,7 +113,7 @@ isc_nm_udp_stoplistening(isc_nmsocket_t *socket) {
 					    netievent_udpstoplisten);
 		ievent->socket = &socket->children[i];
 		isc__nm_enqueue_ievent(&socket->mgr->workers[i],
-				       (isc__netievent_t*) ievent);
+				       (isc__netievent_t *) ievent);
 	}
 
 	LOCK(&socket->lock);
@@ -139,7 +139,7 @@ isc__nm_handle_udplisten(isc__networker_t *worker, isc__netievent_t *ievent0) {
 	uv_udp_init(&worker->loop, &socket->uv_handle.udp);
 	socket->uv_handle.udp.data = NULL;
 	isc_nmsocket_attach(socket,
-			    (isc_nmsocket_t**)&socket->uv_handle.udp.data);
+			    (isc_nmsocket_t **)&socket->uv_handle.udp.data);
 
 	uv_udp_open(&socket->uv_handle.udp, socket->fd);
 	uv_udp_bind(&socket->uv_handle.udp,
@@ -156,7 +156,7 @@ static void
 udp_close_cb(uv_handle_t *handle) {
 	isc_nmsocket_t *socket = handle->data;
 
-	isc_nmsocket_detach((isc_nmsocket_t**)&socket->uv_handle.udp.data);
+	isc_nmsocket_detach((isc_nmsocket_t **)&socket->uv_handle.udp.data);
 }
 
 /*
@@ -177,12 +177,12 @@ isc__nm_handle_udpstoplisten(isc__networker_t *worker,
 	UNUSED(worker);
 
 	/* XXXWPK TODO do it properly! */
-	if (uv_is_closing((uv_handle_t*) &socket->uv_handle.udp)) {
+	if (uv_is_closing((uv_handle_t *) &socket->uv_handle.udp)) {
 		return;
 	}
 
 	uv_udp_recv_stop(&socket->uv_handle.udp);
-	uv_close((uv_handle_t*) &socket->uv_handle.udp, udp_close_cb);
+	uv_close((uv_handle_t *) &socket->uv_handle.udp, udp_close_cb);
 
 	LOCK(&socket->parent->lock);
 	atomic_fetch_sub(&socket->parent->rchildren, 1);
@@ -293,7 +293,7 @@ isc__nm_udp_send(isc_nmhandle_t *handle, isc_region_t *region,
 		ievent->req = uvreq;
 
 		isc__nm_enqueue_ievent(&socket->mgr->workers[rsocket->tid],
-				       (isc__netievent_t*) ievent);
+				       (isc__netievent_t *) ievent);
 		return (ISC_R_SUCCESS);
 	}
 }
@@ -318,7 +318,7 @@ isc__nm_handle_udpsend(isc__networker_t *worker, isc__netievent_t *ievent0) {
 static void
 udp_send_cb(uv_udp_send_t *req, int status) {
 	isc_result_t result = ISC_R_SUCCESS;
-	isc__nm_uvreq_t *uvreq = (isc__nm_uvreq_t*)req->data;
+	isc__nm_uvreq_t *uvreq = (isc__nm_uvreq_t *)req->data;
 
 	REQUIRE(VALID_UVREQ(uvreq));
 	REQUIRE(VALID_NMHANDLE(uvreq->handle));

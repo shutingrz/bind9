@@ -29,14 +29,14 @@
 #include "netmgr-int.h"
 
 static void
-dnslisten_readcb(void *arg, isc_nmhandle_t*handle, isc_region_t *region);
+dnslisten_readcb(void *arg, isc_nmhandle_t *handle, isc_region_t *region);
 
 /*
  * Accept callback for TCP-DNS connection
  */
 static void
 dnslisten_acceptcb(isc_nmhandle_t *handle, isc_result_t result, void *cbarg) {
-	isc_nmsocket_t *dnslistensocket = (isc_nmsocket_t*) cbarg;
+	isc_nmsocket_t *dnslistensocket = (isc_nmsocket_t *) cbarg;
 
 	REQUIRE(VALID_NMSOCK(dnslistensocket));
 	REQUIRE(dnslistensocket->type == isc_nm_tcpdnslistener);
@@ -130,11 +130,11 @@ isc_nm_tcpdns_stoplistening(isc_nmsocket_t *socket) {
 
 
 typedef struct tcpsend {
-	isc_nmhandle_t *	handle;
+	isc_nmhandle_t		*handle;
 	isc_region_t		region;
-	isc_nmhandle_t *	orighandle;
+	isc_nmhandle_t		*orighandle;
 	isc_nm_send_cb_t	cb;
-	void*			cbarg;
+	void 			*cbarg;
 } tcpsend_t;
 
 static void

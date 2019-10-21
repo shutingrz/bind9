@@ -697,7 +697,7 @@ static void
 sendstream(xfrout_ctx_t *xfr);
 
 static void
-xfrout_senddone(isc_nmhandle_t *handle, isc_result_t result, void* arg);
+xfrout_senddone(isc_nmhandle_t *handle, isc_result_t result, void *arg);
 
 static void
 xfrout_fail(xfrout_ctx_t *xfr, isc_result_t result, const char *msg);
@@ -1641,7 +1641,7 @@ xfrout_ctx_destroy(xfrout_ctx_t **xfrp) {
 }
 
 static void
-xfrout_senddone(isc_nmhandle_t *handle, isc_result_t result, void* arg) {
+xfrout_senddone(isc_nmhandle_t *handle, isc_result_t result, void *arg) {
 	xfrout_ctx_t *xfr = (xfrout_ctx_t *)arg;
 
 	REQUIRE((xfr->client->attributes & NS_CLIENTATTR_TCP) != 0);

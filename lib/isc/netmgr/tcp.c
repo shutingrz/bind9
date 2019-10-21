@@ -49,7 +49,7 @@ static void
 tcp_connection_cb(uv_stream_t *server, int status);
 
 static void
-read_cb(uv_stream_t*stream, ssize_t nread, const uv_buf_t*buf);
+read_cb(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf);
 
 
 /*
@@ -59,7 +59,7 @@ read_cb(uv_stream_t*stream, ssize_t nread, const uv_buf_t*buf);
  * If the result is ISC_R_SUCCESS then the cb is always called.
  */
 isc_result_t
-isc_nm_tcp_connect(isc_nm_t*mgr, isc_nmiface_t *iface, isc_sockaddr_t *peer,
+isc_nm_tcp_connect(isc_nm_t *mgr, isc_nmiface_t *iface, isc_sockaddr_t *peer,
 		   isc_nm_connect_cb_t cb, void *cbarg)
 {
 	isc_nmsocket_t *sock;
@@ -136,7 +136,7 @@ isc__nm_handle_tcpconnect(isc__networker_t *worker, isc__netievent_t *ievent0) {
 
 static void
 tcp_connect_cb(uv_connect_t *uvreq, int status) {
-	isc__nm_uvreq_t *req = (isc__nm_uvreq_t*) uvreq->data;
+	isc__nm_uvreq_t *req = (isc__nm_uvreq_t *) uvreq->data;
 	isc_nmsocket_t *socket = uvreq->handle->data;
 
 	REQUIRE(VALID_UVREQ(req));
@@ -148,10 +148,10 @@ tcp_connect_cb(uv_connect_t *uvreq, int status) {
 		struct sockaddr_storage ss;
 
 		uv_tcp_getpeername(&socket->uv_handle.tcp,
-				   (struct sockaddr*) &ss,
+				   (struct sockaddr *) &ss,
 				   &(int){sizeof(ss)});
 		result = isc_sockaddr_fromsockaddr(&peer,
-						   (struct sockaddr*) &ss);
+						   (struct sockaddr *) &ss);
 		RUNTIME_CHECK(result == ISC_R_SUCCESS);
 
 		handle = isc__nmhandle_get(socket, &peer);
@@ -201,7 +201,7 @@ isc_nm_listentcp(isc_nm_t *mgr, isc_nmiface_t *iface,
 	ievent = isc__nm_get_ievent(mgr, netievent_tcplisten);
 	ievent->socket = nsocket;
 	isc__nm_enqueue_ievent(&mgr->workers[nsocket->tid],
-			       (isc__netievent_t*) ievent);
+			       (isc__netievent_t *) ievent);
 	*rv = nsocket;
 
 	return (ISC_R_SUCCESS);
@@ -223,7 +223,7 @@ isc__nm_handle_tcplisten(isc__networker_t *worker, isc__netievent_t *ievent0) {
 	}
 
 	uv_tcp_bind(&socket->uv_handle.tcp, &socket->iface->addr.type.sa, 0);
-	r = uv_listen((uv_stream_t*) &socket->uv_handle.tcp,
+	r = uv_listen((uv_stream_t *) &socket->uv_handle.tcp,
 		      10,
 		      tcp_connection_cb);
 	socket->listening = true;
@@ -241,7 +241,7 @@ isc_nm_tcp_stoplistening(isc_nmsocket_t *socket) {
 	ievent = isc__nm_get_ievent(socket->mgr, netievent_tcpstoplisten);
 	isc_nmsocket_attach(socket, &ievent->socket);
 	isc__nm_enqueue_ievent(&socket->mgr->workers[socket->tid],
-			       (isc__netievent_t*) ievent);
+			       (isc__netievent_t *) ievent);
 
 	LOCK(&socket->lock);
 	while (atomic_load(&socket->listening) == true) {
@@ -299,7 +299,7 @@ isc_nm_read(isc_nmhandle_t *handle, isc_nm_recv_cb_t cb, void *cbarg) {
 					   netievent_tcpstartread);
 		ievent->socket = socket;
 		isc__nm_enqueue_ievent(&socket->mgr->workers[socket->tid],
-				       (isc__netievent_t*) ievent);
+				       (isc__netievent_t *) ievent);
 	}
 
 	return (ISC_R_SUCCESS);
@@ -392,10 +392,10 @@ accept_connection(isc_nmsocket_t *ssocket) {
 
 	isc_nmsocket_attach(ssocket, &csocket->server);
 
-	uv_tcp_getpeername(&csocket->uv_handle.tcp, (struct sockaddr*) &ss,
+	uv_tcp_getpeername(&csocket->uv_handle.tcp, (struct sockaddr *) &ss,
 			   &(int){sizeof(ss)});
 
-	result = isc_sockaddr_fromsockaddr(&peer, (struct sockaddr*) &ss);
+	result = isc_sockaddr_fromsockaddr(&peer, (struct sockaddr *) &ss);
 	RUNTIME_CHECK(result == ISC_R_SUCCESS);
 
 	handle = isc__nmhandle_get(csocket, &peer);
@@ -457,7 +457,7 @@ isc__nm_tcp_send(isc_nmhandle_t *handle, isc_region_t *region,
 		ievent->socket = socket;
 		ievent->req = uvreq;
 		isc__nm_enqueue_ievent(&socket->mgr->workers[socket->tid],
-				       (isc__netievent_t*) ievent);
+				       (isc__netievent_t *) ievent);
 		return (ISC_R_SUCCESS);
 	}
 
@@ -467,7 +467,7 @@ isc__nm_tcp_send(isc_nmhandle_t *handle, isc_region_t *region,
 static void
 tcp_send_cb(uv_write_t *req, int status) {
 	isc_result_t result = ISC_R_SUCCESS;
-	isc__nm_uvreq_t *uvreq = (isc__nm_uvreq_t*)req->data;
+	isc__nm_uvreq_t *uvreq = (isc__nm_uvreq_t *) req->data;
 
 	REQUIRE(VALID_UVREQ(uvreq));
 	REQUIRE(VALID_NMHANDLE(uvreq->handle));
@@ -565,7 +565,7 @@ isc__nm_tcp_close(isc_nmsocket_t *socket) {
 
 		ievent->socket = socket;
 		isc__nm_enqueue_ievent(&socket->mgr->workers[socket->tid],
-				       (isc__netievent_t*) ievent);
+				       (isc__netievent_t *) ievent);
 	}
 }
 

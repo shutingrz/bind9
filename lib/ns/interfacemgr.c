@@ -462,7 +462,7 @@ static isc_result_t
 ns_interface_listentcp(ns_interface_t *ifp) {
 	isc_result_t result;
 	result = isc_nm_listentcpdns(ifp->mgr->nm,
-				     (isc_nmiface_t*) &ifp->addr, /* XXXWPK */
+				     (isc_nmiface_t *) &ifp->addr, /* XXXWPK */
 				     ns__client_request, ifp,
 				     sizeof(ns_client_t),
 				     &ifp->mgr->sctx->tcpquota,

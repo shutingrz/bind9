@@ -65,7 +65,7 @@ void
 isc_hp_clear_one(isc_hp_t *hp, int ihp);
 
 uintptr_t
-isc_hp_protect(isc_hp_t *hp, int ihp, atomic_uintptr_t* atom);
+isc_hp_protect(isc_hp_t *hp, int ihp, atomic_uintptr_t *atom);
 
 uintptr_t
 isc_hp_protect_ptr(isc_hp_t *hp, int ihp, const atomic_uintptr_t ptr);

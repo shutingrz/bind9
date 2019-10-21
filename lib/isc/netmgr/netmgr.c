@@ -306,7 +306,7 @@ async_cb(uv_async_t *handle) {
 	 * that if someone calls uv_async_send -after- async_cb was called
 	 * then async_cb will be called again, we won't loose any signals.
 	 */
-	while ((ievent = (isc__netievent_t*)
+	while ((ievent = (isc__netievent_t *)
 		isc_faaa_queue_dequeue(worker->ievents)) != NULL)
 	{
 		switch (ievent->type) {
@@ -549,7 +549,7 @@ isc__nmsocket_init(isc_nmsocket_t *socket, isc_nm_t *mgr,
 					    socket->ah_size * sizeof(size_t));
 	socket->ah_handles = isc_mem_allocate(mgr->mctx,
 					      socket->ah_size *
-					      sizeof(isc_nmhandle_t*));
+					      sizeof(isc_nmhandle_t *));
 	for (size_t i = 0; i < 32; i++) {
 		socket->ah_frees[i] = i;
 		socket->ah_handles[i] = NULL;
@@ -773,7 +773,7 @@ isc_nmhandle_setdata(isc_nmhandle_t *handle, void *arg,
 	handle->dofree = dofree;
 }
 
-void*
+void *
 isc_nmhandle_getextra(isc_nmhandle_t *handle) {
 	REQUIRE(VALID_NMHANDLE(handle));
 

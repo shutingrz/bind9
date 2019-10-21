@@ -65,23 +65,23 @@ node_destroy(void *node0) {
 }
 
 static bool
-node_cas_next(node_t *node, node_t* cmp, const node_t *val) {
+node_cas_next(node_t *node, node_t *cmp, const node_t *val) {
 	return (atomic_compare_exchange_strong(&node->next,
-					       (uintptr_t*)&cmp,
+					       (uintptr_t *)&cmp,
 					       (uintptr_t)val));
 }
 
 static bool
-queue_cas_tail(isc_faaa_queue_t *queue, node_t* cmp, const node_t *val) {
+queue_cas_tail(isc_faaa_queue_t *queue, node_t *cmp, const node_t *val) {
 	return (atomic_compare_exchange_strong(&queue->tail,
-					       (uintptr_t*)&cmp,
+					       (uintptr_t *)&cmp,
 					       (uintptr_t)val));
 }
 
 static bool
-queue_cas_head(isc_faaa_queue_t *queue, node_t* cmp, const node_t *val) {
+queue_cas_head(isc_faaa_queue_t *queue, node_t *cmp, const node_t *val) {
 	return (atomic_compare_exchange_strong(&queue->head,
-					       (uintptr_t*)&cmp,
+					       (uintptr_t *)&cmp,
 					       (uintptr_t)val));
 }
 
@@ -129,7 +129,7 @@ isc_faaa_queue_enqueue(isc_faaa_queue_t *queue, uintptr_t item) {
 
 			lnext = (node_t *)atomic_load(&lt->next);
 			if (lnext == NULL) {
-				node_t* newnode = node_new(queue->mctx, item);
+				node_t *newnode = node_new(queue->mctx, item);
 				if (node_cas_next(lt, NULL, newnode)) {
 					queue_cas_tail(queue, lt, newnode);
 					isc_hp_clear(queue->hp);

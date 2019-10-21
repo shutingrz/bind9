@@ -2505,7 +2505,7 @@ clientmgr_destroy(ns_clientmgr_t *manager) {
 		}
 	}
 	isc_mem_put(manager->mctx, manager->taskpool,
-		    CLIENT_NTASKS * sizeof(isc_task_t*));
+		    CLIENT_NTASKS * sizeof(isc_task_t *));
 	ns_server_detach(&manager->sctx);
 
 	manager->magic = 0;
@@ -2540,7 +2540,7 @@ ns_clientmgr_create(isc_mem_t *mctx, ns_server_t *sctx, isc_taskmgr_t *taskmgr,
 	manager->interface = interface;
 	manager->exiting = false;
 	manager->taskpool =
-		isc_mem_get(mctx, CLIENT_NTASKS*sizeof(isc_task_t*));
+		isc_mem_get(mctx, CLIENT_NTASKS*sizeof(isc_task_t *));
 	for (i = 0; i < CLIENT_NTASKS; i++) {
 		manager->taskpool[i] = NULL;
 		isc_task_create(manager->taskmgr, 20, &manager->taskpool[i]);

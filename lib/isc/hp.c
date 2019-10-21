@@ -164,7 +164,7 @@ void isc_hp_clear_one(isc_hp_t *hp, int ihp) {
  * Progress Condition: lock-free
  */
 uintptr_t
-isc_hp_protect(isc_hp_t *hp, int ihp, atomic_uintptr_t* atom) {
+isc_hp_protect(isc_hp_t *hp, int ihp, atomic_uintptr_t *atom) {
 	uintptr_t n = 0;
 	uintptr_t ret;
 	while ((ret = atomic_load(atom)) != n) {

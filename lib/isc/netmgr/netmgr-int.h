@@ -41,7 +41,7 @@ typedef struct isc__networker {
 	uv_async_t		   async;       /* async channel to send
 						 * data to this networker */
 	isc_mutex_t		   lock;
-	isc_mempool_t *		   mpool_bufs;
+	isc_mempool_t		   *mpool_bufs;
 	isc_condition_t		   cond;
 	bool			   paused;
 	bool			   finished;
@@ -62,7 +62,7 @@ typedef struct isc__networker {
 #define VALID_NMHANDLE(t)                     ISC_MAGIC_VALID(t, \
 							      NMHANDLE_MAGIC)
 
-typedef void (*isc__nm_closecb)(isc_nmhandle_t*);
+typedef void (*isc__nm_closecb)(isc_nmhandle_t *);
 
 struct isc_nmhandle {
 	int		      magic;

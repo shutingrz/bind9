@@ -79,7 +79,7 @@ isc_nmhandle_detach(isc_nmhandle_t **handlep);
 void *
 isc_nmhandle_getdata(isc_nmhandle_t *handle);
 
-void*
+void *
 isc_nmhandle_getextra(isc_nmhandle_t *handle);
 
 typedef void (*isc_nm_opaquecb)(void *arg);
@@ -88,7 +88,7 @@ bool
 isc_nmhandle_is_stream(isc_nmhandle_t *handle);
 
 /*
- * isc_nmhandle_t has a void* opaque field (usually - ns_client_t).
+ * isc_nmhandle_t has a void * opaque field (usually - ns_client_t).
  * We reuse handle and `opaque` can also be reused between calls.
  * This function sets this field and two callbacks:
  * - doreset resets the `opaque` to initial state
@@ -108,7 +108,7 @@ isc_nmhandle_peeraddr(isc_nmhandle_t *handle);
  * region - contains the received data. It will be freed after
  *          return by caller
  */
-typedef void (*isc_nm_recv_cb_t)(void *arg, isc_nmhandle_t*handle,
+typedef void (*isc_nm_recv_cb_t)(void *arg, isc_nmhandle_t *handle,
 				 isc_region_t *region);
 
 /*
@@ -147,18 +147,18 @@ void
 isc_nm_resume(isc_nm_t *mgr);
 
 isc_result_t
-isc_nm_tcp_connect(isc_nm_t*mgr, isc_nmiface_t *iface, isc_sockaddr_t *peer,
+isc_nm_tcp_connect(isc_nm_t *mgr, isc_nmiface_t *iface, isc_sockaddr_t *peer,
 		   isc_nm_connect_cb_t cb, void *cbarg);
 
-isc_nmsocket_t*
+isc_nmsocket_t *
 isc_nm_udp_socket();
 
 isc_result_t
-isc_nm_dnsread(isc_nmsocket_t *socket, isc_buffer_t*buf);
+isc_nm_dnsread(isc_nmsocket_t *socket, isc_buffer_t *buf);
 
 
 isc_result_t
-isc_nm_read(isc_nmhandle_t *handle, isc_nm_recv_cb_t cb, void*cbarg);
+isc_nm_read(isc_nmhandle_t *handle, isc_nm_recv_cb_t cb, void *cbarg);
 
 /*
  * isc_nm_send sends region to handle, after finishing cb is called.
