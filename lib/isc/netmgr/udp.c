@@ -63,7 +63,9 @@ isc_nm_listenudp(isc_nm_t *mgr, isc_nmiface_t *iface,
 	nsocket->iface = iface;
 	nsocket->nchildren = mgr->nworkers;
 	atomic_init(&nsocket->rchildren, mgr->nworkers);
-	nsocket->children = malloc(mgr->nworkers * sizeof(*nsocket));
+	nsocket->children = isc_mem_get(mgr->mctx,
+					mgr->nworkers * sizeof(*nsocket));
+	memset(nsocket->children, 0, mgr->nworkers * sizeof(*nsocket));
 
 	INSIST(nsocket->rcb.recv == NULL && nsocket->rcbarg == NULL);
 	nsocket->rcb.recv = cb;

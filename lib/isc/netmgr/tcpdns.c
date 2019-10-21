@@ -130,6 +130,7 @@ isc_nm_tcpdns_stoplistening(isc_nmsocket_t *socket) {
 
 
 typedef struct tcpsend {
+	isc_mem_t		*mctx;
 	isc_nmhandle_t		*handle;
 	isc_region_t		region;
 	isc_nmhandle_t		*orighandle;
@@ -145,6 +146,8 @@ tcpdnssend_cb(isc_nmhandle_t *handle, isc_result_t result, void *cbarg) {
 
 	ts->cb(ts->orighandle, result, ts->cbarg);
 	isc_nmhandle_detach(&ts->orighandle);
+	isc_mem_put(ts->mctx, ts->region.base, ts->region.length);
+	isc_mem_putanddetach(&ts->mctx, ts, sizeof(*ts));
 }
 /*
  * isc__nm_tcp_send sends buf to a peer on a socket.
@@ -154,21 +157,25 @@ isc__nm_tcpdns_send(isc_nmhandle_t *handle, isc_region_t *region,
 		    isc_nm_send_cb_t cb, void *cbarg)
 {
 	isc_nmsocket_t *socket = handle->socket;
-	tcpsend_t *t = malloc(sizeof(*t));
+	tcpsend_t *t = isc_mem_get(socket->mgr->mctx, sizeof(*t));
 
 	REQUIRE(socket->type == isc_nm_tcpdnssocket);
 
 	*t = (tcpsend_t) {};
+
+	isc_mem_attach(socket->mgr->mctx, &t->mctx);
 	t->handle = handle->socket->outer->tcphandle;
 	t->cb = cb;
 	t->cbarg = cbarg;
+
 	t->region = (isc_region_t) {
-		.base = malloc(region->length + 2),
+		.base = isc_mem_get(t->mctx, region->length + 2),
 		.length = region->length + 2
 	};
 	memmove(t->region.base + 2, region->base, region->length);
 	t->region.base[0] = (uint8_t) (region->length >> 8);
 	t->region.base[1] = (uint8_t) (region->length & 0xff);
+
 	isc_nmhandle_attach(handle, &t->orighandle);
 
 	return (isc__nm_tcp_send(t->handle, &t->region, tcpdnssend_cb, t));

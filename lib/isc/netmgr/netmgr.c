@@ -416,8 +416,13 @@ isc__nmsocket_destroy(isc_nmsocket_t *socket, bool dofree) {
 
 	mgr = socket->mgr;
 
-	for (int i = 0; i < socket->nchildren; i++) {
-		isc__nmsocket_destroy(&socket->children[i], false);
+	if (socket->children != NULL) {
+		for (int i = 0; i < socket->nchildren; i++) {
+			isc__nmsocket_destroy(&socket->children[i], false);
+		}
+
+		isc_mem_put(mgr->mctx, socket->children,
+			    mgr->nworkers * sizeof(*socket));
 	}
 
 	if (socket->tcphandle != NULL) {
