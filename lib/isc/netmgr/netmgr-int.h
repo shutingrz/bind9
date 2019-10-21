@@ -16,7 +16,7 @@
 #include <isc/buffer.h>
 #include <isc/condition.h>
 #include <isc/faaa_queue.h>
-#include <isc/hpstack.h>
+#include <isc/astack.h>
 #include <isc/magic.h>
 #include <isc/mem.h>
 #include <isc/netmgr.h>
@@ -88,14 +88,11 @@ struct isc_nmhandle {
 	atomic_bool		inflight;
 
 	isc_sockaddr_t		peer;
-	isc_hpstack_link_t	ilink;
 	isc_nm_opaquecb		doreset; /* reset extra callback, external */
 	isc_nm_opaquecb		dofree;  /* free extra callback, external */
 	void *			opaque;
 	char			extra[];
 };
-
-ISC_HPSTACK_CONTAINER(struct isc_nmhandle, ilink, nm_handle_is_get);
 
 /*
  * An interface - an address we can listen on.
@@ -163,7 +160,6 @@ typedef struct isc__nm_uvreq {
 	isc__nm_cb_t		cb;	/* callback */
 	void *			cbarg;	/* callback argument */
 	isc_nmhandle_t *	handle;
-	isc_hpstack_link_t	ilink;
 	union {
 		uv_req_t		req;
 		uv_getaddrinfo_t	getaddrinfo;
@@ -176,8 +172,6 @@ typedef struct isc__nm_uvreq {
 		uv_work_t		work;
 	} uv_req;
 } isc__nm_uvreq_t;
-
-ISC_HPSTACK_CONTAINER(struct isc__nm_uvreq, ilink, uvreq_is_get);
 
 /*
  * TODO: unify the events.
@@ -335,8 +329,8 @@ struct isc_nmsocket {
 	 * 'spare' handles for that can be reused to avoid allocations,
 	 * for UDP.
 	 */
-	isc_hpstack_t *inactivehandles;
-	isc_hpstack_t *inactivereqs;
+	isc_astack_t *inactivehandles;
+	isc_astack_t *inactivereqs;
 
 	/* Used for active/rchildren during shutdown */
 	isc_mutex_t			  lock;

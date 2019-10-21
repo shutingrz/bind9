@@ -406,13 +406,15 @@ isc_nmsocket_attach(isc_nmsocket_t *socket, isc_nmsocket_t **target) {
  */
 static void
 isc__nmsocket_destroy(isc_nmsocket_t *socket, bool dofree) {
-	isc_hpstack_link_t *se = NULL;
+	isc_nmhandle_t *handle = NULL;
+	isc__nm_uvreq_t *uvreq = NULL;
+	isc_nm_t *mgr = NULL;
 
 	REQUIRE(VALID_NMSOCK(socket));
 	REQUIRE(socket->ah_cpos == 0);  /* We don't have active handles */
 	REQUIRE(!isc__nmsocket_active(socket));
 
-	isc_nm_t *mgr = socket->mgr;
+	mgr = socket->mgr;
 
 	for (int i = 0; i < socket->nchildren; i++) {
 		isc__nmsocket_destroy(&socket->children[i], false);
@@ -426,24 +428,17 @@ isc__nmsocket_destroy(isc_nmsocket_t *socket, bool dofree) {
 		isc_quota_detach(&socket->quota);
 	}
 
-	while ((se = isc_hpstack_pop(socket->inactivehandles)) != NULL) {
-		isc_nmhandle_t *handle = NULL;
-
-		isc_hpstack_delelem(se); /* XXXWPK TODO is it safe? */
-
-		handle = nm_handle_is_get(se);
+	while ((handle = isc_astack_pop(socket->inactivehandles)) != NULL) {
 		isc__nmhandle_free(socket, handle);
 	}
 
-	isc_hpstack_destroy(socket->inactivehandles);
+	isc_astack_destroy(socket->inactivehandles);
 
-	while ((se = isc_hpstack_pop(socket->inactivereqs)) != NULL) {
-		isc_hpstack_delelem(se);
-		isc__nm_uvreq_t *uvreq = uvreq_is_get(se);
+	while ((uvreq = isc_astack_pop(socket->inactivereqs)) != NULL) {
 		isc_mem_put(mgr->mctx, uvreq, sizeof(*uvreq));
 	}
 
-	isc_hpstack_destroy(socket->inactivereqs);
+	isc_astack_destroy(socket->inactivereqs);
 
 	isc_mem_free(mgr->mctx, socket->ah_frees);
 	isc_mem_free(mgr->mctx, socket->ah_handles);
@@ -453,16 +448,6 @@ isc__nmsocket_destroy(isc_nmsocket_t *socket, bool dofree) {
 	}
 
 	isc_nm_detach(&mgr);
-}
-
-static void
-delhandle(isc_hpstack_link_t* se) {
-	UNUSED(se);
-}
-
-static void
-delreq(isc_hpstack_link_t *se) {
-	UNUSED(se);
 }
 
 static void
@@ -555,8 +540,8 @@ isc__nmsocket_init(isc_nmsocket_t *socket, isc_nm_t *mgr,
 	isc_nm_attach(mgr, &socket->mgr);
 	socket->uv_handle.handle.data = socket;
 
-	socket->inactivehandles = isc_hpstack_new(mgr->mctx, delhandle);
-	socket->inactivereqs = isc_hpstack_new(mgr->mctx, delreq);
+	socket->inactivehandles = isc_astack_new(mgr->mctx, 60);
+	socket->inactivereqs = isc_astack_new(mgr->mctx, 60);
 
 	socket->ah_cpos = 0;
 	socket->ah_size = 32;
@@ -640,17 +625,12 @@ alloc_handle(isc_nmsocket_t *socket) {
 isc_nmhandle_t *
 isc__nmhandle_get(isc_nmsocket_t *socket, isc_sockaddr_t *peer) {
 	isc_nmhandle_t *handle = NULL;
-	isc_hpstack_link_t *sentry;
 	int pos;
 
 	REQUIRE(VALID_NMSOCK(socket));
 	INSIST(peer != NULL);
 
-	sentry = isc_hpstack_pop(socket->inactivehandles);
-
-	if (sentry != NULL) {
-		handle = nm_handle_is_get(sentry);
-	}
+	handle = isc_astack_pop(socket->inactivehandles);
 
 	if (handle == NULL) {
 		handle = alloc_handle(socket);
@@ -758,8 +738,8 @@ isc_nmhandle_detach(isc_nmhandle_t **handlep) {
 		handle->ah_pos = 0;
 
 		if (atomic_load(&socket->active)) {
-			reuse = isc_hpstack_trypush(socket->inactivehandles,
-						    &handle->ilink);
+			reuse = isc_astack_trypush(socket->inactivehandles,
+						   handle);
 		}
 		UNLOCK(&socket->lock);
 
@@ -817,11 +797,7 @@ isc__nm_uvreq_get(isc_nm_t *mgr, isc_nmsocket_t *socket) {
 
 	if (socket != NULL && atomic_load(&socket->active)) {
 		/* Try to reuse one */
-		isc_hpstack_link_t *sentry =
-			isc_hpstack_pop(socket->inactivereqs);
-		if (sentry != NULL) {
-			req = uvreq_is_get(sentry);
-		}
+		req = isc_astack_pop(socket->inactivereqs);
 	}
 
 	if (req == NULL) {
@@ -863,7 +839,7 @@ isc__nm_uvreq_put(isc__nm_uvreq_t **req0, isc_nmsocket_t *socket) {
 	mgr = req->mgr;
 	req->mgr = NULL;
 	if (socket == NULL || !atomic_load(&socket->active) ||
-	    !isc_hpstack_trypush(socket->inactivereqs, &req->ilink))
+	    !isc_astack_trypush(socket->inactivereqs, req))
 	{
 		isc_mem_put(mgr->mctx, req, sizeof(isc__nm_uvreq_t));
 	}
