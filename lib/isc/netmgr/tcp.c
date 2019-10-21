@@ -422,7 +422,6 @@ tcp_connection_cb(uv_stream_t *server, int status) {
 	}
 }
 
-
 /*
  * isc__nm_tcp_send sends buf to a peer on a socket.
  */

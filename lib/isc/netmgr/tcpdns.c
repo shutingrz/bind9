@@ -37,22 +37,27 @@ dnslisten_readcb(void *arg, isc_nmhandle_t *handle, isc_region_t *region);
 static void
 dnslisten_acceptcb(isc_nmhandle_t *handle, isc_result_t result, void *cbarg) {
 	isc_nmsocket_t *dnslistensocket = (isc_nmsocket_t *) cbarg;
+	isc_nmsocket_t *dnssocket = NULL;
 
 	REQUIRE(VALID_NMSOCK(dnslistensocket));
 	REQUIRE(dnslistensocket->type == isc_nm_tcpdnslistener);
 
-	INSIST(result == ISC_R_SUCCESS); /* XXXWPK TODO */
+	/* If accept() was unnsuccessful we can't do anything */
+	if (result != ISC_R_SUCCESS) {
+		return;
+	}
 
 	/* We need to create a 'wrapper' dnssocket for this connection */
-	isc_nmsocket_t *dnssocket = isc_mem_get(handle->socket->mgr->mctx,
-						sizeof(*dnssocket));
+	dnssocket = isc_mem_get(handle->socket->mgr->mctx, sizeof(*dnssocket));
 	isc__nmsocket_init(dnssocket, handle->socket->mgr,
 			   isc_nm_tcpdnssocket);
+
 	/* We need to copy read callbacks from outer socket */
 	dnssocket->rcb.recv = dnslistensocket->rcb.recv;
 	dnssocket->rcbarg = dnslistensocket->rcbarg;
 	dnssocket->extrahandlesize = dnslistensocket->extrahandlesize;
 	isc_nmsocket_attach(handle->socket, &dnssocket->outer);
+
 	isc_nm_read(handle, dnslisten_readcb, dnssocket);
 }
 
@@ -76,7 +81,11 @@ dnslisten_readcb(void *arg, isc_nmhandle_t *handle, isc_region_t *region) {
 
 	dnshandle = isc__nmhandle_get(dnssocket, &handle->peer);
 
-	/* XXXWPK for the love of all that is holy fix it, that's so wrong */
+	/*
+	 * XXX This MUST be fixed; currently if we read a partial
+	 * DNS packet we'll crash. We need to buffer it and wait for the
+	 * rest.
+	 */
 	INSIST(((region->base[0] << 8) + (region->base[1]) ==
 		(int) region->length - 2));
 

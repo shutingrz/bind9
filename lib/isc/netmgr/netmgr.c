@@ -367,7 +367,7 @@ isc__nm_get_ievent(isc_nm_t *mgr, isc__netievent_type type) {
 }
 
 /*
- * enqueue ievent on a specific worker queue. This the only safe
+ * Enqueue ievent on a specific worker queue. This the only safe
  * way to use isc__networker_t from another thread.
  */
 void
@@ -472,9 +472,9 @@ isc__nmsocket_maybe_destroy(isc_nmsocket_t *socket) {
 }
 
 /*
- * The final external reference to the socket is gone, we can try
- * destroying the socket, but we have to wait for all the inflight handles
- * to finish first.
+ * The final external reference to the socket is gone. We can try
+ * destroying the socket, but we have to wait for all the inflight
+ * handles to finish first.
  */
 void
 isc__nmsocket_prep_destroy(isc_nmsocket_t *socket) {
@@ -483,26 +483,20 @@ isc__nmsocket_prep_destroy(isc_nmsocket_t *socket) {
 	atomic_store(&socket->active, false);
 
 	/*
-	 * XXXWPK if we're here we already stopped listening, otherwise
+	 * If we're here then we already stopped listening; otherwise
 	 * we'd have a hanging reference from the listening process.
 	 *
-	 * If that's a regular socket we need to close it.
+	 * If it's a regular socket we may need to close it.
 	 */
-	if (atomic_load(&socket->closed)) {
-		isc__nmsocket_maybe_destroy(socket);
-	} else {
-		switch (socket->type) {
-		case isc_nm_tcpsocket:
+	if (!atomic_load(&socket->closed)) {
+		if (socket->type == isc_nm_tcpsocket) {
 			isc__nm_tcp_close(socket);
-			break;
-		case isc_nm_tcpdnssocket:
+		} else if (socket->type == isc_nm_tcpdnssocket) {
 			isc__nm_tcpdns_close(socket);
-			break;
-		default: /* This socket does not require closing */
-			isc__nmsocket_maybe_destroy(socket);
-			break;
 		}
 	}
+
+	isc__nmsocket_maybe_destroy(socket);
 }
 
 void
