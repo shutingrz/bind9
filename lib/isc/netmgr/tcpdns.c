@@ -28,6 +28,31 @@
 
 #include "netmgr-int.h"
 
+static inline size_t
+dnslen(unsigned char* base) {
+	return ((base[0] << 8) + (base[1]));
+}
+
+#define NM_REG_BUF 4096
+#define NM_BIG_BUF 65536
+static inline void
+alloc_dnsbuf(isc_nmsocket_t *sock, size_t len) {
+	REQUIRE(len <= NM_BIG_BUF);
+	if (sock->buf == NULL) {
+		/* We don't have the buffer at all */
+		size_t alloc_len = len < NM_REG_BUF ? NM_REG_BUF : NM_BIG_BUF;
+		sock->buf = isc_mem_get(sock->mgr->mctx, alloc_len);
+		sock->buf_size = alloc_len;
+	} else {
+		/* We have the buffer but it's too small */
+		sock->buf = isc_mem_reallocate(sock->mgr->mctx,
+					       sock->buf,
+					       NM_BIG_BUF);
+		sock->buf_size = NM_BIG_BUF;
+	}
+}
+
+
 static void
 dnslisten_readcb(void *arg, isc_nmhandle_t *handle, isc_region_t *region);
 
@@ -68,8 +93,6 @@ dnslisten_acceptcb(isc_nmhandle_t *handle, isc_result_t result, void *cbarg) {
 static void
 dnslisten_readcb(void *arg, isc_nmhandle_t *handle, isc_region_t *region) {
 	isc_nmsocket_t *dnssocket = (isc_nmsocket_t *) arg;
-	isc_nmhandle_t *dnshandle = NULL;
-	isc_region_t r2;
 
 	if (region == NULL) {
 		/* Connection closed */
@@ -79,21 +102,78 @@ dnslisten_readcb(void *arg, isc_nmhandle_t *handle, isc_region_t *region) {
 		return;
 	}
 
-	dnshandle = isc__nmhandle_get(dnssocket, &handle->peer);
+	unsigned char * base = region->base;
+	size_t len = region->length;
 
 	/*
-	 * XXX This MUST be fixed; currently if we read a partial
-	 * DNS packet we'll crash. We need to buffer it and wait for the
-	 * rest.
+	 * We have something in the buffer, we need to glue it.
 	 */
-	INSIST(((region->base[0] << 8) + (region->base[1]) ==
-		(int) region->length - 2));
+	if (dnssocket->buf_len > 0) {
+		if (dnssocket->buf_len == 1) {
+			/* Make sure we have the length */
+			dnssocket->buf[1] = base[0];
+			base++;
+			len--;
+		}
+		/* At this point we definitely have 2 bytes there. */
+		size_t plen = len < dnslen(dnssocket->buf) ?
+			       len : dnslen(dnssocket->buf);
+		if (plen > dnssocket->buf_size) {
+			alloc_dnsbuf(dnssocket, plen);
+		}
 
-	r2.base = region->base + 2;
-	r2.length = region->length - 2;
+		memmove(dnssocket->buf + dnssocket->buf_len, base, plen);
+		dnssocket->buf_len += plen;
+		base += plen;
+		len -= plen;
+		/* Do we have a complete packet in the buffer? */
+		if (dnslen(dnssocket->buf) == dnssocket->buf_len - 2) {
+			isc_region_t r2;
+			isc_nmhandle_t *dnshandle;
+			r2.base = dnssocket->buf + 2;
+			r2.length = dnslen(dnssocket->buf);
+			dnshandle = isc__nmhandle_get(dnssocket,
+						      &handle->peer);
+			dnssocket->rcb.recv(dnssocket->rcbarg,
+					    dnshandle,
+					    &r2);
+			isc_nmhandle_detach(&dnshandle);
+		} else {
+			/*
+			 * If we don't have the whole packet make sure
+			 * we copied everything.
+			 */
+			INSIST(len == 0);
+		}
+	}
 
-	dnssocket->rcb.recv(dnssocket->rcbarg, dnshandle, &r2);
-	isc_nmhandle_detach(&dnshandle);
+	/*
+	 * We don't have anything in buffer, process what's incoming
+	 */
+	while (len >= 2 && dnslen(base) <= len-2) {
+		/* We have a packet, pass it */
+		isc_region_t r2;
+		r2.base = base + 2;
+		r2.length = dnslen(base);
+		len -= dnslen(base)+2;
+		base += dnslen(base)+2;
+		isc_nmhandle_t *dnshandle = isc__nmhandle_get(dnssocket,
+							      &handle->peer);
+		dnssocket->rcb.recv(dnssocket->rcbarg, dnshandle, &r2);
+		isc_nmhandle_detach(&dnshandle);
+	}
+	/*
+	 * Put the remainder in the buffer
+	 */
+	if (len > 0) {
+		if (len > dnssocket->buf_size) {
+			alloc_dnsbuf(dnssocket, len);
+		}
+		INSIST(len <= dnssocket->buf_size);
+		memcpy(dnssocket->buf, base, len);
+		dnssocket->buf_len = len;
+	}
+
 }
 
 /*

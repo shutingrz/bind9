@@ -359,6 +359,11 @@ struct isc_nmsocket {
 	size_t *		ah_frees;
 	isc_nmhandle_t **	ah_handles;
 
+	/* Buffer for TCPDNS processing, optional */
+	size_t			buf_size;
+	size_t			buf_len;
+	unsigned char *		buf;
+
 	/* XXXWPK can it be not locked? */
 	isc__nm_readcb_t	rcb;
 	void *			rcbarg;
