@@ -18,11 +18,6 @@ options {
         notify no;
 };
 
-#zone "." {
-#        type hint;
-#        file "../../common/root.hint";
-#};
-
 # Should include all files matching pattern.
 include "zone*.conf";
 
