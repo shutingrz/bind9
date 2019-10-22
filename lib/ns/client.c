@@ -1957,19 +1957,26 @@ ns__client_request(void *arg, struct isc_nmhandle *handle,
 			result = dns_message_reply(client->message, true);
 			if (result != ISC_R_SUCCESS) {
 				ns_client_error(client, result);
+				isc_task_unpause(client->task);
 				return;
 			}
-			if (notimp)
+
+			if (notimp) {
 				client->message->rcode = dns_rcode_notimp;
+			}
+
 			ns_client_send(client);
+			isc_task_unpause(client->task);
 			return;
 		}
+
 		ns_client_log(client, NS_LOGCATEGORY_CLIENT,
 			      NS_LOGMODULE_CLIENT, ISC_LOG_DEBUG(1),
 			      "message class could not be determined");
 		ns_client_dumpmessage(client,
 				      "message class could not be determined");
 		ns_client_error(client, notimp ? DNS_R_NOTIMP : DNS_R_FORMERR);
+		isc_task_unpause(client->task);
 		return;
 	}
 

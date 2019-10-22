@@ -1642,10 +1642,13 @@ isc_task_pause(isc_task_t *task0) {
 	REQUIRE(ISCAPI_TASK_VALID(task0));
 	isc__task_t *task = (isc__task_t *)task0;
 	isc__taskmgr_t *manager = task->manager;
+
 	LOCK(&task->lock);
-	INSIST(task->state == task_state_idle || task->state == task_state_ready);
+	INSIST(task->state == task_state_idle ||
+	       task->state == task_state_ready);
 	task->state = task_state_paused;
 	UNLOCK(&task->lock);
+
 	/* XXXWPK TODO optimize it - 'lazy' removal in runner? */
 	LOCK(&manager->queues[task->threadid].lock);
 	if (ISC_LINK_LINKED(task, ready_link)) {
@@ -1657,11 +1660,13 @@ isc_task_pause(isc_task_t *task0) {
 
 void
 isc_task_unpause(isc_task_t *task0) {
-	REQUIRE(ISCAPI_TASK_VALID(task0));
 	isc__task_t *task = (isc__task_t *)task0;
+	bool was_idle = false;
+
+	REQUIRE(ISCAPI_TASK_VALID(task0));
+
 	LOCK(&task->lock);
 	INSIST(task->state == task_state_paused);
-	bool was_idle = false;
 	if (!EMPTY(task->events)) {
 		task->state = task_state_ready;
 		was_idle = true;
@@ -1669,6 +1674,7 @@ isc_task_unpause(isc_task_t *task0) {
 		task->state = task_state_idle;
 	}
 	UNLOCK(&task->lock);
+
 	if (was_idle) {
 		task_ready(task);
 	}
