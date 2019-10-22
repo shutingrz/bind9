@@ -214,6 +214,7 @@ isc_nm_tcpdns_stoplistening(isc_nmsocket_t *socket) {
 
 	isc_nm_tcp_stoplistening(socket->outer);
 	atomic_store(&socket->listening, false);
+	atomic_store(&socket->closed, true);
 	isc_nmsocket_detach(&socket->outer);
 }
 

@@ -248,6 +248,9 @@ isc_nm_tcp_stoplistening(isc_nmsocket_t *socket) {
 		isc_condition_wait(&socket->cond, &socket->lock);
 	}
 	UNLOCK(&socket->lock);
+	if (socket->quota != NULL) {
+		isc_quota_detach(&socket->quota);
+	}
 
 	isc_nmsocket_detach(&socket);
 }
@@ -258,6 +261,7 @@ stoplistening_cb(uv_handle_t *handle) {
 
 	LOCK(&socket->lock);
 	atomic_store(&socket->listening, false);
+	atomic_store(&socket->closed, true);
 	SIGNAL(&socket->cond);
 	UNLOCK(&socket->lock);
 }

@@ -410,6 +410,12 @@ isc__nmsocket_destroy(isc_nmsocket_t *socket, bool dofree) {
 	isc__nm_uvreq_t *uvreq = NULL;
 	isc_nm_t *mgr = NULL;
 
+	atomic_store(&socket->destroying, true);
+
+	if (socket->tcphandle != NULL) {
+		isc_nmhandle_detach(&socket->tcphandle);
+	}
+
 	REQUIRE(VALID_NMSOCK(socket));
 	REQUIRE(socket->ah_cpos == 0);  /* We don't have active handles */
 	REQUIRE(!isc__nmsocket_active(socket));
@@ -425,9 +431,6 @@ isc__nmsocket_destroy(isc_nmsocket_t *socket, bool dofree) {
 			    mgr->nworkers * sizeof(*socket));
 	}
 
-	if (socket->tcphandle != NULL) {
-		isc_nmhandle_detach(&socket->tcphandle);
-	}
 
 	if (socket->quota != NULL) {
 		isc_quota_detach(&socket->quota);
@@ -463,7 +466,7 @@ isc__nmsocket_maybe_destroy(isc_nmsocket_t *socket) {
 
 	/* XXXWPK TODO destroy non-inflight handles, launching callbacks */
 	LOCK(&socket->lock);
-	destroy = (socket->ah_cpos == 0);
+	destroy = socket->references == 0 && socket->closed && ((socket->ah_cpos == 0) || (socket->tcphandle != NULL));
 	UNLOCK(&socket->lock);
 
 	if (destroy) {
@@ -642,6 +645,7 @@ isc__nmhandle_get(isc_nmsocket_t *socket, isc_sockaddr_t *peer) {
 	memcpy(&handle->peer, peer, sizeof(isc_sockaddr_t));
 
 	LOCK(&socket->lock);
+	/* We need to add this handle to the list of active handles */
 	if (socket->ah_cpos == socket->ah_size) {
 		socket->ah_frees =
 			isc_mem_reallocate(socket->mgr->mctx, socket->ah_frees,
@@ -709,6 +713,7 @@ isc__nmhandle_free(isc_nmsocket_t *socket, isc_nmhandle_t *handle) {
 void
 isc_nmhandle_detach(isc_nmhandle_t **handlep) {
 	isc_nmhandle_t *handle = *handlep;
+	*handlep = NULL;
 	int refs;
 
 	REQUIRE(VALID_NMHANDLE(handle));
@@ -746,12 +751,10 @@ isc_nmhandle_detach(isc_nmhandle_t **handlep) {
 			isc__nmhandle_free(socket, handle);
 		}
 
-		if (!atomic_load(&socket->active)) {
+		if (!atomic_load(&socket->active) && !atomic_load(&socket->destroying)) {
 			isc__nmsocket_maybe_destroy(socket);
 		}
 	}
-
-	*handlep = NULL;
 }
 
 void *
@@ -854,6 +857,8 @@ isc_result_t
 isc_nm_send(isc_nmhandle_t *handle, isc_region_t *region,
 	    isc_nm_send_cb_t cb, void *cbarg)
 {
+	REQUIRE(VALID_NMHANDLE(handle));
+
 	switch (handle->socket->type) {
 	case isc_nm_udpsocket:
 	case isc_nm_udplistener:

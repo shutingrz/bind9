@@ -315,7 +315,7 @@ struct isc_nmsocket {
 	 * push handles or reqs for reuse
 	 */
 	atomic_bool        active;
-
+	atomic_bool	   destroying;
 	/*%
 	 * Socket is closed if it's not active and all the possible
 	 * callbacks were fired, there are no active handles, etc.

@@ -58,7 +58,7 @@ isc_nm_listenudp(isc_nm_t *mgr, isc_nmiface_t *iface,
 	 * We are creating mgr->nworkers duplicated sockets, one
 	 * socket for each worker thread.
 	 */
-	nsocket = isc_mem_get(mgr->mctx, sizeof(*nsocket));
+	nsocket = isc_mem_get(mgr->mctx, sizeof(isc_nmsocket_t));
 	isc__nmsocket_init(nsocket, mgr, isc_nm_udplistener);
 	nsocket->iface = iface;
 	nsocket->nchildren = mgr->nworkers;
@@ -122,7 +122,10 @@ isc_nm_udp_stoplistening(isc_nmsocket_t *socket) {
 	while (atomic_load(&socket->rchildren) > 0) {
 		WAIT(&socket->cond, &socket->lock);
 	}
+	atomic_store(&socket->closed, true);
 	UNLOCK(&socket->lock);
+
+	isc__nmsocket_prep_destroy(socket);
 }
 
 /*
@@ -157,6 +160,7 @@ isc__nm_handle_udplisten(isc__networker_t *worker, isc__netievent_t *ievent0) {
 static void
 udp_close_cb(uv_handle_t *handle) {
 	isc_nmsocket_t *socket = handle->data;
+	atomic_store(&socket->closed, true);
 
 	isc_nmsocket_detach((isc_nmsocket_t **)&socket->uv_handle.udp.data);
 }
@@ -263,9 +267,10 @@ isc__nm_udp_send(isc_nmhandle_t *handle, isc_region_t *region,
 		return (ISC_R_UNEXPECTED);
 	}
 
-	ntid = isc_nm_tid();
-	if (ntid == 0) {
-	       ntid = (int) isc_random_uniform(socket->nchildren);
+	if (isc__nm_in_netthread()) {
+		ntid = isc_nm_tid();
+	} else {
+		ntid = (int) isc_random_uniform(socket->nchildren);
 	}
 
 	rsocket = &psocket->children[ntid];
