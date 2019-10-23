@@ -1548,15 +1548,15 @@ sendstream(xfrout_ctx_t *xfr) {
 		cleanup_cctx = false;
 
 		isc_buffer_usedregion(&xfr->txbuf, &used);
+
 		xfrout_log(xfr, ISC_LOG_DEBUG(8),
 			   "sending TCP message of %d bytes",
 			   used.length);
-		CHECK(isc_nm_send(xfr->client->handle,
-				  &used,
-				  xfrout_senddone,
-				  xfr));
+
+		CHECK(isc_nm_send(xfr->client->handle, &used,
+				  xfrout_senddone, xfr));
 		xfr->sends++;
-		xfr->cbytes = used.length+2;
+		xfr->cbytes = used.length;
 	} else {
 		xfrout_log(xfr, ISC_LOG_DEBUG(8), "sending IXFR UDP response");
 		ns_client_send(xfr->client);
