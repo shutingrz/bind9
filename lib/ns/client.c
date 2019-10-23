@@ -1591,9 +1591,6 @@ client_put_cb(void *client0) {
 
 	ns_query_free(client);
 	isc_mem_put(client->mctx, client->recvbuf, NS_CLIENT_RECV_BUFFER_SIZE);
-	if (client->delaytimer != NULL) {
-		isc_timer_detach(&client->delaytimer);
-	}
 	if (client->tcpbuf != NULL) {
 		isc_mem_put(client->mctx, client->tcpbuf,
 			    NS_CLIENT_TCP_BUFFER_SIZE);
@@ -2314,27 +2311,22 @@ client_setup(ns_clientmgr_t *manager, isc_mem_t *mctx, ns_client_t *client) {
 
 	REQUIRE(client != NULL);
 
+	*client = (ns_client_t){};
+
 	client->mctx = mctx;
 
-	client->sctx = NULL;
 	ns_server_attach(manager->sctx, &client->sctx);
-
-	client->task = NULL;
 	isc_task_create(manager->taskmgr, 20,  &client->task);
-
-	client->delaytimer = NULL;
-
-	client->message = NULL;
 	result = dns_message_create(client->mctx, DNS_MESSAGE_INTENTPARSE,
 				    &client->message);
-	if (result != ISC_R_SUCCESS)
+	if (result != ISC_R_SUCCESS) {
 		goto cleanup_timer;
+	}
 
 	/* XXXRTH  Hardwired constants */
 
 	client->recvbuf = isc_mem_get(client->mctx, NS_CLIENT_RECV_BUFFER_SIZE);
 
-	client->magic = NS_CLIENT_MAGIC;
 	client->manager = NULL;
 	client->allocated = false;
 	client->state = NS_CLIENTSTATE_INACTIVE;
@@ -2354,7 +2346,6 @@ client_setup(ns_clientmgr_t *manager, isc_mem_t *mctx, ns_client_t *client) {
 	client->prefetch_handle = NULL;
 	client->tcplistener = NULL;
 	client->tcpsocket = NULL;
-	client->tcpmsg_valid = false;
 	client->tcpbuf = NULL;
 	client->opt = NULL;
 	client->udpsize = 512;
@@ -2368,7 +2359,6 @@ client_setup(ns_clientmgr_t *manager, isc_mem_t *mctx, ns_client_t *client) {
 	dns_name_init(&client->signername, NULL);
 	client->mortal = false;
 	client->sendcb = NULL;
-	client->tcpconn = NULL;
 	client->recursionquota = NULL;
 	client->peeraddr_valid = false;
 	dns_ecs_init(&client->ecs);
@@ -2386,6 +2376,8 @@ client_setup(ns_clientmgr_t *manager, isc_mem_t *mctx, ns_client_t *client) {
 	client->keytag_len = 0;
 	client->rcode_override = -1; 	/* not set */
 
+	client->magic = NS_CLIENT_MAGIC;
+
 	/*
 	 * We call the init routines for the various kinds of client here,
 	 * after we have created an otherwise valid client, because some
@@ -2401,8 +2393,6 @@ client_setup(ns_clientmgr_t *manager, isc_mem_t *mctx, ns_client_t *client) {
 
  cleanup_recvevent:
 	isc_mem_put(client->mctx, client->recvbuf, NS_CLIENT_RECV_BUFFER_SIZE);
-
-	client->magic = 0;
 
 	dns_message_destroy(&client->message);
 

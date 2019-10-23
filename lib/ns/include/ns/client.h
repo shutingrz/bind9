@@ -80,13 +80,6 @@
  *** Types
  ***/
 
-/*% reference-counted TCP connection object */
-typedef struct ns_tcpconn {
-	isc_refcount_t		refs;
-	isc_quota_t		*tcpquota;
-	bool			pipelined;
-} ns_tcpconn_t;
-
 #define NS_CLIENT_TCP_BUFFER_SIZE			(65535 + 2)
 #define NS_CLIENT_SEND_BUFFER_SIZE		4096
 #define NS_CLIENT_RECV_BUFFER_SIZE		4096
@@ -174,9 +167,6 @@ struct ns_client {
 	isc_socket_t		*tcplistener;
 	isc_socket_t		*tcpsocket;
 	unsigned char		*tcpbuf;
-	dns_tcpmsg_t		tcpmsg;
-	bool			tcpmsg_valid;
-	isc_timer_t		*delaytimer;
 	dns_message_t		*message;
 	unsigned char		*recvbuf;
 	unsigned char		sendbuf[NS_CLIENT_SEND_BUFFER_SIZE];
@@ -194,7 +184,6 @@ struct ns_client {
 	dns_name_t		signername;   /*%< [T]SIG key name */
 	dns_name_t		*signer;      /*%< NULL if not valid sig */
 	bool			mortal;	      /*%< Die after handling request */
-	ns_tcpconn_t		*tcpconn;
 	isc_quota_t		*recursionquota;
 
 	isc_sockaddr_t		peeraddr;

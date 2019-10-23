@@ -1634,7 +1634,6 @@ isc_task_endexclusive(isc_task_t *task0) {
 		WAIT(&manager->halt_cond, &manager->halt_lock);
 	}
 	UNLOCK(&manager->halt_lock);
-
 }
 
 void

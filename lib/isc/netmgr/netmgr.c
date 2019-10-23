@@ -751,7 +751,9 @@ isc_nmhandle_detach(isc_nmhandle_t **handlep) {
 			isc__nmhandle_free(socket, handle);
 		}
 
-		if (!atomic_load(&socket->active) && !atomic_load(&socket->destroying)) {
+		if (!atomic_load(&socket->active) &&
+		    !atomic_load(&socket->destroying))
+		{
 			isc__nmsocket_maybe_destroy(socket);
 		}
 	}
