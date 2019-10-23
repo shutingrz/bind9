@@ -669,7 +669,7 @@ typedef struct {
 						   names and rdatas */
 	isc_buffer_t 		txlenbuf;	/* Transmit length buffer */
 	isc_buffer_t		txbuf;		/* Transmit message buffer */
-	size_t			cbytes;		/* Lenght of current message */
+	size_t			cbytes;		/* Length of current message */
 	void 			*txmem;
 	unsigned int 		txmemlen;
 	dns_tsigkey_t		*tsigkey;	/* Key used to create TSIG */

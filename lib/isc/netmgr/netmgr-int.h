@@ -314,27 +314,27 @@ struct isc_nmsocket {
 	 * closing a socket it doesn't make any sense to e.g. still
 	 * push handles or reqs for reuse
 	 */
-	atomic_bool        active;
-	atomic_bool	   destroying;
+	atomic_bool        	    active;
+	atomic_bool	   	    destroying;
 	/*%
 	 * Socket is closed if it's not active and all the possible
 	 * callbacks were fired, there are no active handles, etc.
 	 * active==false, closed==false means the socket is closing.
 	 */
-	atomic_bool	      closed;
-	atomic_bool	      listening;
-	isc_refcount_t	      references;
+	atomic_bool	      	    closed;
+	atomic_bool	      	    listening;
+	isc_refcount_t	      	    references;
 
 	/*%
 	 * 'spare' handles for that can be reused to avoid allocations,
 	 * for UDP.
 	 */
-	isc_astack_t *inactivehandles;
-	isc_astack_t *inactivereqs;
+	isc_astack_t 		    *inactivehandles;
+	isc_astack_t 		    *inactivereqs;
 
 	/* Used for active/rchildren during shutdown */
-	isc_mutex_t			  lock;
-	isc_condition_t			  cond;
+	isc_mutex_t		    lock;
+	isc_condition_t		    cond;
 
 	/*%
 	 * List of active handles.
@@ -354,19 +354,19 @@ struct isc_nmsocket {
 	 * XXXWPK for now this is locked with socket->lock, but we might want
 	 * to change it to something lockless
 	 */
-	size_t			ah_size;
-	size_t			ah_cpos;
-	size_t *		ah_frees;
-	isc_nmhandle_t **	ah_handles;
+	size_t			    ah_size;
+	size_t			    ah_cpos;
+	size_t			    *ah_frees;
+	isc_nmhandle_t		    **ah_handles;
 
 	/* Buffer for TCPDNS processing, optional */
-	size_t			buf_size;
-	size_t			buf_len;
-	unsigned char *		buf;
+	size_t			    buf_size;
+	size_t			    buf_len;
+	unsigned char		    *buf;
 
 	/* XXXWPK can it be not locked? */
-	isc__nm_readcb_t	rcb;
-	void *			rcbarg;
+	isc__nm_readcb_t	    rcb;
+	void			    *rcbarg;
 };
 
 bool

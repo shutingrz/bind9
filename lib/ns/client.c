@@ -2351,6 +2351,7 @@ client_setup(ns_clientmgr_t *manager, isc_mem_t *mctx, ns_client_t *client) {
 	client->dispatch = NULL;
 	client->udpsocket = NULL;
 	client->handle = NULL;
+	client->prefetch_handle = NULL;
 	client->tcplistener = NULL;
 	client->tcpsocket = NULL;
 	client->tcpmsg_valid = false;
