@@ -5004,6 +5004,15 @@ qctx_init(ns_client_t *client, dns_fetchevent_t *event,
 
 	/* Set this first so CCTRACE will work */
 	qctx->client = client;
+
+	/*
+	 * We need to keep the handle to make sure it won't
+	 * get freed (along with client) before we're done -
+	 * this could happen if client_senddone is faster than us.
+	 */
+	if (client->handle != NULL) {
+		isc_nmhandle_attach(client->handle, &qctx->handle);
+	}
 	dns_view_attach(client->view, &qctx->view);
 
 	CCTRACE(ISC_LOG_DEBUG(3), "qctx_init");
@@ -5083,6 +5092,9 @@ qctx_destroy(query_ctx_t *qctx) {
 	dns_view_detach(&qctx->view);
 	if (qctx->detach_client) {
 		ns_client_detach(&qctx->client);
+	}
+	if (qctx->handle != NULL) {
+		isc_nmhandle_detach(&qctx->handle);
 	}
 }
 

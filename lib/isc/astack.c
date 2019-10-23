@@ -22,7 +22,7 @@ struct isc_astack {
 	isc_mem_t *mctx;
 	size_t size;
 	atomic_uint_fast32_t current;
-	uintptr_t nodes[];
+	_Atomic uintptr_t nodes[];
 };
 
 isc_astack_t *
@@ -66,8 +66,8 @@ isc_astack_pop(isc_astack_t *stack) {
 	uintptr_t nv = 0;
 
 	while (true) {
-		atomic_uint_fast32_t cur = atomic_load(&stack->current);
-		atomic_uint_fast32_t next;
+		uint_fast32_t cur = atomic_load(&stack->current);
+		uint_fast32_t next;
 
 		if (cur == 0) {
 			return (NULL);

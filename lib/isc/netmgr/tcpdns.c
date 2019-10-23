@@ -28,6 +28,9 @@
 
 #include "netmgr-int.h"
 
+static void
+dnslisten_readcb(void *arg, isc_nmhandle_t *handle, isc_region_t *region);
+
 static inline size_t
 dnslen(unsigned char* base) {
 	return ((base[0] << 8) + (base[1]));
@@ -38,6 +41,7 @@ dnslen(unsigned char* base) {
 static inline void
 alloc_dnsbuf(isc_nmsocket_t *sock, size_t len) {
 	REQUIRE(len <= NM_BIG_BUF);
+
 	if (sock->buf == NULL) {
 		/* We don't have the buffer at all */
 		size_t alloc_len = len < NM_REG_BUF ? NM_REG_BUF : NM_BIG_BUF;
@@ -45,16 +49,12 @@ alloc_dnsbuf(isc_nmsocket_t *sock, size_t len) {
 		sock->buf_size = alloc_len;
 	} else {
 		/* We have the buffer but it's too small */
-		sock->buf = isc_mem_reallocate(sock->mgr->mctx,
-					       sock->buf,
+		sock->buf = isc_mem_reallocate(sock->mgr->mctx, sock->buf,
 					       NM_BIG_BUF);
 		sock->buf_size = NM_BIG_BUF;
 	}
 }
 
-
-static void
-dnslisten_readcb(void *arg, isc_nmhandle_t *handle, isc_region_t *region);
 
 /*
  * Accept callback for TCP-DNS connection
@@ -82,6 +82,7 @@ dnslisten_acceptcb(isc_nmhandle_t *handle, isc_result_t result, void *cbarg) {
 	dnssocket->rcbarg = dnslistensocket->rcbarg;
 	dnssocket->extrahandlesize = dnslistensocket->extrahandlesize;
 	isc_nmsocket_attach(handle->socket, &dnssocket->outer);
+	dnssocket->peer = handle->socket->peer;
 
 	isc_nm_read(handle, dnslisten_readcb, dnssocket);
 }
@@ -93,6 +94,11 @@ dnslisten_acceptcb(isc_nmhandle_t *handle, isc_result_t result, void *cbarg) {
 static void
 dnslisten_readcb(void *arg, isc_nmhandle_t *handle, isc_region_t *region) {
 	isc_nmsocket_t *dnssocket = (isc_nmsocket_t *) arg;
+	unsigned char *base = NULL;
+	size_t len;
+
+	REQUIRE(VALID_NMSOCK(dnssocket));
+	REQUIRE(VALID_NMHANDLE(handle));
 
 	if (region == NULL) {
 		/* Connection closed */
@@ -102,22 +108,24 @@ dnslisten_readcb(void *arg, isc_nmhandle_t *handle, isc_region_t *region) {
 		return;
 	}
 
-	unsigned char * base = region->base;
-	size_t len = region->length;
+	base = region->base;
+	len = region->length;
 
 	/*
 	 * We have something in the buffer, we need to glue it.
 	 */
 	if (dnssocket->buf_len > 0) {
+		size_t plen;
+
 		if (dnssocket->buf_len == 1) {
 			/* Make sure we have the length */
 			dnssocket->buf[1] = base[0];
 			base++;
 			len--;
 		}
+
 		/* At this point we definitely have 2 bytes there. */
-		size_t plen = len < dnslen(dnssocket->buf) ?
-			       len : dnslen(dnssocket->buf);
+		plen = ISC_MIN(len, dnslen(dnssocket->buf));
 		if (plen > dnssocket->buf_size) {
 			alloc_dnsbuf(dnssocket, plen);
 		}
@@ -126,18 +134,20 @@ dnslisten_readcb(void *arg, isc_nmhandle_t *handle, isc_region_t *region) {
 		dnssocket->buf_len += plen;
 		base += plen;
 		len -= plen;
+
 		/* Do we have a complete packet in the buffer? */
 		if (dnslen(dnssocket->buf) == dnssocket->buf_len - 2) {
-			isc_region_t r2;
-			isc_nmhandle_t *dnshandle;
-			r2.base = dnssocket->buf + 2;
-			r2.length = dnslen(dnssocket->buf);
-			dnshandle = isc__nmhandle_get(dnssocket,
-						      &handle->peer);
-			dnssocket->rcb.recv(dnssocket->rcbarg,
-					    dnshandle,
-					    &r2);
+			isc_nmhandle_t *dnshandle = NULL;
+			isc_region_t r2 = {
+				.base = dnssocket->buf + 1,
+				.length = dnslen(dnssocket->buf)
+			};
+
+			dnshandle = isc__nmhandle_get(dnssocket, NULL);
+			atomic_store(&dnssocket->processing, true);
+			dnssocket->rcb.recv(dnssocket->rcbarg, dnshandle, &r2);
 			isc_nmhandle_detach(&dnshandle);
+			dnssocket->buf_len = 0;
 		} else {
 			/*
 			 * If we don't have the whole packet make sure
@@ -148,20 +158,28 @@ dnslisten_readcb(void *arg, isc_nmhandle_t *handle, isc_region_t *region) {
 	}
 
 	/*
-	 * We don't have anything in buffer, process what's incoming
+	 * We don't have anything in buffer, and we're either pipelining
+	 * or not processing anything else; process what's incoming.
 	 */
-	while (len >= 2 && dnslen(base) <= len-2) {
-		/* We have a packet, pass it */
-		isc_region_t r2;
-		r2.base = base + 2;
-		r2.length = dnslen(base);
-		len -= dnslen(base)+2;
-		base += dnslen(base)+2;
-		isc_nmhandle_t *dnshandle = isc__nmhandle_get(dnssocket,
-							      &handle->peer);
+	while (len >= 2 && dnslen(base) <= len-2 &&
+	       !(atomic_load(&dnssocket->sequential) &&
+		 atomic_load(&dnssocket->processing)))
+	{
+		isc_nmhandle_t *dnshandle = NULL;
+		isc_region_t r2 = {
+			.base = base + 2,
+			.length = dnslen(base)
+		};
+
+		len -= dnslen(base) + 2;
+		base += dnslen(base) + 2;
+
+		dnshandle = isc__nmhandle_get(dnssocket, NULL);
+		atomic_store(&dnssocket->processing, true);
 		dnssocket->rcb.recv(dnssocket->rcbarg, dnshandle, &r2);
 		isc_nmhandle_detach(&dnshandle);
 	}
+
 	/*
 	 * Put the remainder in the buffer
 	 */
@@ -169,11 +187,47 @@ dnslisten_readcb(void *arg, isc_nmhandle_t *handle, isc_region_t *region) {
 		if (len > dnssocket->buf_size) {
 			alloc_dnsbuf(dnssocket, len);
 		}
+
 		INSIST(len <= dnssocket->buf_size);
-		memcpy(dnssocket->buf, base, len);
+		memmove(dnssocket->buf, base, len);
 		dnssocket->buf_len = len;
 	}
 
+}
+
+/* Process all complete packets out of incoming buffer */
+static void
+processbuffer(isc_nmsocket_t *dnssocket) {
+	REQUIRE(VALID_NMSOCK(dnssocket));
+
+	/* While we have a complete packet in the buffer */
+	while (dnssocket->buf_len > 2 &&
+	       dnslen(dnssocket->buf) <= dnssocket->buf_len - 2)
+	{
+		isc_nmhandle_t *dnshandle = NULL;
+		isc_region_t r2 = {
+			.base = dnssocket->buf + 2,
+			.length = dnslen(dnssocket->buf)
+		};
+		size_t len;
+
+		dnshandle = isc__nmhandle_get(dnssocket, NULL);
+		atomic_store(&dnssocket->processing, true);
+		dnssocket->rcb.recv(dnssocket->rcbarg, dnshandle, &r2);
+		isc_nmhandle_detach(&dnshandle);
+
+		len = dnslen(dnssocket->buf) + 2;
+		dnssocket->buf_len -= len;
+		if (len > 0) {
+			memmove(dnssocket->buf, dnssocket->buf + len,
+				dnssocket->buf_len);
+		}
+
+		/* Check here to make sure we do the processing at least once */
+		if (atomic_load(&dnssocket->processing)) {
+			return;
+		}
+	}
 }
 
 /*
@@ -210,6 +264,7 @@ isc_nm_listentcpdns(isc_nm_t *mgr, isc_nmiface_t *iface,
 
 void
 isc_nm_tcpdns_stoplistening(isc_nmsocket_t *socket) {
+	REQUIRE(VALID_NMSOCK(socket));
 	REQUIRE(socket->type == isc_nm_tcpdnslistener);
 
 	isc_nm_tcp_stoplistening(socket->outer);
@@ -218,6 +273,25 @@ isc_nm_tcpdns_stoplistening(isc_nmsocket_t *socket) {
 	isc_nmsocket_detach(&socket->outer);
 }
 
+void
+isc_nm_tcpdns_sequential(isc_nmhandle_t *handle) {
+	REQUIRE(VALID_NMHANDLE(handle));
+
+	if (handle->socket->type != isc_nm_tcpdnssocket) {
+		return;
+	}
+
+	/*
+	 * We don't want pipelining on this connection. That means
+	 * that we can launch query processing only when the previous
+	 * one returned.
+	 *
+	 * This has to be called from the callback, otherwise we might
+	 * never be unpaused.
+	 */
+	isc_nm_pauseread(handle->socket->outer);
+	atomic_store(&handle->socket->sequential, true);
+}
 
 typedef struct tcpsend {
 	isc_mem_t		*mctx;
@@ -235,8 +309,19 @@ tcpdnssend_cb(isc_nmhandle_t *handle, isc_result_t result, void *cbarg) {
 	UNUSED(handle);
 
 	ts->cb(ts->orighandle, result, ts->cbarg);
-	isc_nmhandle_detach(&ts->orighandle);
 	isc_mem_put(ts->mctx, ts->region.base, ts->region.length);
+
+	/*
+	 * The response was sent, if we're in sequential mode resume
+	 * processing.
+	 */
+	if (atomic_load(&ts->orighandle->socket->sequential)) {
+		atomic_store(&ts->orighandle->socket->processing, false);
+		processbuffer(ts->orighandle->socket);
+		isc_nm_resumeread(handle->socket);
+	}
+
+	isc_nmhandle_detach(&ts->orighandle);
 	isc_mem_putanddetach(&ts->mctx, ts, sizeof(*ts));
 }
 /*

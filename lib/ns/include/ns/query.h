@@ -172,6 +172,8 @@ struct query_ctx {
 
 	isc_result_t result;			/* query result */
 	int line;				/* line to report error */
+
+	isc_nmhandle_t *handle;			/* clients netmgr handle */
 };
 
 /*

@@ -450,6 +450,10 @@ client_send(ns_client_t *client) {
 #endif /* HAVE_DNSTAP */
 
 	REQUIRE(NS_CLIENT_VALID(client));
+	/*
+	 * We need to do it to make sure the client and handle
+	 * won't disappear from under us with client_senddone.
+	 */
 
 	env = ns_interfacemgr_getaclenv(client->manager->interface->mgr);
 
@@ -688,8 +692,9 @@ client_send(ns_client_t *client) {
 		ns_stats_increment(client->sctx->nsstats,
 				   ns_statscounter_truncatedresp);
 
-	if (result == ISC_R_SUCCESS)
+	if (result == ISC_R_SUCCESS) {
 		return;
+	}
 
  done:
 	if (client->tcpbuf != NULL) {
@@ -700,8 +705,6 @@ client_send(ns_client_t *client) {
 
 	if (cleanup_cctx)
 		dns_compress_invalidate(&cctx);
-
-	ns_client_drop(client, result);
 }
 
 void
@@ -1566,6 +1569,10 @@ client_reset_cb(void *client_) {
 			      "reset client");
 	}
 	ns_client_endrequest(client);
+	if (client->tcpbuf != NULL) {
+		isc_mem_put(client->mctx, client->tcpbuf,
+			    NS_CLIENT_TCP_BUFFER_SIZE);
+	}
 
 	client->state = NS_CLIENTSTATE_READY;
 	INSIST(client->recursionquota == NULL);
@@ -1591,10 +1598,6 @@ client_put_cb(void *client0) {
 
 	ns_query_free(client);
 	isc_mem_put(client->mctx, client->recvbuf, NS_CLIENT_RECV_BUFFER_SIZE);
-	if (client->tcpbuf != NULL) {
-		isc_mem_put(client->mctx, client->tcpbuf,
-			    NS_CLIENT_TCP_BUFFER_SIZE);
-	}
 	if (client->opt != NULL) {
 		INSIST(dns_rdataset_isassociated(client->opt));
 		dns_rdataset_disassociate(client->opt);
@@ -1863,17 +1866,17 @@ ns__client_request(void *arg, struct isc_nmhandle *handle,
 	}
 
 	/*
-	 * Pipeline TCP query processing.
+	 * Disable pipelined TCP query processing if necessary.
 	 */
-/*	if (client->message->opcode != dns_opcode_query)
-		client->pipelined = false;
-	if (TCP_CLIENT(client) && client->pipelined) {
-		result = isc_quota_reserve(&client->sctx->tcpquota);
-		if (result != ISC_R_SUCCESS) {
-			client->tcpconn->pipelined = false;
-		}
+	if (TCP_CLIENT(client) &&
+	    (client->message->opcode != dns_opcode_query ||
+	     (client->sctx->keepresporder != NULL &&
+	      dns_acl_allowed(&netaddr, NULL,
+			      client->sctx->keepresporder, env))))
+	{
+		isc_nm_tcpdns_sequential(handle);
 	}
-*/
+
 	dns_opcodestats_increment(client->sctx->opcodestats,
 				  client->message->opcode);
 	switch (client->message->opcode) {
@@ -1893,10 +1896,11 @@ ns__client_request(void *arg, struct isc_nmhandle *handle,
 	/*
 	 * Deal with EDNS.
 	 */
-	if ((client->sctx->options & NS_SERVER_NOEDNS) != 0)
+	if ((client->sctx->options & NS_SERVER_NOEDNS) != 0) {
 		opt = NULL;
-	else
+	} else {
 		opt = dns_message_getopt(client->message);
+	}
 
 	client->ecs.source = 0;
 	client->ecs.scope = 0;

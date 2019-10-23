@@ -160,14 +160,30 @@ isc_nm_dnsread(isc_nmsocket_t *socket, isc_buffer_t *buf);
 isc_result_t
 isc_nm_read(isc_nmhandle_t *handle, isc_nm_recv_cb_t cb, void *cbarg);
 
-/*
- * isc_nm_send sends region to handle, after finishing cb is called.
- * region is not copied, it has to be allocated beforehand and freed in cb.
- * Callback can be invoked directly from the calling thread, or called later.
+isc_result_t
+isc_nm_pauseread(isc_nmsocket_t *socket);
+/*%<
+ * Pause reading on this socket, while still remembering the callback.
  */
+
+isc_result_t
+isc_nm_resumeread(isc_nmsocket_t *socket);
+/*%<
+ * Resume reading from socket, the socket read had to be paused beforehand.
+ */
+
 isc_result_t
 isc_nm_send(isc_nmhandle_t *handle, isc_region_t *region,
 	    isc_nm_send_cb_t cb, void *cbarg);
+/*%<
+ * Send the data in 'region' via 'handle'. Afterward, the callback 'cb' is
+ * called with the argument 'cbarg'.
+ *
+ * 'region' is not copied; it has to be allocated beforehand and freed
+ * in 'cb'.
+ *
+ * Callback can be invoked directly from the calling thread, or called later.
+ */
 
 isc_result_t
 isc_nm_listentcp(isc_nm_t *mgr, isc_nmiface_t *iface,
@@ -186,3 +202,12 @@ isc_nm_listentcpdns(isc_nm_t *mgr, isc_nmiface_t *iface,
 
 void
 isc_nm_tcpdns_stoplistening(isc_nmsocket_t *socket);
+
+void
+isc_nm_tcpdns_sequential(isc_nmhandle_t *handle);
+/*%<
+ * Disable pipelining on this connection. Each DNS packet
+ * will be only processed after the previous completes.
+ *
+ * This cannot be reversed once set for a given connection
+ */

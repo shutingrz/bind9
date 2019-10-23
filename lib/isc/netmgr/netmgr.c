@@ -331,6 +331,9 @@ async_cb(uv_async_t *handle) {
 		case netievent_tcpstartread:
 			isc__nm_handle_startread(worker, ievent);
 			break;
+		case netievent_tcppauseread:
+			isc__nm_handle_pauseread(worker, ievent);
+			break;
 #if 0
 		case netievent_tcpstopread:
 			handle_stopread(worker, ievent);
@@ -432,6 +435,9 @@ isc__nmsocket_destroy(isc_nmsocket_t *socket, bool dofree) {
 	}
 
 
+	if (socket->buf != NULL) {
+		isc_mem_put(socket->mgr->mctx, socket->buf, socket->buf_size);
+	}
 	if (socket->quota != NULL) {
 		isc_quota_detach(&socket->quota);
 	}
@@ -630,7 +636,6 @@ isc__nmhandle_get(isc_nmsocket_t *socket, isc_sockaddr_t *peer) {
 	int pos;
 
 	REQUIRE(VALID_NMSOCK(socket));
-	INSIST(peer != NULL);
 
 	handle = isc_astack_pop(socket->inactivehandles);
 
@@ -642,7 +647,11 @@ isc__nmhandle_get(isc_nmsocket_t *socket, isc_sockaddr_t *peer) {
 	}
 
 	handle->socket = socket;
-	memcpy(&handle->peer, peer, sizeof(isc_sockaddr_t));
+	if (peer != NULL) {
+		memcpy(&handle->peer, peer, sizeof(isc_sockaddr_t));
+	} else {
+		memcpy(&handle->peer, &socket->peer, sizeof(isc_sockaddr_t));
+	}
 
 	LOCK(&socket->lock);
 	/* We need to add this handle to the list of active handles */

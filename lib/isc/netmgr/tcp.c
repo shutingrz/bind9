@@ -144,17 +144,16 @@ tcp_connect_cb(uv_connect_t *uvreq, int status) {
 	if (status == 0) {
 		isc_result_t result;
 		isc_nmhandle_t *handle = NULL;
-		isc_sockaddr_t peer;
 		struct sockaddr_storage ss;
 
 		uv_tcp_getpeername(&socket->uv_handle.tcp,
 				   (struct sockaddr *) &ss,
 				   &(int){sizeof(ss)});
-		result = isc_sockaddr_fromsockaddr(&peer,
+		result = isc_sockaddr_fromsockaddr(&socket->peer,
 						   (struct sockaddr *) &ss);
 		RUNTIME_CHECK(result == ISC_R_SUCCESS);
 
-		handle = isc__nmhandle_get(socket, &peer);
+		handle = isc__nmhandle_get(socket, NULL);
 		/* handle->peer = NULL; */
 		req->cb.connect(handle, ISC_R_SUCCESS, req->cbarg);
 	} else {
@@ -320,6 +319,59 @@ isc__nm_handle_startread(isc__networker_t *worker, isc__netievent_t *ievent0) {
 	uv_read_start(&socket->uv_handle.stream, isc__nm_alloc_cb, read_cb);
 }
 
+isc_result_t
+isc_nm_pauseread(isc_nmsocket_t *socket) {
+	REQUIRE(VALID_NMSOCK(socket));
+
+	if (socket->tid == isc_nm_tid()) {
+		int r = uv_read_stop(&socket->uv_handle.stream);
+		INSIST(r == 0);
+	} else {
+		isc__netievent_pauseread_t *ievent =
+			isc__nm_get_ievent(socket->mgr,
+					   netievent_tcppauseread);
+		ievent->socket = socket;
+		isc__nm_enqueue_ievent(&socket->mgr->workers[socket->tid],
+				       (isc__netievent_t *) ievent);
+	}
+
+	return (ISC_R_SUCCESS);
+}
+
+void
+isc__nm_handle_pauseread(isc__networker_t *worker, isc__netievent_t *ievent0) {
+	isc__netievent_pauseread_t *ievent =
+		(isc__netievent_pauseread_t *) ievent0;
+	isc_nmsocket_t *socket = ievent->socket;
+	REQUIRE(VALID_NMSOCK(socket));
+
+	REQUIRE(worker->id == isc_nm_tid());
+
+	uv_read_stop(&socket->uv_handle.stream);
+}
+
+isc_result_t
+isc_nm_resumeread(isc_nmsocket_t *socket) {
+	REQUIRE(VALID_NMSOCK(socket));
+	INSIST(socket->rcb.recv != NULL);
+
+	if (socket->tid == isc_nm_tid()) {
+		int r = uv_read_start(&socket->uv_handle.stream,
+				      isc__nm_alloc_cb, read_cb);
+		INSIST(r == 0);
+	} else {
+		/* It's the same as startread */
+		isc__netievent_startread_t *ievent =
+			isc__nm_get_ievent(socket->mgr,
+					   netievent_tcpstartread);
+		ievent->socket = socket;
+		isc__nm_enqueue_ievent(&socket->mgr->workers[socket->tid],
+				       (isc__netievent_t *) ievent);
+	}
+
+	return (ISC_R_SUCCESS);
+}
+
 static void
 read_cb(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf) {
 	isc_nmsocket_t *socket = stream->data;
@@ -353,7 +405,6 @@ accept_connection(isc_nmsocket_t *ssocket) {
 	isc_nmsocket_t *csocket = NULL;
 	isc__networker_t *worker = NULL;
 	isc_nmhandle_t *handle = NULL;
-	isc_sockaddr_t peer;
 	struct sockaddr_storage ss;
 	int r;
 
@@ -399,10 +450,10 @@ accept_connection(isc_nmsocket_t *ssocket) {
 	uv_tcp_getpeername(&csocket->uv_handle.tcp, (struct sockaddr *) &ss,
 			   &(int){sizeof(ss)});
 
-	result = isc_sockaddr_fromsockaddr(&peer, (struct sockaddr *) &ss);
+	result = isc_sockaddr_fromsockaddr(&csocket->peer, (struct sockaddr *) &ss);
 	RUNTIME_CHECK(result == ISC_R_SUCCESS);
 
-	handle = isc__nmhandle_get(csocket, &peer);
+	handle = isc__nmhandle_get(csocket, NULL);
 
 	INSIST(ssocket->rcb.accept != NULL);
 	ssocket->rcb.accept(handle, ISC_R_SUCCESS, ssocket->rcbarg);

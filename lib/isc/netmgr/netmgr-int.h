@@ -111,6 +111,8 @@ typedef enum isc__netievent_type {
 	netievent_tcpsend,
 	netievent_tcprecv,
 	netievent_tcpstartread,
+	netievent_tcppauseread,
+	netievent_tcpresumeread,
 	netievent_tcpstopread,
 	netievent_tcplisten,
 	netievent_tcpstoplisten,
@@ -177,15 +179,20 @@ typedef struct isc__nm_uvreq {
  * TODO: unify the events.
  */
 
-typedef struct isc__netievent_udplisten {
+typedef struct isc__netievent__socket {
 	isc__netievent_type	   type;
 	isc_nmsocket_t *	   socket;
-} isc__netievent_udplisten_t;
+} isc__netievent__socket_t;
 
-typedef struct isc__netievent_udpstoplisten {
+typedef struct isc__netievent__socket_req {
 	isc__netievent_type	   type;
 	isc_nmsocket_t *	   socket;
-} isc__netievent_udpstoplisten_t;
+	isc__nm_uvreq_t *	   req;
+} isc__netievent__socket_req_t;
+
+typedef isc__netievent__socket_t isc__netievent_udplisten_t;
+
+typedef isc__netievent__socket_t isc__netievent_udpstoplisten_t;
 
 typedef struct isc__netievent_udpsend {
 	isc__netievent_type	   type;
@@ -194,40 +201,15 @@ typedef struct isc__netievent_udpsend {
 	isc__nm_uvreq_t *	   req;
 } isc__netievent_udpsend_t;
 
-typedef struct isc__netievent_tcpconnect {
-	isc__netievent_type	   type;
-	isc_nmsocket_t *	   socket;
-	isc__nm_uvreq_t *	   req;
-} isc__netievent_tcpconnect_t;
+typedef isc__netievent__socket_req_t isc__netievent_tcpconnect_t;
+typedef isc__netievent__socket_req_t isc__netievent_tcplisten_t;
+typedef isc__netievent__socket_t isc__netievent_tcpstoplisten_t;
+typedef isc__netievent__socket_t isc__netievent_tcpclose_t;
+typedef isc__netievent__socket_req_t isc__netievent_tcpsend_t;
+typedef isc__netievent__socket_t isc__netievent_startread_t;
+typedef isc__netievent__socket_t isc__netievent_pauseread_t;
+typedef isc__netievent__socket_t isc__netievent_resumeread_t;
 
-typedef struct isc__netievent_tcplisten {
-	isc__netievent_type	   type;
-	isc_nmsocket_t *	   socket;
-	isc__nm_uvreq_t *	   req;
-} isc__netievent_tcplisten_t;
-
-typedef struct isc__netievent_tcpstoplisten {
-	isc__netievent_type	   type;
-	isc_nmsocket_t *	   socket;
-} isc__netievent_tcpstoplisten_t;
-
-typedef struct isc__netievent_tcpclose {
-	isc__netievent_type	   type;
-	isc_nmsocket_t *	   socket;
-	isc__nm_uvreq_t *	   req;
-} isc__netievent_tcpclose_t;
-
-typedef struct isc__netievent_tcpsend {
-	isc__netievent_type	   type;
-	isc_nmsocket_t *	   socket;
-	isc__nm_uvreq_t *	   req;
-} isc__netievent_tcpsend_t;
-
-typedef struct isc__netievent_startread {
-	isc__netievent_type	   type;
-	isc_nmsocket_t *	   socket;
-	isc__nm_uvreq_t *	   req;
-} isc__netievent_startread_t;
 
 typedef struct isc__netievent {
 	isc__netievent_type        type;
@@ -305,6 +287,8 @@ struct isc_nmsocket {
 	uv_os_sock_t		   fd;
 	union uv_any_handle	   uv_handle;
 
+	isc_sockaddr_t		   peer;
+
 	/* Atomic */
 	/*% Number of running (e.g. listening) children sockets */
 	atomic_int_fast32_t        rchildren;
@@ -324,6 +308,16 @@ struct isc_nmsocket {
 	atomic_bool	      	    closed;
 	atomic_bool	      	    listening;
 	isc_refcount_t	      	    references;
+
+	/*%
+	 * TCPDNS socket is not pipelining.
+	 */
+	atomic_bool		    sequential;
+	/*%
+	 * TCPDNS socket in sequential mode is currently processing a packet,
+	 * we need to wait until it finishes.
+	 */
+	atomic_bool		    processing;
 
 	/*%
 	 * 'spare' handles for that can be reused to avoid allocations,
@@ -448,6 +442,10 @@ void
 isc__nm_handle_tcpsend(isc__networker_t *worker, isc__netievent_t *ievent0);
 void
 isc__nm_handle_startread(isc__networker_t *worker, isc__netievent_t *ievent0);
+void
+isc__nm_handle_pauseread(isc__networker_t *worker, isc__netievent_t *ievent0);
+void
+isc__nm_handle_resumeread(isc__networker_t *worker, isc__netievent_t *ievent0);
 void
 isc__nm_handle_tcpclose(isc__networker_t *worker, isc__netievent_t *ievent0);
 /*%<
