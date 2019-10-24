@@ -1324,7 +1324,7 @@ AS_CASE([$host],
 		  [MKDEPCFLAGS="-xM"])])
 
 AS_IF([test "$GCC" = "yes"],
-      [STD_CWARNINGS="$STD_CWARNINGS -W -Wall -Wmissing-prototypes -Wcast-qual -Wwrite-strings -Wformat -Wpointer-arith"]
+      [STD_CWARNINGS="$STD_CWARNINGS -W -Wall -Wmissing-prototypes -Wcast-qual -Wwrite-strings -Wformat -Wpointer-arith -Wno-missing-field-initializers"]
       )
 
 AX_CHECK_COMPILE_FLAG([-fno-strict-aliasing],

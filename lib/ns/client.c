@@ -433,8 +433,8 @@ static void
 client_send(ns_client_t *client) {
 	isc_result_t result;
 	unsigned char *data;
-	isc_buffer_t buffer;
-	isc_buffer_t tcpbuffer;
+	isc_buffer_t buffer = {};
+	isc_buffer_t tcpbuffer = {};
 	isc_region_t r;
 	dns_compress_t cctx;
 	bool cleanup_cctx = false;

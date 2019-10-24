@@ -61,7 +61,7 @@
 
 #define TID_UNKNOWN -1
 
-static atomic_int tid_v_base = 0;
+static atomic_int_fast32_t tid_v_base = 0;
 
 #if defined(HAVE_TLS)
 #if defined(HAVE_THREAD_LOCAL)

@@ -80,6 +80,8 @@ typedef int_fast64_t	atomic_int_fast64_t;
 typedef uint_fast64_t	atomic_uint_fast64_t;
 typedef bool		atomic_bool;
 
+typedef uint_fast64_t	atomic_uintptr_t;
+
 #if defined(__CLANG_ATOMICS) /* __c11_atomic builtins */
 #define atomic_init(obj, desired)		\
 	__c11_atomic_init(obj, desired)
