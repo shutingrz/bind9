@@ -745,7 +745,7 @@ query_reset(ns_client_t *client, bool everything) {
 }
 
 static void
-query_next_callback(ns_client_t *client) {
+query_cleanup(ns_client_t *client) {
 	query_reset(client, false);
 }
 
@@ -11004,7 +11004,7 @@ ns_query_start(ns_client_t *client) {
 	/*
 	 * Ensure that appropriate cleanups occur.
 	 */
-	client->next = query_next_callback;
+	client->cleanup = query_cleanup;
 
 	if ((message->flags & DNS_MESSAGEFLAG_RD) != 0)
 		client->query.attributes |= NS_QUERYATTR_WANTRECURSION;

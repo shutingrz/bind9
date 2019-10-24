@@ -156,8 +156,7 @@
 
 #define NS_CLIENTSTATE_MAX      9
 /*%<
- * Sentinel value used to indicate "no state".  When client->newstate
- * has this value, we are not attempting to exit the current state.
+ * Sentinel value used to indicate "no state".
  * Must be greater than any valid state.
  */
 
@@ -189,7 +188,7 @@ ns_client_recursing(ns_client_t *client) {
 	REQUIRE(client->state == NS_CLIENTSTATE_WORKING);
 
 	LOCK(&client->manager->reclock);
-	client->newstate = client->state = NS_CLIENTSTATE_RECURSING;
+	client->state = NS_CLIENTSTATE_RECURSING;
 	ISC_LIST_APPEND(client->manager->recursing, client, rlink);
 	UNLOCK(&client->manager->reclock);
 }
@@ -228,9 +227,9 @@ ns_client_endrequest(ns_client_t *client) {
 
 	CTRACE("endrequest");
 
-	if (client->next != NULL) {
-		(client->next)(client);
-		client->next = NULL;
+	if (client->cleanup != NULL) {
+		(client->cleanup)(client);
+		client->cleanup = NULL;
 	}
 
 	if (client->view != NULL) {
@@ -1551,9 +1550,9 @@ process_opt(ns_client_t *client, dns_rdataset_t *opt) {
 }
 
 static void
-client_reset_cb(void *client_) {
-	ns_client_t *client = client_;
-	client->newstate = NS_CLIENTSTATE_READY;
+client_reset_cb(void *client0) {
+	ns_client_t *client = client0;
+
 	if (client->state == NS_CLIENTSTATE_RECURSING) {
 		ns_client_log(client, DNS_LOGCATEGORY_SECURITY,
 			      NS_LOGMODULE_CLIENT, ISC_LOG_DEBUG(3),
@@ -1568,6 +1567,7 @@ client_reset_cb(void *client_) {
 			      NS_LOGMODULE_CLIENT, ISC_LOG_DEBUG(3),
 			      "reset client");
 	}
+
 	ns_client_endrequest(client);
 	if (client->tcpbuf != NULL) {
 		isc_mem_put(client->mctx, client->tcpbuf,
@@ -1587,7 +1587,14 @@ client_put_cb(void *client0) {
 		      NS_LOGMODULE_CLIENT, ISC_LOG_DEBUG(3),
 		      "freeing client");
 
-	client->newstate = NS_CLIENTSTATE_FREED;
+	/*
+	 * Call this first because it requires a valid client.
+	 */
+	ns_query_free(client);
+
+	client->magic = 0;
+	client->shuttingdown = true;
+
 	if (client->handle != NULL) {
 		isc_nmhandle_detach(&client->handle);
 	}
@@ -1596,7 +1603,6 @@ client_put_cb(void *client0) {
 		clientmgr_detach(&client->manager);
 	}
 
-	ns_query_free(client);
 	isc_mem_put(client->mctx, client->recvbuf, NS_CLIENT_RECV_BUFFER_SIZE);
 	if (client->opt != NULL) {
 		INSIST(dns_rdataset_isassociated(client->opt));
@@ -1620,8 +1626,6 @@ client_put_cb(void *client0) {
 	if (client->task != NULL) {
 		isc_task_detach(&client->task);
 	}
-
-	client->magic = 0;
 
 	/*
 	 * Destroy the fetchlock mutex that was created in
@@ -1729,7 +1733,7 @@ ns__client_request(void *arg, struct isc_nmhandle *handle,
 
 	reqsize = isc_buffer_usedlength(buffer);
 
-	client->state = client->newstate = NS_CLIENTSTATE_WORKING;
+	client->state = NS_CLIENTSTATE_WORKING;
 
 	isc_time_now(&client->requesttime);
 	client->tnow = client->requesttime;
@@ -2334,7 +2338,6 @@ client_setup(ns_clientmgr_t *manager, isc_mem_t *mctx, ns_client_t *client) {
 	client->manager = NULL;
 	client->allocated = false;
 	client->state = NS_CLIENTSTATE_INACTIVE;
-	client->newstate = NS_CLIENTSTATE_MAX;
 	client->naccepts = 0;
 	client->nreads = 0;
 	client->nsends = 0;
@@ -2356,7 +2359,8 @@ client_setup(ns_clientmgr_t *manager, isc_mem_t *mctx, ns_client_t *client) {
 	client->dscp = -1;
 	client->extflags = 0;
 	client->ednsversion = -1;
-	client->next = NULL;
+	client->cleanup = NULL;
+	client->shuttingdown = false;
 	client->shutdown = NULL;
 	client->shutdown_arg = NULL;
 	client->signer = NULL;
@@ -2441,7 +2445,7 @@ ns_client_detach(ns_client_t **clientp) {
 
 bool
 ns_client_shuttingdown(ns_client_t *client) {
-	return (client->newstate == NS_CLIENTSTATE_FREED);
+	return (client->shuttingdown);
 }
 
 /***

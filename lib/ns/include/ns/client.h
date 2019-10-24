@@ -141,7 +141,6 @@ struct ns_client {
 	ns_server_t		*sctx;
 	ns_clientmgr_t		*manager;
 	int			state;
-	int			newstate;
 	int			naccepts;
 	int			nreads;
 	int			nsends;
@@ -150,6 +149,7 @@ struct ns_client {
 	int			nctls;
 	isc_refcount_t		references;
 	bool			tcpactive;
+	bool			shuttingdown;
 	bool			needshutdown; 	/*
 						 * Used by clienttest to get
 						 * the client to go from
@@ -174,7 +174,7 @@ struct ns_client {
 	uint16_t		udpsize;
 	uint16_t		extflags;
 	int16_t			ednsversion;	/* -1 noedns */
-	void			(*next)(ns_client_t *);
+	void			(*cleanup)(ns_client_t *);
 	void			(*shutdown)(void *arg, isc_result_t result);
 	void 			*shutdown_arg;
 	ns_query_t		query;
