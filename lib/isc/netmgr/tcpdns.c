@@ -29,7 +29,7 @@
 #include "netmgr-int.h"
 
 static void
-dnslisten_readcb(void *arg, isc_nmhandle_t *handle, isc_region_t *region);
+dnslisten_readcb(isc_nmhandle_t *handle, isc_region_t *region, void *arg);
 
 static inline size_t
 dnslen(unsigned char* base) {
@@ -92,7 +92,7 @@ dnslisten_acceptcb(isc_nmhandle_t *handle, isc_result_t result, void *cbarg) {
  * a complete DNS packet and, if so - call the callback
  */
 static void
-dnslisten_readcb(void *arg, isc_nmhandle_t *handle, isc_region_t *region) {
+dnslisten_readcb(isc_nmhandle_t *handle, isc_region_t *region, void *arg) {
 	isc_nmsocket_t *dnssock = (isc_nmsocket_t *) arg;
 	unsigned char *base = NULL;
 	size_t len;
@@ -145,7 +145,7 @@ dnslisten_readcb(void *arg, isc_nmhandle_t *handle, isc_region_t *region) {
 
 			dnshandle = isc__nmhandle_get(dnssock, NULL);
 			atomic_store(&dnssock->processing, true);
-			dnssock->rcb.recv(dnssock->rcbarg, dnshandle, &r2);
+			dnssock->rcb.recv(dnshandle, &r2, dnssock->rcbarg);
 			isc_nmhandle_detach(&dnshandle);
 			dnssock->buf_len = 0;
 		} else {
@@ -176,7 +176,7 @@ dnslisten_readcb(void *arg, isc_nmhandle_t *handle, isc_region_t *region) {
 
 		dnshandle = isc__nmhandle_get(dnssock, NULL);
 		atomic_store(&dnssock->processing, true);
-		dnssock->rcb.recv(dnssock->rcbarg, dnshandle, &r2);
+		dnssock->rcb.recv(dnshandle, &r2, dnssock->rcbarg);
 		isc_nmhandle_detach(&dnshandle);
 	}
 
@@ -213,7 +213,7 @@ processbuffer(isc_nmsocket_t *dnssock) {
 
 		dnshandle = isc__nmhandle_get(dnssock, NULL);
 		atomic_store(&dnssock->processing, true);
-		dnssock->rcb.recv(dnssock->rcbarg, dnshandle, &r2);
+		dnssock->rcb.recv(dnshandle, &r2, dnssock->rcbarg);
 		isc_nmhandle_detach(&dnshandle);
 
 		len = dnslen(dnssock->buf) + 2;
@@ -305,7 +305,7 @@ typedef struct tcpsend {
 	isc_nmhandle_t		*handle;
 	isc_region_t		region;
 	isc_nmhandle_t		*orighandle;
-	isc_nm_send_cb_t	cb;
+	isc_nm_cb_t		cb;
 	void 			*cbarg;
 } tcpsend_t;
 
@@ -336,7 +336,7 @@ tcpdnssend_cb(isc_nmhandle_t *handle, isc_result_t result, void *cbarg) {
  */
 isc_result_t
 isc__nm_tcpdns_send(isc_nmhandle_t *handle, isc_region_t *region,
-		    isc_nm_send_cb_t cb, void *cbarg)
+		    isc_nm_cb_t cb, void *cbarg)
 {
 	tcpsend_t *t = NULL;
 

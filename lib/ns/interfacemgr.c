@@ -441,13 +441,10 @@ ns_interface_create(ns_interfacemgr_t *mgr, isc_sockaddr_t *addr,
 static isc_result_t
 ns_interface_listenudp(ns_interface_t *ifp) {
 	isc_result_t result;
-	/*
-	 * XXXWPK TODO we have to increase refcount on ifp, for both UDP
-	 * and TCP
-	 */
 
+	/* Reserve space for an ns_client_t with the netmgr handle */
 	result = isc_nm_listenudp(ifp->mgr->nm,
-				  (isc_nmiface_t *) &ifp->addr, /* XXXWPK */
+				  (isc_nmiface_t *) &ifp->addr,
 				  ns__client_request, ifp,
 				  sizeof(ns_client_t),
 				  &ifp->udplistensocket);
@@ -457,8 +454,10 @@ ns_interface_listenudp(ns_interface_t *ifp) {
 static isc_result_t
 ns_interface_listentcp(ns_interface_t *ifp) {
 	isc_result_t result;
+
+	/* Reserve space for an ns_client_t with the netmgr handle */
 	result = isc_nm_listentcpdns(ifp->mgr->nm,
-				     (isc_nmiface_t *) &ifp->addr, /* XXXWPK */
+				     (isc_nmiface_t *) &ifp->addr,
 				     ns__client_request, ifp,
 				     sizeof(ns_client_t),
 				     &ifp->mgr->sctx->tcpquota,
@@ -467,10 +466,9 @@ ns_interface_listentcp(ns_interface_t *ifp) {
 		isc_log_write(IFMGR_COMMON_LOGARGS, ISC_LOG_ERROR,
 				 "creating TCP socket: %s",
 				 isc_result_totext(result));
-		return (result);
 	}
+
 #if 0
-	isc_socket_setname(ifp->tcpsocket, "dispatcher", NULL);
 #ifndef ISC_ALLOW_MAPPED
 	isc_socket_ipv6only(ifp->tcpsocket, true);
 #endif

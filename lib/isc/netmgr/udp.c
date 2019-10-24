@@ -48,8 +48,8 @@ udp_send_cb(uv_udp_send_t *req, int status);
 
 isc_result_t
 isc_nm_listenudp(isc_nm_t *mgr, isc_nmiface_t *iface,
-		 isc_nm_recv_cb_t cb, void *arg,
-		 size_t extrahandlesize, isc_nmsocket_t **rv)
+		 isc_nm_recv_cb_t cb, void *cbarg,
+		 size_t extrahandlesize, isc_nmsocket_t **sockp)
 {
 	isc_nmsocket_t *nsock = NULL;
 	int res;
@@ -69,7 +69,7 @@ isc_nm_listenudp(isc_nm_t *mgr, isc_nmiface_t *iface,
 
 	INSIST(nsock->rcb.recv == NULL && nsock->rcbarg == NULL);
 	nsock->rcb.recv = cb;
-	nsock->rcbarg = arg;
+	nsock->rcbarg = cbarg;
 	nsock->extrahandlesize = extrahandlesize;
 
 	for (size_t i = 0; i < mgr->nworkers; i++) {
@@ -84,7 +84,7 @@ isc_nm_listenudp(isc_nm_t *mgr, isc_nmiface_t *iface,
 
 		INSIST(csock->rcb.recv == NULL && csock->rcbarg == NULL);
 		csock->rcb.recv = cb;
-		csock->rcbarg = arg;
+		csock->rcbarg = cbarg;
 		csock->fd = socket(AF_INET, SOCK_DGRAM, 0);
 		INSIST(csock->fd >= 0);
 
@@ -98,7 +98,7 @@ isc_nm_listenudp(isc_nm_t *mgr, isc_nmiface_t *iface,
 				       (isc__netievent_t *) ievent);
 	}
 
-	*rv = nsock;
+	*sockp = nsock;
 	return (ISC_R_SUCCESS);
 }
 
@@ -132,7 +132,7 @@ isc_nm_udp_stoplistening(isc_nmsocket_t *sock) {
  * handle 'udplisten' async call - start listening on a socket.
  */
 void
-isc__nm_handle_udplisten(isc__networker_t *worker, isc__netievent_t *ievent0) {
+isc__nm_async_udplisten(isc__networker_t *worker, isc__netievent_t *ievent0) {
 	isc__netievent_udplisten_t *ievent =
 		(isc__netievent_udplisten_t *) ievent0;
 	isc_nmsocket_t *sock = ievent->sock;
@@ -169,8 +169,8 @@ udp_close_cb(uv_handle_t *handle) {
  * handle 'udpstoplisten' async call - stop listening on a socket.
  */
 void
-isc__nm_handle_udpstoplisten(isc__networker_t *worker,
-			     isc__netievent_t *ievent0)
+isc__nm_async_udpstoplisten(isc__networker_t *worker,
+			    isc__netievent_t *ievent0)
 {
 	isc__netievent_udplisten_t *ievent =
 		(isc__netievent_udplisten_t *) ievent0;
@@ -235,7 +235,7 @@ udp_recv_cb(uv_udp_t *handle, ssize_t nrecv, const uv_buf_t *buf,
 	region.length = nrecv;
 
 	INSIST(sock->rcb.recv != NULL);
-	sock->rcb.recv(sock->rcbarg, nmhandle, &region);
+	sock->rcb.recv(nmhandle, &region, sock->rcbarg);
 	isc__nm_free_uvbuf(sock, buf);
 
 	/* If recv callback wants it it should attach to it */
@@ -249,7 +249,7 @@ udp_recv_cb(uv_udp_t *handle, ssize_t nrecv, const uv_buf_t *buf,
  */
 isc_result_t
 isc__nm_udp_send(isc_nmhandle_t *handle, isc_region_t *region,
-		 isc_nm_send_cb_t cb, void *cbarg)
+		 isc_nm_cb_t cb, void *cbarg)
 {
 	isc_nmsocket_t *psock = NULL, *rsock = NULL;
 	isc_nmsocket_t *sock = handle->sock;
@@ -310,7 +310,7 @@ isc__nm_udp_send(isc_nmhandle_t *handle, isc_region_t *region,
  * handle 'udpsend' async event - send a packet on the socket
  */
 void
-isc__nm_handle_udpsend(isc__networker_t *worker, isc__netievent_t *ievent0) {
+isc__nm_async_udpsend(isc__networker_t *worker, isc__netievent_t *ievent0) {
 	isc__netievent_udpsend_t *ievent =
 		(isc__netievent_udpsend_t *) ievent0;
 

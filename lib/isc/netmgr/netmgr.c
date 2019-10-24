@@ -55,6 +55,9 @@ static __declspec( thread ) int isc__nm_tid_v = ISC_NETMGR_TID_UNKNOWN;
 static int isc__nm_tid_v = ISC_NETMGR_TID_NOTLS;
 #endif /* if defined(HAVE_TLS) */
 
+static void
+nmhandle_free(isc_nmsocket_t *sock, isc_nmhandle_t *handle);
+
 static void *
 nm_thread(void *worker0);
 
@@ -314,25 +317,25 @@ async_cb(uv_async_t *handle) {
 			uv_stop(handle->loop);
 			break;
 		case netievent_udplisten:
-			isc__nm_handle_udplisten(worker, ievent);
+			isc__nm_async_udplisten(worker, ievent);
 			break;
 		case netievent_udpstoplisten:
-			isc__nm_handle_udpstoplisten(worker, ievent);
+			isc__nm_async_udpstoplisten(worker, ievent);
 			break;
 		case netievent_udpsend:
-			isc__nm_handle_udpsend(worker, ievent);
+			isc__nm_async_udpsend(worker, ievent);
 			break;
 		case netievent_tcpconnect:
-			isc__nm_handle_tcpconnect(worker, ievent);
+			isc__nm_async_tcpconnect(worker, ievent);
 			break;
 		case netievent_tcplisten:
-			isc__nm_handle_tcplisten(worker, ievent);
+			isc__nm_async_tcplisten(worker, ievent);
 			break;
 		case netievent_tcpstartread:
-			isc__nm_handle_startread(worker, ievent);
+			isc__nm_async_startread(worker, ievent);
 			break;
 		case netievent_tcppauseread:
-			isc__nm_handle_pauseread(worker, ievent);
+			isc__nm_async_pauseread(worker, ievent);
 			break;
 #if 0
 		case netievent_tcpstopread:
@@ -340,13 +343,13 @@ async_cb(uv_async_t *handle) {
 			break;
 #endif
 		case netievent_tcpsend:
-			isc__nm_handle_tcpsend(worker, ievent);
+			isc__nm_async_tcpsend(worker, ievent);
 			break;
 		case netievent_tcpstoplisten:
-			isc__nm_handle_tcpstoplistening(worker, ievent);
+			isc__nm_async_tcpstoplisten(worker, ievent);
 			break;
 		case netievent_tcpclose:
-			isc__nm_handle_tcpclose(worker, ievent);
+			isc__nm_async_tcpclose(worker, ievent);
 			break;
 		default:
 			INSIST(0);
@@ -356,23 +359,16 @@ async_cb(uv_async_t *handle) {
 	}
 }
 
-/*
- * isc__nm_get_ievent allocates an ievent and sets the type
- * XXXWPK: use pool?
- */
 void *
 isc__nm_get_ievent(isc_nm_t *mgr, isc__netievent_type type) {
 	isc__netievent_storage_t *event =
 		isc_mem_get(mgr->mctx, sizeof(isc__netievent_storage_t));
 
+	/* XXX: use a memory pool? */
 	*event = (isc__netievent_storage_t) { .ni.type = type };
 	return (event);
 }
 
-/*
- * Enqueue ievent on a specific worker queue. This the only safe
- * way to use isc__networker_t from another thread.
- */
 void
 isc__nm_enqueue_ievent(isc__networker_t *worker, isc__netievent_t *event) {
 	isc_queue_enqueue(worker->ievents, (uintptr_t)event);
@@ -443,7 +439,7 @@ isc__nmsocket_destroy(isc_nmsocket_t *sock, bool dofree) {
 	}
 
 	while ((handle = isc_astack_pop(sock->inactivehandles)) != NULL) {
-		isc__nmhandle_free(sock, handle);
+		nmhandle_free(sock, handle);
 	}
 
 	isc_astack_destroy(sock->inactivehandles);
@@ -466,13 +462,17 @@ isc__nmsocket_destroy(isc_nmsocket_t *sock, bool dofree) {
 
 static void
 isc__nmsocket_maybe_destroy(isc_nmsocket_t *sock) {
-	bool destroy;
+	bool destroy = false;
 
 	REQUIRE(!isc__nmsocket_active(sock));
 
 	/* XXXWPK TODO destroy non-inflight handles, launching callbacks */
 	LOCK(&sock->lock);
-	destroy = sock->references == 0 && sock->closed && ((sock->ah_cpos == 0) || (sock->tcphandle != NULL));
+	if (sock->references == 0 && sock->closed &&
+	    (sock->ah_cpos == 0 || sock->tcphandle != NULL))
+	{
+		destroy = true;
+	}
 	UNLOCK(&sock->lock);
 
 	if (destroy) {
@@ -480,15 +480,15 @@ isc__nmsocket_maybe_destroy(isc_nmsocket_t *sock) {
 	}
 }
 
-/*
- * The final external reference to the socket is gone. We can try
- * destroying the socket, but we have to wait for all the inflight
- * handles to finish first.
- */
 void
 isc__nmsocket_prep_destroy(isc_nmsocket_t *sock) {
 	REQUIRE(sock->parent == NULL);
 
+	/*
+	 * The final external reference to the socket is gone. We can try
+	 * destroying the socket, but we have to wait for all the inflight
+	 * handles to finish first.
+	 */
 	atomic_store(&sock->active, false);
 
 	/*
@@ -498,10 +498,15 @@ isc__nmsocket_prep_destroy(isc_nmsocket_t *sock) {
 	 * If it's a regular socket we may need to close it.
 	 */
 	if (!atomic_load(&sock->closed)) {
-		if (sock->type == isc_nm_tcpsocket) {
+		switch (sock->type) {
+		case isc_nm_tcpsocket:
 			isc__nm_tcp_close(sock);
-		} else if (sock->type == isc_nm_tcpdnssocket) {
+			break;
+		case isc_nm_tcpdnssocket:
 			isc__nm_tcpdns_close(sock);
+			break;
+		default:
+			break;
 		}
 	}
 
@@ -542,22 +547,20 @@ isc__nmsocket_init(isc_nmsocket_t *sock, isc_nm_t *mgr,
 {
 	*sock = (isc_nmsocket_t) {
 		.type = type,
-		.fd = -1
+		.fd = -1,
+		.ah_size = 32,
+		.inactivehandles = isc_astack_new(mgr->mctx, 60),
+		.inactivereqs = isc_astack_new(mgr->mctx, 60)
 	};
 
 	isc_nm_attach(mgr, &sock->mgr);
 	sock->uv_handle.handle.data = sock;
 
-	sock->inactivehandles = isc_astack_new(mgr->mctx, 60);
-	sock->inactivereqs = isc_astack_new(mgr->mctx, 60);
-
-	sock->ah_cpos = 0;
-	sock->ah_size = 32;
 	sock->ah_frees = isc_mem_allocate(mgr->mctx,
-					    sock->ah_size * sizeof(size_t));
+					  sock->ah_size * sizeof(size_t));
 	sock->ah_handles = isc_mem_allocate(mgr->mctx,
-					      sock->ah_size *
-					      sizeof(isc_nmhandle_t *));
+					    sock->ah_size *
+					     sizeof(isc_nmhandle_t *));
 	for (size_t i = 0; i < 32; i++) {
 		sock->ah_frees[i] = i;
 		sock->ah_handles[i] = NULL;
@@ -567,12 +570,10 @@ isc__nmsocket_init(isc_nmsocket_t *sock, isc_nm_t *mgr,
 	isc_condition_init(&sock->cond);
 	isc_refcount_init(&sock->references, 1);
 	atomic_init(&sock->active, true);
+
 	sock->magic = NMSOCK_MAGIC;
 }
 
-/*
- * alloc_cb for recv operations. XXXWPK TODO use a pool
- */
 void
 isc__nm_alloc_cb(uv_handle_t *handle, size_t size, uv_buf_t *buf) {
 	isc_nmsocket_t *sock = (isc_nmsocket_t *) handle->data;
@@ -587,9 +588,6 @@ isc__nm_alloc_cb(uv_handle_t *handle, size_t size, uv_buf_t *buf) {
 	INSIST(!worker->udprecvbuf_inuse);
 
 	buf->base = worker->udprecvbuf;
-#if 0
-	buf->base = isc_mempool_get(worker->mpool_bufs);
-#endif
 	worker->udprecvbuf_inuse = true;
 	buf->len = size;
 }
@@ -608,25 +606,17 @@ isc__nm_free_uvbuf(isc_nmsocket_t *sock, const uv_buf_t *buf) {
 	UNUSED(buf);
 
 	worker->udprecvbuf_inuse = false;
-#if 0
-	void *b = buf->base;
-	if (b != NULL) {
-		isc_mempool_put(worker->mpool_bufs, b);
-	}
-#endif
 }
-
-/*
- * alloc_handle allocates a handle. XXXWPK TODO use a pool
- */
 
 static isc_nmhandle_t *
 alloc_handle(isc_nmsocket_t *sock) {
-	isc_nmhandle_t *handle = isc_mem_get(sock->mgr->mctx,
-					     sizeof(isc_nmhandle_t) +
-					     sock->extrahandlesize);
+	isc_nmhandle_t *handle =
+		isc_mem_get(sock->mgr->mctx,
+			    sizeof(isc_nmhandle_t) + sock->extrahandlesize);
+
 	*handle = (isc_nmhandle_t) { .magic = NMHANDLE_MAGIC };
 	isc_refcount_init(&handle->references, 1);
+
 	return (handle);
 }
 
@@ -685,7 +675,7 @@ isc__nmhandle_get(isc_nmsocket_t *sock, isc_sockaddr_t *peer) {
 		sock->tcphandle = handle;
 	}
 
-	return(handle);
+	return (handle);
 }
 
 void
@@ -703,12 +693,12 @@ isc_nmhandle_attach(isc_nmhandle_t *handle, isc_nmhandle_t **handlep) {
 
 bool
 isc_nmhandle_is_stream(isc_nmhandle_t *handle) {
-	return(handle->sock->type == isc_nm_tcpsocket ||
+	return (handle->sock->type == isc_nm_tcpsocket ||
 	       handle->sock->type == isc_nm_tcpdnssocket);
 }
 
-void
-isc__nmhandle_free(isc_nmsocket_t *sock, isc_nmhandle_t *handle) {
+static void
+nmhandle_free(isc_nmsocket_t *sock, isc_nmhandle_t *handle) {
 	size_t extra = sock->extrahandlesize;
 
 	if (handle->dofree) {
@@ -757,7 +747,7 @@ isc_nmhandle_detach(isc_nmhandle_t **handlep) {
 		UNLOCK(&sock->lock);
 
 		if (!reuse) {
-			isc__nmhandle_free(sock, handle);
+			nmhandle_free(sock, handle);
 		}
 
 		if (!atomic_load(&sock->active) &&
@@ -800,10 +790,6 @@ isc_nmhandle_peeraddr(isc_nmhandle_t *handle) {
 	return (handle->peer);
 }
 
-/*
- * isc__nm_uvreq_get returns an uv_req_t of specified type
- * with data field set up.
- */
 isc__nm_uvreq_t *
 isc__nm_uvreq_get(isc_nm_t *mgr, isc_nmsocket_t *sock) {
 	isc__nm_uvreq_t *req = NULL;
@@ -825,9 +811,6 @@ isc__nm_uvreq_get(isc_nm_t *mgr, isc_nmsocket_t *sock) {
 	return (req);
 }
 
-/*
- * isc__nm_uvreq_put frees uv_req_t of specified type
- */
 void
 isc__nm_uvreq_put(isc__nm_uvreq_t **req0, isc_nmsocket_t *sock) {
 	isc__nm_uvreq_t *req = NULL;
@@ -866,7 +849,7 @@ isc__nm_uvreq_put(isc__nm_uvreq_t **req0, isc_nmsocket_t *sock) {
  */
 isc_result_t
 isc_nm_send(isc_nmhandle_t *handle, isc_region_t *region,
-	    isc_nm_send_cb_t cb, void *cbarg)
+	    isc_nm_cb_t cb, void *cbarg)
 {
 	REQUIRE(VALID_NMHANDLE(handle));
 

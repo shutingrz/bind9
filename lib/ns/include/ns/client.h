@@ -461,11 +461,8 @@ ns_client_addopt(ns_client_t *client, dns_message_t *message,
  */
 
 void
-ns__client_request(void *arg,
-		   isc_nmhandle_t *handle,
-		   struct isc_region *region);
-void
-ns__client_request_old(isc_task_t *task, isc_event_t *event);
+ns__client_request(isc_nmhandle_t *handle, isc_region_t *region, void *arg);
+
 /*
  * Handle client requests.
  * (Not intended for use outside this module and associated tests.)

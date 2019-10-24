@@ -65,8 +65,8 @@ typedef struct isc__networker {
 typedef void (*isc__nm_closecb)(isc_nmhandle_t *);
 
 struct isc_nmhandle {
-	int		      magic;
-	isc_refcount_t	      references;
+	int			magic;
+	isc_refcount_t		references;
 
 	/*
 	 * The socket is not 'attached' in the traditional
@@ -75,9 +75,9 @@ struct isc_nmhandle {
 	 * dependencies and we can close all handles when we're destroying
 	 * the socket.
 	 */
-	isc_nmsocket_t *      sock;
-	size_t		      ah_pos;    /* Position in socket active handles
-					  * array */
+	isc_nmsocket_t		*sock;
+	size_t			ah_pos;    /* Position in the socket's
+					    * 'active handles' array */
 
 	/*
 	 * The handle is 'inflight' if netmgr is not currently processing
@@ -128,20 +128,20 @@ typedef struct isc__netievent_stop {
  * simultaneously.
  */
 typedef union {
-	isc_nm_recv_cb_t	  recv;
-	isc_nm_accept_cb_t	  accept;
+	isc_nm_recv_cb_t	recv;
+	isc_nm_cb_t	  	accept;
 } isc__nm_readcb_t;
 
 typedef union {
-	isc_nm_send_cb_t	   send;
-	isc_nm_connect_cb_t	   connect;
+	isc_nm_cb_t	   	send;
+	isc_nm_cb_t	   	connect;
 } isc__nm_writecb_t;
 
 typedef union {
-	isc_nm_recv_cb_t	   recv;
-	isc_nm_accept_cb_t	   accept;
-	isc_nm_send_cb_t	   send;
-	isc_nm_connect_cb_t	   connect;
+	isc_nm_recv_cb_t	recv;
+	isc_nm_cb_t		accept;
+	isc_nm_cb_t		send;
+	isc_nm_cb_t		connect;
 } isc__nm_cb_t;
 
 /*
@@ -175,44 +175,38 @@ typedef struct isc__nm_uvreq {
 	} uv_req;
 } isc__nm_uvreq_t;
 
-/*
- * TODO: unify the events.
- */
-
 typedef struct isc__netievent__socket {
-	isc__netievent_type	   type;
-	isc_nmsocket_t *	   sock;
+	isc__netievent_type	type;
+	isc_nmsocket_t		*sock;
 } isc__netievent__socket_t;
 
-typedef struct isc__netievent__socket_req {
-	isc__netievent_type	   type;
-	isc_nmsocket_t *	   sock;
-	isc__nm_uvreq_t *	   req;
-} isc__netievent__socket_req_t;
-
 typedef isc__netievent__socket_t isc__netievent_udplisten_t;
-
 typedef isc__netievent__socket_t isc__netievent_udpstoplisten_t;
-
-typedef struct isc__netievent_udpsend {
-	isc__netievent_type	   type;
-	isc_nmsocket_t *	   sock;
-	isc_sockaddr_t		   peer;
-	isc__nm_uvreq_t *	   req;
-} isc__netievent_udpsend_t;
-
-typedef isc__netievent__socket_req_t isc__netievent_tcpconnect_t;
-typedef isc__netievent__socket_req_t isc__netievent_tcplisten_t;
 typedef isc__netievent__socket_t isc__netievent_tcpstoplisten_t;
 typedef isc__netievent__socket_t isc__netievent_tcpclose_t;
-typedef isc__netievent__socket_req_t isc__netievent_tcpsend_t;
 typedef isc__netievent__socket_t isc__netievent_startread_t;
 typedef isc__netievent__socket_t isc__netievent_pauseread_t;
 typedef isc__netievent__socket_t isc__netievent_resumeread_t;
 
+typedef struct isc__netievent__socket_req {
+	isc__netievent_type	type;
+	isc_nmsocket_t		*sock;
+	isc__nm_uvreq_t		*req;
+} isc__netievent__socket_req_t;
+
+typedef isc__netievent__socket_req_t isc__netievent_tcpconnect_t;
+typedef isc__netievent__socket_req_t isc__netievent_tcplisten_t;
+typedef isc__netievent__socket_req_t isc__netievent_tcpsend_t;
+
+typedef struct isc__netievent_udpsend {
+	isc__netievent_type	type;
+	isc_nmsocket_t		*sock;
+	isc_sockaddr_t		peer;
+	isc__nm_uvreq_t		*req;
+} isc__netievent_udpsend_t;
 
 typedef struct isc__netievent {
-	isc__netievent_type        type;
+	isc__netievent_type	type;
 } isc__netievent_t;
 
 typedef union {
@@ -229,15 +223,15 @@ typedef union {
 #define VALID_NM(t)                     ISC_MAGIC_VALID(t, NM_MAGIC)
 
 struct isc_nm {
-	int			    magic;
-	isc_refcount_t		    references;
-	isc_mem_t *		    mctx;
-	uint32_t		    nworkers;
-	isc_mutex_t		    lock;
-	isc_condition_t		    wkstatecond;
-	isc__networker_t *	    workers;
-	atomic_uint_fast32_t	    workers_running;
-	atomic_uint_fast32_t	    workers_paused;
+	int			magic;
+	isc_refcount_t		references;
+	isc_mem_t		*mctx;
+	uint32_t		nworkers;
+	isc_mutex_t		lock;
+	isc_condition_t		wkstatecond;
+	isc__networker_t	*workers;
+	atomic_uint_fast32_t	workers_running;
+	atomic_uint_fast32_t	workers_paused;
 };
 
 
@@ -260,75 +254,75 @@ typedef enum isc_nmsocket_type {
 
 struct isc_nmsocket {
 	/*% Unlocked, RO */
-	int			   magic;
-	int			   tid;
-	isc_nmsocket_type	   type;
-	isc_nm_t *		   mgr;
-	isc_nmsocket_t *	   parent;
-	isc_quota_t *		   quota;
-	bool			   overquota;
+	int			magic;
+	int			tid;
+	isc_nmsocket_type	type;
+	isc_nm_t		*mgr;
+	isc_nmsocket_t		*parent;
+	isc_quota_t		*quota;
+	bool			overquota;
 
 	/*% outer socket is for 'wrapped' sockets - e.g. tcpdns in tcp */
-	isc_nmsocket_t *	   outer;
+	isc_nmsocket_t		*outer;
 
 	/*% server socket for connections */
-	isc_nmsocket_t *	   server;
+	isc_nmsocket_t		*server;
 
 	/*% children sockets for multi-socket setups */
-	isc_nmsocket_t *	   children;
-	int			   nchildren;
-	isc_nmiface_t *		   iface;
-	isc_nmhandle_t *	   tcphandle;
+	isc_nmsocket_t		*children;
+	int			nchildren;
+	isc_nmiface_t		*iface;
+	isc_nmhandle_t		*tcphandle;
 
 	/*% extra data allocated at the end of each isc_nmhandle_t */
-	size_t			   extrahandlesize;
+	size_t			extrahandlesize;
 
 	/*% libuv data */
-	uv_os_sock_t		   fd;
-	union uv_any_handle	   uv_handle;
+	uv_os_sock_t		fd;
+	union uv_any_handle	uv_handle;
 
-	isc_sockaddr_t		   peer;
+	isc_sockaddr_t		peer;
 
 	/* Atomic */
 	/*% Number of running (e.g. listening) children sockets */
-	atomic_int_fast32_t        rchildren;
+	atomic_int_fast32_t     rchildren;
 
 	/*%
 	 * Socket if active if it's listening, working, etc., if we're
 	 * closing a socket it doesn't make any sense to e.g. still
 	 * push handles or reqs for reuse
 	 */
-	atomic_bool        	    active;
-	atomic_bool	   	    destroying;
+	atomic_bool        	active;
+	atomic_bool	   	destroying;
 	/*%
 	 * Socket is closed if it's not active and all the possible
 	 * callbacks were fired, there are no active handles, etc.
 	 * active==false, closed==false means the socket is closing.
 	 */
-	atomic_bool	      	    closed;
-	atomic_bool	      	    listening;
-	isc_refcount_t	      	    references;
+	atomic_bool	      	closed;
+	atomic_bool	      	listening;
+	isc_refcount_t	      	references;
 
 	/*%
 	 * TCPDNS socket is not pipelining.
 	 */
-	atomic_bool		    sequential;
+	atomic_bool		sequential;
 	/*%
 	 * TCPDNS socket in sequential mode is currently processing a packet,
 	 * we need to wait until it finishes.
 	 */
-	atomic_bool		    processing;
+	atomic_bool		processing;
 
 	/*%
 	 * 'spare' handles for that can be reused to avoid allocations,
 	 * for UDP.
 	 */
-	isc_astack_t 		    *inactivehandles;
-	isc_astack_t 		    *inactivereqs;
+	isc_astack_t 		*inactivehandles;
+	isc_astack_t 		*inactivereqs;
 
 	/* Used for active/rchildren during shutdown */
-	isc_mutex_t		    lock;
-	isc_condition_t		    cond;
+	isc_mutex_t		lock;
+	isc_condition_t		cond;
 
 	/*%
 	 * List of active handles.
@@ -348,113 +342,163 @@ struct isc_nmsocket {
 	 * XXXWPK for now this is locked with socket->lock, but we might want
 	 * to change it to something lockless
 	 */
-	size_t			    ah_size;
-	size_t			    ah_cpos;
-	size_t			    *ah_frees;
-	isc_nmhandle_t		    **ah_handles;
+	size_t			ah_size;
+	size_t			ah_cpos;
+	size_t			*ah_frees;
+	isc_nmhandle_t		**ah_handles;
 
 	/* Buffer for TCPDNS processing, optional */
-	size_t			    buf_size;
-	size_t			    buf_len;
-	unsigned char		    *buf;
+	size_t			buf_size;
+	size_t			buf_len;
+	unsigned char		*buf;
 
-	/* XXXWPK can it be not locked? */
-	isc__nm_readcb_t	    rcb;
-	void			    *rcbarg;
+	isc__nm_readcb_t	rcb;
+	void			*rcbarg;
 };
 
 bool
 isc__nm_in_netthread(void);
 /*%
- * Returns 'true' iff. we're in the network thread.
+ * Returns 'true' if we're in the network thread.
  */
-
-void
-isc__nmhandle_free(isc_nmsocket_t *sock, isc_nmhandle_t *handle);
 
 void *
 isc__nm_get_ievent(isc_nm_t *mgr, isc__netievent_type type);
+/*%<
+ * Allocate an ievent and set the type.
+ */
 
 void
 isc__nm_enqueue_ievent(isc__networker_t *worker, isc__netievent_t *event);
+/*%<
+ * Enqueue an ievent onto a specific worker queue. (This the only safe
+ * way to use an isc__networker_t from another thread.)
+ */
 
 void
 isc__nm_alloc_cb(uv_handle_t *handle, size_t size, uv_buf_t *buf);
+/*%<
+ * Allocator for recv operations.
+ *
+ * Note that as currently implemented, this doesn't actually
+ * allocate anything, it just assigns the the isc__networker's UDP
+ * receive buffer to a socket, and marks it as "in use".
+ */
 
 void
 isc__nm_free_uvbuf(isc_nmsocket_t *sock, const uv_buf_t *buf);
+/*%<
+ * Free a buffer allocated for a receive operation.
+ *
+ * Note that as currently implemented, this doesn't actually
+ * free anything, marks the isc__networker's UDP receive buffer
+ * as "not in use".
+ */
+
 
 isc_nmhandle_t *
 isc__nmhandle_get(isc_nmsocket_t *sock, isc_sockaddr_t *peer);
+/*%<
+ * Get a handle for the socket 'sock', allocating a new one
+ * if there isn't one availbale in 'sock->inactivehandles'.
+ *
+ * If 'peer' is not NULL, set the handle's peer to 'peer', otherwise
+ * set it to 'sock->peer'.
+ */
 
 isc__nm_uvreq_t *
 isc__nm_uvreq_get(isc_nm_t *mgr, isc_nmsocket_t *sock);
+/*%<
+ * Get a UV request structure for the socket 'sock', allocating a
+ * new one if there isn't one availbale in 'sock->inactivereqs'.
+ */
 
 void
 isc__nm_uvreq_put(isc__nm_uvreq_t **req, isc_nmsocket_t *sock);
+/*%<
+ * Completes the use of a UV request structure, setting '*req' to NULL.
+ *
+ * The UV request is pushed onto the 'sock->inactivereqs' stack or,
+ * if that doesn't work, freed.
+ */
 
 void
 isc__nmsocket_init(isc_nmsocket_t *sock, isc_nm_t *mgr,
 		   isc_nmsocket_type type);
-
-void
-isc__nmsocket_prep_destroy(isc_nmsocket_t *sock);
-
-isc_result_t
-isc__nm_udp_send(isc_nmhandle_t *handle, isc_region_t *region,
-		 isc_nm_send_cb_t cb, void *cbarg);
 /*%<
- * Send for UDP handle
+ * Initialize socket 'sock', attach it to 'mgr', and set it to type 'type'.
  */
 
 void
-isc__nm_handle_udplisten(isc__networker_t *worker, isc__netievent_t *ievent0);
-void
-isc__nm_handle_udpstoplisten(isc__networker_t *worker,
-			     isc__netievent_t *ievent0);
-void
-isc__nm_handle_udpsend(isc__networker_t *worker, isc__netievent_t *ievent0);
+isc__nmsocket_prep_destroy(isc_nmsocket_t *sock);
 /*%<
- * Asynchrounous callbacks for UDP
+ * Market 'sock' as inactive, close it if necessary, and destroy it
+ * if there are no remaining references or active handles.
+ */
+
+isc_result_t
+isc__nm_udp_send(isc_nmhandle_t *handle, isc_region_t *region,
+		 isc_nm_cb_t cb, void *cbarg);
+/*%<
+ * Back-end implemenation of isc_nm_send() for UDP handles.
+ */
+
+void
+isc__nm_async_udplisten(isc__networker_t *worker, isc__netievent_t *ievent0);
+void
+isc__nm_async_udpstoplisten(isc__networker_t *worker,
+			    isc__netievent_t *ievent0);
+void
+isc__nm_async_udpsend(isc__networker_t *worker, isc__netievent_t *ievent0);
+/*%<
+ * Callback handlers for asynchronous UDP events (listen, stoplisten, send).
  */
 
 isc_result_t
 isc__nm_tcp_send(isc_nmhandle_t *handle, isc_region_t *region,
-		 isc_nm_send_cb_t cb, void *cbarg);
+		 isc_nm_cb_t cb, void *cbarg);
 /*%<
- * Send for TCP handle
+ * Back-end implemenation of isc_nm_send() for TCP handles.
  */
 
 void
 isc__nm_tcp_close(isc_nmsocket_t *sock);
 /*%<
- * Close TCP socket
+ * Close a TCP socket.
  */
 
 void
-isc__nm_handle_tcpconnect(isc__networker_t *worker, isc__netievent_t *ievent0);
+isc__nm_async_tcpconnect(isc__networker_t *worker, isc__netievent_t *ievent0);
 void
-isc__nm_handle_tcplisten(isc__networker_t *worker, isc__netievent_t *ievent0);
+isc__nm_async_tcplisten(isc__networker_t *worker, isc__netievent_t *ievent0);
 void
-isc__nm_handle_tcpstoplistening(isc__networker_t *worker,
-				isc__netievent_t *ievent0);
+isc__nm_async_tcpstoplisten(isc__networker_t *worker,
+			    isc__netievent_t *ievent0);
 void
-isc__nm_handle_tcpsend(isc__networker_t *worker, isc__netievent_t *ievent0);
+isc__nm_async_tcpsend(isc__networker_t *worker, isc__netievent_t *ievent0);
 void
-isc__nm_handle_startread(isc__networker_t *worker, isc__netievent_t *ievent0);
+isc__nm_async_startread(isc__networker_t *worker, isc__netievent_t *ievent0);
 void
-isc__nm_handle_pauseread(isc__networker_t *worker, isc__netievent_t *ievent0);
+isc__nm_async_pauseread(isc__networker_t *worker, isc__netievent_t *ievent0);
 void
-isc__nm_handle_resumeread(isc__networker_t *worker, isc__netievent_t *ievent0);
+isc__nm_async_resumeread(isc__networker_t *worker, isc__netievent_t *ievent0);
 void
-isc__nm_handle_tcpclose(isc__networker_t *worker, isc__netievent_t *ievent0);
+isc__nm_async_tcpclose(isc__networker_t *worker, isc__netievent_t *ievent0);
 /*%<
- * Asynchrounous callbacks for TCP
+ * Callback handlers for asynchronous TCP events (connect, listen,
+ * stoplisten, send, read, pauseread, resumeread, close).
  */
 
 
 isc_result_t
 isc__nm_tcpdns_send(isc_nmhandle_t *handle, isc_region_t *region,
-		    isc_nm_send_cb_t cb, void *cbarg);
+		    isc_nm_cb_t cb, void *cbarg);
+/*%<
+ * Back-end implemenation of isc_nm_send() for TCPDNS handles.
+ */
+
 void
 isc__nm_tcpdns_close(isc_nmsocket_t *sock);
+/*%<
+ * Close a TCPDNS socket.
+ */

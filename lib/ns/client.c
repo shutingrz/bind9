@@ -1647,9 +1647,7 @@ client_put_cb(void *client0) {
  * or tcpmsg (TCP case).
  */
 void
-ns__client_request(void *arg, struct isc_nmhandle *handle,
-		   struct isc_region *region)
-{
+ns__client_request(isc_nmhandle_t *handle, isc_region_t *region, void *arg) {
 	ns_client_t *client;
 	bool newclient = false;
 	ns_clientmgr_t *mgr;
