@@ -384,13 +384,13 @@ ns_interface_create(ns_interfacemgr_t *mgr, isc_sockaddr_t *addr,
 	REQUIRE(NS_INTERFACEMGR_VALID(mgr));
 
 	ifp = isc_mem_get(mgr->mctx, sizeof(*ifp));
+	*ifp = (ns_interface_t){
+		.generation = mgr->generation,
+		.addr = *addr,
+		.dscp = -1
+	};
 
-	ifp->mgr = NULL;
-	ifp->generation = mgr->generation;
-	ifp->addr = *addr;
-	ifp->flags = 0;
 	strlcpy(ifp->name, name, sizeof(ifp->name));
-	ifp->clientmgr = NULL;
 
 	isc_mutex_init(&ifp->lock);
 
@@ -404,10 +404,9 @@ ns_interface_create(ns_interfacemgr_t *mgr, isc_sockaddr_t *addr,
 		goto clientmgr_create_failure;
 	}
 
-	for (disp = 0; disp < MAX_UDP_DISPATCH; disp++)
+	for (disp = 0; disp < MAX_UDP_DISPATCH; disp++) {
 		ifp->udpdispatch[disp] = NULL;
-
-	ifp->tcpsocket = NULL;
+	}
 
 	/*
 	 * Create a single TCP client object.  It will replace itself
@@ -417,10 +416,6 @@ ns_interface_create(ns_interfacemgr_t *mgr, isc_sockaddr_t *addr,
 	 */
 	isc_refcount_init(&ifp->ntcpaccepting, 0);
 	isc_refcount_init(&ifp->ntcpactive, 0);
-
-	ifp->nudpdispatch = 0;
-
-	ifp->dscp = -1;
 
 	ISC_LINK_INIT(ifp, link);
 
