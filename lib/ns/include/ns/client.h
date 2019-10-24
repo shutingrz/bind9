@@ -162,7 +162,7 @@ struct ns_client {
 	dns_view_t		*view;
 	dns_dispatch_t		*dispatch;
 	isc_nmhandle_t		*handle;
-	isc_nmhandle_t		*prefetch_handle;
+	isc_nmhandle_t		*cont_handle;
 	isc_socket_t		*udpsocket;
 	isc_socket_t		*tcplistener;
 	isc_socket_t		*tcpsocket;

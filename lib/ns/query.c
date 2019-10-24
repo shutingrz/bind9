@@ -144,6 +144,9 @@ do { \
 #define REDIRECT(c)		(((c)->query.attributes & \
 				  NS_QUERYATTR_REDIRECT) != 0)
 
+#define ZEROTTL_REFETCH(c)	(((c)->query.attributes & \
+				  NS_QUERYATTR_ZEROTTL_REFETCH) != 0)
+
 /*% Does the rdataset 'r' have an attached 'No QNAME Proof'? */
 #define NOQNAME(r)		(((r)->attributes & \
 				  DNS_RDATASETATTR_NOQNAME) != 0)
@@ -2473,7 +2476,7 @@ prefetch_done(isc_task_t *task, isc_event_t *event) {
 	UNLOCK(&client->query.fetchlock);
 
 	free_devent(client, &event, &devent);
-	isc_nmhandle_detach(&client->prefetch_handle);
+	isc_nmhandle_detach(&client->cont_handle);
 }
 
 static void
@@ -2514,7 +2517,7 @@ query_prefetch(ns_client_t *client, dns_name_t *qname,
 		peeraddr = NULL;
 	}
 
-	isc_nmhandle_attach(client->handle, &client->prefetch_handle);
+	isc_nmhandle_attach(client->handle, &client->cont_handle);
 	options = client->query.fetchoptions | DNS_FETCHOPT_PREFETCH;
 	result = dns_resolver_createfetch(client->view->resolver,
 					  qname, rdataset->type, NULL, NULL,
@@ -2525,7 +2528,7 @@ query_prefetch(ns_client_t *client, dns_name_t *qname,
 					  &client->query.prefetch);
 	if (result != ISC_R_SUCCESS) {
 		ns_client_putrdataset(client, &tmprdataset);
-		isc_nmhandle_detach(&client->prefetch_handle);
+		isc_nmhandle_detach(&client->cont_handle);
 	}
 
 	dns_rdataset_clearprefetch(rdataset);
@@ -2725,7 +2728,7 @@ query_rpzfetch(ns_client_t *client, dns_name_t *qname, dns_rdatatype_t type) {
 	}
 
 	options = client->query.fetchoptions;
-	isc_nmhandle_attach(client->handle, &client->prefetch_handle);
+	isc_nmhandle_attach(client->handle, &client->cont_handle);
 	result = dns_resolver_createfetch(client->view->resolver, qname, type,
 					  NULL, NULL, NULL, peeraddr,
 					  client->message->id, options, 0,
@@ -2734,7 +2737,7 @@ query_rpzfetch(ns_client_t *client, dns_name_t *qname, dns_rdatatype_t type) {
 					  &client->query.prefetch);
 	if (result != ISC_R_SUCCESS) {
 		ns_client_putrdataset(client, &tmprdataset);
-		isc_nmhandle_detach(&client->prefetch_handle);
+		isc_nmhandle_detach(&client->cont_handle);
 	}
 }
 
@@ -5598,6 +5601,7 @@ fetch_callback(isc_task_t *task, isc_event_t *event) {
 	REQUIRE(task == client->task);
 	REQUIRE(RECURSING(client));
 
+
 	LOCK(&client->query.fetchlock);
 	if (client->query.fetch != NULL) {
 		/*
@@ -5619,6 +5623,11 @@ fetch_callback(isc_task_t *task, isc_event_t *event) {
 	}
 	UNLOCK(&client->query.fetchlock);
 	INSIST(client->query.fetch == NULL);
+
+	if (ZEROTTL_REFETCH(client)) {
+		client->query.attributes &= ~NS_QUERYATTR_ZEROTTL_REFETCH;
+		isc_nmhandle_detach(&client->cont_handle);
+	}
 
 	client->query.attributes &= ~NS_QUERYATTR_RECURSING;
 	SAVE(fetch, devent->fetch);
@@ -9449,13 +9458,15 @@ query_zerottl_refetch(query_ctx_t *qctx) {
 
 	INSIST(!REDIRECT(qctx->client));
 
+	isc_nmhandle_attach(qctx->client->handle,
+			    &qctx->client->cont_handle);
 	result = ns_query_recurse(qctx->client, qctx->qtype,
 				  qctx->client->query.qname,
 				  NULL, NULL, qctx->resuming);
 	if (result == ISC_R_SUCCESS) {
 		CALL_HOOK(NS_QUERY_ZEROTTL_RECURSE, qctx);
-		qctx->client->query.attributes |=
-			NS_QUERYATTR_RECURSING;
+		qctx->client->query.attributes |= NS_QUERYATTR_RECURSING;
+		qctx->client->query.attributes |= NS_QUERYATTR_ZEROTTL_REFETCH;
 
 		if (qctx->dns64) {
 			qctx->client->query.attributes |=
@@ -9466,6 +9477,7 @@ query_zerottl_refetch(query_ctx_t *qctx) {
 				NS_QUERYATTR_DNS64EXCLUDE;
 		}
 	} else {
+		isc_nmhandle_detach(&qctx->client->cont_handle);
 		QUERY_ERROR(qctx, result);
 	}
 
