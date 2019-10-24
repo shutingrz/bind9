@@ -2492,12 +2492,18 @@ clientmgr_destroy(ns_clientmgr_t *manager) {
 
 	MTRACE("clientmgr_destroy");
 
+	manager->magic = 0;
+
 #if CLIENT_NMCTXS > 0
 	for (i = 0; i < CLIENT_NMCTXS; i++) {
 		if (manager->mctxpool[i] != NULL)
 			isc_mem_detach(&manager->mctxpool[i]);
 	}
 #endif
+
+	if (manager->interface != NULL) {
+		ns_interface_detach(&manager->interface);
+	}
 
 	isc_mutex_destroy(&manager->lock);
 	isc_mutex_destroy(&manager->reclock);
@@ -2514,7 +2520,6 @@ clientmgr_destroy(ns_clientmgr_t *manager) {
 		    CLIENT_NTASKS * sizeof(isc_task_t *));
 	ns_server_detach(&manager->sctx);
 
-	manager->magic = 0;
 	isc_mem_put(manager->mctx, manager, sizeof(*manager));
 }
 
@@ -2530,6 +2535,7 @@ ns_clientmgr_create(isc_mem_t *mctx, ns_server_t *sctx, isc_taskmgr_t *taskmgr,
 #endif
 
 	manager = isc_mem_get(mctx, sizeof(*manager));
+	*manager = (ns_clientmgr_t){};
 
 	isc_mutex_init(&manager->lock);
 	isc_mutex_init(&manager->reclock);
@@ -2543,7 +2549,9 @@ ns_clientmgr_create(isc_mem_t *mctx, ns_server_t *sctx, isc_taskmgr_t *taskmgr,
 	manager->mctx = mctx;
 	manager->taskmgr = taskmgr;
 	manager->timermgr = timermgr;
-	manager->interface = interface;
+
+	ns_interface_attach(interface, &manager->interface);
+
 	manager->exiting = false;
 	manager->taskpool =
 		isc_mem_get(mctx, CLIENT_NTASKS*sizeof(isc_task_t *));

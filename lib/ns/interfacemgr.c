@@ -394,16 +394,6 @@ ns_interface_create(ns_interfacemgr_t *mgr, isc_sockaddr_t *addr,
 
 	isc_mutex_init(&ifp->lock);
 
-	result = ns_clientmgr_create(mgr->mctx, mgr->sctx,
-				     mgr->taskmgr, mgr->timermgr, ifp,
-				     &ifp->clientmgr);
-	if (result != ISC_R_SUCCESS) {
-		isc_log_write(IFMGR_COMMON_LOGARGS, ISC_LOG_ERROR,
-			      "ns_clientmgr_create() failed: %s",
-			      isc_result_totext(result));
-		goto clientmgr_create_failure;
-	}
-
 	for (disp = 0; disp < MAX_UDP_DISPATCH; disp++) {
 		ifp->udpdispatch[disp] = NULL;
 	}
@@ -424,11 +414,22 @@ ns_interface_create(ns_interfacemgr_t *mgr, isc_sockaddr_t *addr,
 
 	isc_refcount_init(&ifp->references, 1);
 	ifp->magic = IFACE_MAGIC;
+
+	result = ns_clientmgr_create(mgr->mctx, mgr->sctx,
+				     mgr->taskmgr, mgr->timermgr, ifp,
+				     &ifp->clientmgr);
+	if (result != ISC_R_SUCCESS) {
+		isc_log_write(IFMGR_COMMON_LOGARGS, ISC_LOG_ERROR,
+			      "ns_clientmgr_create() failed: %s",
+			      isc_result_totext(result));
+		goto failure;
+	}
+
 	*ifpret = ifp;
 
 	return (ISC_R_SUCCESS);
 
- clientmgr_create_failure:
+ failure:
 	isc_mutex_destroy(&ifp->lock);
 
 	ifp->magic = 0;
