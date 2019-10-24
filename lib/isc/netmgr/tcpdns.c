@@ -267,17 +267,22 @@ isc_nm_tcpdns_stoplistening(isc_nmsocket_t *sock) {
 	REQUIRE(VALID_NMSOCK(sock));
 	REQUIRE(sock->type == isc_nm_tcpdnslistener);
 
-	isc_nm_tcp_stoplistening(sock->outer);
 	atomic_store(&sock->listening, false);
 	atomic_store(&sock->closed, true);
-	isc_nmsocket_detach(&sock->outer);
+
+	if (sock->outer != NULL) {
+		isc_nm_tcp_stoplistening(sock->outer);
+		isc_nmsocket_detach(&sock->outer);
+	}
 }
 
 void
 isc_nm_tcpdns_sequential(isc_nmhandle_t *handle) {
 	REQUIRE(VALID_NMHANDLE(handle));
 
-	if (handle->sock->type != isc_nm_tcpdnssocket) {
+	if (handle->sock->type != isc_nm_tcpdnssocket ||
+	    handle->sock->outer == NULL)
+	{
 		return;
 	}
 
@@ -286,8 +291,10 @@ isc_nm_tcpdns_sequential(isc_nmhandle_t *handle) {
 	 * that we can launch query processing only when the previous
 	 * one returned.
 	 *
-	 * This has to be called from the callback, otherwise we might
-	 * never be unpaused.
+	 * The socket MUST be unpaused after the query is processed.
+	 * This is done by isc_nm_resumeread() in tcpdnssend_cb() below.
+	 *
+	 * XXX: The callback is not currently executed in failure cases!
 	 */
 	isc_nm_pauseread(handle->sock->outer);
 	atomic_store(&handle->sock->sequential, true);
@@ -331,34 +338,48 @@ isc_result_t
 isc__nm_tcpdns_send(isc_nmhandle_t *handle, isc_region_t *region,
 		    isc_nm_send_cb_t cb, void *cbarg)
 {
-	isc_nmsocket_t *sock = handle->sock;
-	tcpsend_t *t = isc_mem_get(sock->mgr->mctx, sizeof(*t));
+	tcpsend_t *t = NULL;
 
+	REQUIRE(VALID_NMHANDLE(handle));
+
+	isc_nmsocket_t *sock = handle->sock;
+
+	REQUIRE(VALID_NMSOCK(sock));
 	REQUIRE(sock->type == isc_nm_tcpdnssocket);
 
-	*t = (tcpsend_t) {};
+	if (sock == NULL || sock->outer == NULL) {
+		/* The socket is closed, just issue the callback */
+		cb(handle, ISC_R_FAILURE, cbarg);
+		return (ISC_R_FAILURE);
+	}
+
+	t = isc_mem_get(sock->mgr->mctx, sizeof(*t));
+	*t = (tcpsend_t) {
+		.cb = cb,
+		.cbarg = cbarg,
+		.handle = handle->sock->outer->tcphandle,
+	};
 
 	isc_mem_attach(sock->mgr->mctx, &t->mctx);
-	t->handle = handle->sock->outer->tcphandle;
-	t->cb = cb;
-	t->cbarg = cbarg;
+	isc_nmhandle_attach(handle, &t->orighandle);
 
 	t->region = (isc_region_t) {
 		.base = isc_mem_get(t->mctx, region->length + 2),
 		.length = region->length + 2
 	};
-	memmove(t->region.base + 2, region->base, region->length);
-	t->region.base[0] = (uint8_t) (region->length >> 8);
-	t->region.base[1] = (uint8_t) (region->length & 0xff);
 
-	isc_nmhandle_attach(handle, &t->orighandle);
+	*(uint16_t *) t->region.base = htons(region->length);
+	memmove(t->region.base + 2, region->base, region->length);
 
 	return (isc__nm_tcp_send(t->handle, &t->region, tcpdnssend_cb, t));
 }
 
 void
 isc__nm_tcpdns_close(isc_nmsocket_t *sock) {
-	isc_nmsocket_detach(&sock->outer);
-	sock->closed = true;
+	if (sock->outer != NULL) {
+		isc_nmsocket_detach(&sock->outer);
+	}
+
+	atomic_store(&sock->closed, true);
 	isc__nmsocket_prep_destroy(sock);
 }
