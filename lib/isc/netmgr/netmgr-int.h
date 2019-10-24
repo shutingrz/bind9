@@ -75,7 +75,7 @@ struct isc_nmhandle {
 	 * dependencies and we can close all handles when we're destroying
 	 * the socket.
 	 */
-	isc_nmsocket_t *      socket;
+	isc_nmsocket_t *      sock;
 	size_t		      ah_pos;    /* Position in socket active handles
 					  * array */
 
@@ -181,12 +181,12 @@ typedef struct isc__nm_uvreq {
 
 typedef struct isc__netievent__socket {
 	isc__netievent_type	   type;
-	isc_nmsocket_t *	   socket;
+	isc_nmsocket_t *	   sock;
 } isc__netievent__socket_t;
 
 typedef struct isc__netievent__socket_req {
 	isc__netievent_type	   type;
-	isc_nmsocket_t *	   socket;
+	isc_nmsocket_t *	   sock;
 	isc__nm_uvreq_t *	   req;
 } isc__netievent__socket_req_t;
 
@@ -196,7 +196,7 @@ typedef isc__netievent__socket_t isc__netievent_udpstoplisten_t;
 
 typedef struct isc__netievent_udpsend {
 	isc__netievent_type	   type;
-	isc_nmsocket_t *	   socket;
+	isc_nmsocket_t *	   sock;
 	isc_sockaddr_t		   peer;
 	isc__nm_uvreq_t *	   req;
 } isc__netievent_udpsend_t;
@@ -370,7 +370,7 @@ isc__nm_in_netthread(void);
  */
 
 void
-isc__nmhandle_free(isc_nmsocket_t *socket, isc_nmhandle_t *handle);
+isc__nmhandle_free(isc_nmsocket_t *sock, isc_nmhandle_t *handle);
 
 void *
 isc__nm_get_ievent(isc_nm_t *mgr, isc__netievent_type type);
@@ -382,23 +382,23 @@ void
 isc__nm_alloc_cb(uv_handle_t *handle, size_t size, uv_buf_t *buf);
 
 void
-isc__nm_free_uvbuf(isc_nmsocket_t *socket, const uv_buf_t *buf);
+isc__nm_free_uvbuf(isc_nmsocket_t *sock, const uv_buf_t *buf);
 
 isc_nmhandle_t *
-isc__nmhandle_get(isc_nmsocket_t *socket, isc_sockaddr_t *peer);
+isc__nmhandle_get(isc_nmsocket_t *sock, isc_sockaddr_t *peer);
 
 isc__nm_uvreq_t *
-isc__nm_uvreq_get(isc_nm_t *mgr, isc_nmsocket_t *socket);
+isc__nm_uvreq_get(isc_nm_t *mgr, isc_nmsocket_t *sock);
 
 void
-isc__nm_uvreq_put(isc__nm_uvreq_t **req, isc_nmsocket_t *socket);
+isc__nm_uvreq_put(isc__nm_uvreq_t **req, isc_nmsocket_t *sock);
 
 void
-isc__nmsocket_init(isc_nmsocket_t *socket, isc_nm_t *mgr,
+isc__nmsocket_init(isc_nmsocket_t *sock, isc_nm_t *mgr,
 		   isc_nmsocket_type type);
 
 void
-isc__nmsocket_prep_destroy(isc_nmsocket_t *socket);
+isc__nmsocket_prep_destroy(isc_nmsocket_t *sock);
 
 isc_result_t
 isc__nm_udp_send(isc_nmhandle_t *handle, isc_region_t *region,
@@ -426,7 +426,7 @@ isc__nm_tcp_send(isc_nmhandle_t *handle, isc_region_t *region,
  */
 
 void
-isc__nm_tcp_close(isc_nmsocket_t *socket);
+isc__nm_tcp_close(isc_nmsocket_t *sock);
 /*%<
  * Close TCP socket
  */
@@ -457,4 +457,4 @@ isc_result_t
 isc__nm_tcpdns_send(isc_nmhandle_t *handle, isc_region_t *region,
 		    isc_nm_send_cb_t cb, void *cbarg);
 void
-isc__nm_tcpdns_close(isc_nmsocket_t *socket);
+isc__nm_tcpdns_close(isc_nmsocket_t *sock);
