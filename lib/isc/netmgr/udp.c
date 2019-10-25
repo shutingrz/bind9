@@ -64,7 +64,7 @@ isc_nm_listenudp(isc_nm_t *mgr, isc_nmiface_t *iface,
 	nsock->nchildren = mgr->nworkers;
 	atomic_init(&nsock->rchildren, mgr->nworkers);
 	nsock->children = isc_mem_get(mgr->mctx,
-					mgr->nworkers * sizeof(*nsock));
+				      mgr->nworkers * sizeof(*nsock));
 	memset(nsock->children, 0, mgr->nworkers * sizeof(*nsock));
 
 	INSIST(nsock->rcb.recv == NULL && nsock->rcbarg == NULL);

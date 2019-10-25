@@ -462,14 +462,24 @@ isc__nmsocket_destroy(isc_nmsocket_t *sock, bool dofree) {
 
 static void
 isc__nmsocket_maybe_destroy(isc_nmsocket_t *sock) {
+	int active_handles = 0;
 	bool destroy = false;
 
 	REQUIRE(!isc__nmsocket_active(sock));
 
 	/* XXXWPK TODO destroy non-inflight handles, launching callbacks */
 	LOCK(&sock->lock);
+	active_handles += sock->ah_cpos;
+	if (sock->children != NULL) {
+		for (int i = 0; i < sock->nchildren; i++) {
+			LOCK(&sock->children[i].lock);
+			active_handles += sock->children[i].ah_cpos;
+			UNLOCK(&sock->children[i].lock);
+		}
+	}
+
 	if (sock->references == 0 && sock->closed &&
-	    (sock->ah_cpos == 0 || sock->tcphandle != NULL))
+	    (active_handles == 0 || sock->tcphandle != NULL))
 	{
 		destroy = true;
 	}
