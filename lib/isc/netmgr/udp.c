@@ -330,8 +330,8 @@ udp_send_cb(uv_udp_send_t *req, int status) {
 	REQUIRE(VALID_UVREQ(uvreq));
 	REQUIRE(VALID_NMHANDLE(uvreq->handle));
 
-	if (status != 0) {
-		result = ISC_R_FAILURE;
+	if (status < 0) {
+		result = isc__nm_uverr2result(status);
 	}
 
 	uvreq->cb.send(uvreq->handle, result, uvreq->cbarg);
@@ -354,8 +354,8 @@ udp_send_direct(isc_nmsocket_t *sock, isc__nm_uvreq_t *req,
 	rv = uv_udp_send(&req->uv_req.udp_send,
 			 &sock->uv_handle.udp, &req->uvbuf, 1,
 			 &peer->type.sa, udp_send_cb);
-	if (rv != 0) {
-		return (ISC_R_FAILURE);
+	if (rv < 0) {
+		return (isc__nm_uverr2result(rv));
 	}
 
 	return (ISC_R_SUCCESS);

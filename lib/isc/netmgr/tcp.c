@@ -410,7 +410,7 @@ accept_connection(isc_nmsocket_t *ssock) {
 		}
 		isc_mem_put(ssock->mgr->mctx, csock, sizeof(isc_nmsocket_t));
 
-		return (ISC_R_FAILURE); /* XXXWPK TODO translate ! */
+		return (isc__nm_uverr2result(r));
 	}
 
 	isc_nmsocket_attach(ssock, &csock->server);
@@ -495,8 +495,8 @@ tcp_send_cb(uv_write_t *req, int status) {
 	REQUIRE(VALID_UVREQ(uvreq));
 	REQUIRE(VALID_NMHANDLE(uvreq->handle));
 
-	if (status != 0) {
-		result = ISC_R_FAILURE;
+	if (status < 0) {
+		result = isc__nm_uverr2result(status);
 	}
 
 	uvreq->cb.send(uvreq->handle, result, uvreq->cbarg);
@@ -529,11 +529,10 @@ tcp_send_direct(isc_nmsocket_t *sock, isc__nm_uvreq_t *req) {
 
 	r = uv_write(&req->uv_req.write, &sock->uv_handle.stream,
 		     &req->uvbuf, 1, tcp_send_cb);
-	if (r != 0) {
-		req->cb.send(NULL, ISC_R_FAILURE, req->cbarg);
+	if (r < 0) {
+		req->cb.send(NULL, isc__nm_uverr2result(r), req->cbarg);
 		isc__nm_uvreq_put(&req, sock);
-		/* XXX translate UV status to isc_result_t */
-		return (ISC_R_FAILURE);
+		return (isc__nm_uverr2result(r));
 	}
 
 	return (ISC_R_SUCCESS);

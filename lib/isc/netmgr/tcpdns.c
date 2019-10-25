@@ -350,7 +350,7 @@ isc__nm_tcpdns_send(isc_nmhandle_t *handle, isc_region_t *region,
 	if (sock == NULL || sock->outer == NULL) {
 		/* The socket is closed, just issue the callback */
 		cb(handle, ISC_R_FAILURE, cbarg);
-		return (ISC_R_FAILURE);
+		return (ISC_R_NOTCONNECTED);
 	}
 
 	t = isc_mem_get(sock->mgr->mctx, sizeof(*t));

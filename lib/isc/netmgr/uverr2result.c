@@ -30,8 +30,6 @@ isc_result_t
 isc___nm_uverr2result(int uverr, bool dolog,
 		     const char *file, unsigned int line)
 {
-	char strbuf[ISC_STRERRORSIZE];
-
 	switch (uverr) {
 	case UV_ENOTDIR:
 	case UV_ELOOP:
@@ -83,9 +81,10 @@ isc___nm_uverr2result(int uverr, bool dolog,
 		return (ISC_R_CONNREFUSED);
 	default:
 		if (dolog) {
-			uv_err_name_r(uverr, strbuf, sizeof(strbuf));
-			UNEXPECTED_ERROR(file, line, "unable to convert libuv error code to isc_result: %d: %s",
-					 uverr, strbuf);
+			UNEXPECTED_ERROR(file, line,
+					 "unable to convert libuv "
+					 "error code to isc_result: %d: %s",
+					 uverr, uv_strerror(uverr));
 		}
 		return (ISC_R_UNEXPECTED);
 	}
