@@ -40,6 +40,9 @@
 static int
 tcp_connect_direct(isc_nmsocket_t *sock, isc__nm_uvreq_t *req);
 
+static void
+tcp_close_direct(isc_nmsocket_t *sock);
+
 static isc_result_t
 tcp_send_direct(isc_nmsocket_t *sock, isc__nm_uvreq_t *req);
 static void
@@ -50,6 +53,9 @@ tcp_connection_cb(uv_stream_t *server, int status);
 
 static void
 read_cb(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf);
+
+static void
+tcp_close_cb(uv_handle_t *uvhandle);
 
 static int
 tcp_connect_direct(isc_nmsocket_t *sock, isc__nm_uvreq_t *req) {
@@ -68,7 +74,7 @@ tcp_connect_direct(isc_nmsocket_t *sock, isc__nm_uvreq_t *req) {
 	if (req->local.length != 0) {
 		r = uv_tcp_bind(&sock->uv_handle.tcp, &req->local.type.sa, 0);
 		if (r != 0) {
-			/* TODO uv_close() */
+			tcp_close_direct(sock);
 			return (r);
 		}
 	}
@@ -402,8 +408,7 @@ accept_connection(isc_nmsocket_t *ssock) {
 		if (csock->quota != NULL) {
 			isc_quota_detach(&csock->quota);
 		}
-		isc_mem_put(ssock->mgr->mctx, csock,
-			    sizeof(isc_nmsocket_t));
+		isc_mem_put(ssock->mgr->mctx, csock, sizeof(isc_nmsocket_t));
 
 		return (ISC_R_FAILURE); /* XXXWPK TODO translate ! */
 	}
@@ -517,15 +522,17 @@ isc__nm_async_tcpsend(isc__networker_t *worker, isc__netievent_t *ievent0) {
 
 static isc_result_t
 tcp_send_direct(isc_nmsocket_t *sock, isc__nm_uvreq_t *req) {
-	int rv;
+	int r;
 
 	REQUIRE(sock->tid == isc_nm_tid());
 	REQUIRE(sock->type == isc_nm_tcpsocket);
 
-	rv = uv_write(&req->uv_req.write, &sock->uv_handle.stream,
-		      &req->uvbuf, 1, tcp_send_cb);
-	if (rv != 0) {
-		/* TODO call cb! */
+	r = uv_write(&req->uv_req.write, &sock->uv_handle.stream,
+		     &req->uvbuf, 1, tcp_send_cb);
+	if (r != 0) {
+		req->cb.send(NULL, ISC_R_FAILURE, req->cbarg);
+		isc__nm_uvreq_put(&req, sock);
+		/* XXX translate UV status to isc_result_t */
 		return (ISC_R_FAILURE);
 	}
 

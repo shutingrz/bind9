@@ -2329,8 +2329,6 @@ client_setup(ns_clientmgr_t *manager, isc_mem_t *mctx, ns_client_t *client) {
 		goto cleanup_timer;
 	}
 
-	/* XXXRTH  Hardwired constants */
-
 	client->recvbuf = isc_mem_get(client->mctx, NS_CLIENT_RECV_BUFFER_SIZE);
 
 	client->manager = NULL;
