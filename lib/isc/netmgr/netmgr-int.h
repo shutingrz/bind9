@@ -502,3 +502,15 @@ isc__nm_tcpdns_close(isc_nmsocket_t *sock);
 /*%<
  * Close a TCPDNS socket.
  */
+
+isc_result_t
+isc___nm_uverr2result(int uverr, bool dolog,
+		     const char *file, unsigned int line);
+/*%<
+ * Convert a libuv error value into an isc_result_t.  The
+ * list of supported error values is not complete; new users
+ * of this function should add any expected errors that are
+ * not already there.
+ */
+
+#define isc__nm_uverr2result(x) isc___nm_uverr2result(x, true, __FILE__, __LINE__)

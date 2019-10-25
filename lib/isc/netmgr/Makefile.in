@@ -23,10 +23,10 @@ CDEFINES =
 CWARNINGS =
 
 # Alphabetically
-OBJS =		netmgr.@O@ tcp.@O@ udp.@O@ tcpdns.@O@
+OBJS =		netmgr.@O@ tcp.@O@ udp.@O@ tcpdns.@O@ uverr2result.@O@
 
 # Alphabetically
-SRCS =		netmgr.c tcp.c udp.c tcpdns.c
+SRCS =		netmgr.c tcp.c udp.c tcpdns.c uverr2result.c
 
 TARGETS =	${OBJS}
 
