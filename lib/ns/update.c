@@ -3410,7 +3410,6 @@ forward_fail(isc_task_t *task, isc_event_t *event) {
 	ns_client_detach(&client);
 }
 
-
 static void
 forward_callback(void *arg, isc_result_t result, dns_message_t *answer) {
 	update_event_t *uev = arg;

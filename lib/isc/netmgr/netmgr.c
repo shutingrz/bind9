@@ -56,11 +56,11 @@ static int isc__nm_tid_v = ISC_NETMGR_TID_NOTLS;
 #endif /* if defined(HAVE_TLS) */
 
 static void
+nmsocket_maybe_destroy(isc_nmsocket_t *sock);
+static void
 nmhandle_free(isc_nmsocket_t *sock, isc_nmhandle_t *handle);
-
 static void *
 nm_thread(void *worker0);
-
 static void
 async_cb(uv_async_t *handle);
 
@@ -124,35 +124,22 @@ isc_nm_start(isc_mem_t *mctx, uint32_t workers) {
 }
 
 /*
- * isc_nm_shutdown shuts down the network manager.
+ * Free the resources of the network manager.
+ *
  * TODO we need to clean up properly - launch all missing callbacks,
  * destroy all listeners, etc.
  */
-void
-isc_nm_shutdown(isc_nm_t **mgr0) {
+static void
+nm_destroy(isc_nm_t **mgr0) {
 	REQUIRE(VALID_NM(*mgr0));
 	REQUIRE(!isc__nm_in_netthread());
 
 	isc_nm_t *mgr = *mgr0;
 
 	for (size_t i = 0; i < mgr->nworkers; i++) {
-		LOCK(&mgr->workers[i].lock);
-		mgr->workers[i].finished = true;
-		UNLOCK(&mgr->workers[i].lock);
-		isc__netievent_t *ievent = isc__nm_get_ievent(mgr,
-							      netievent_stop);
-		isc__nm_enqueue_ievent(&mgr->workers[i], ievent);
-	}
-
-	LOCK(&mgr->lock);
-	while (mgr->workers_running > 0) {
-		WAIT(&mgr->wkstatecond, &mgr->lock);
-	}
-	for (size_t i = 0; i < mgr->nworkers; i++) {
 		isc_queue_destroy(mgr->workers[i].ievents);
 		isc_mempool_destroy(&mgr->workers[i].mpool_bufs);
 	}
-	UNLOCK(&mgr->lock);
 
 	isc_condition_destroy(&mgr->wkstatecond);
 	isc_mutex_destroy(&mgr->lock);
@@ -160,6 +147,30 @@ isc_nm_shutdown(isc_nm_t **mgr0) {
 		    mgr->nworkers * sizeof(isc__networker_t));
 	isc_mem_putanddetach(&mgr->mctx, mgr, sizeof(*mgr));
 	*mgr0 = NULL;
+}
+
+void
+isc_nm_shutdown(isc_nm_t **mgr0) {
+	REQUIRE(VALID_NM(*mgr0));
+
+	isc_nm_t *mgr = *mgr0;
+
+	for (size_t i = 0; i < mgr->nworkers; i++) {
+		LOCK(&mgr->workers[i].lock);
+		mgr->workers[i].finished = true;
+		UNLOCK(&mgr->workers[i].lock);
+		isc__netievent_t *ievent =
+			isc__nm_get_ievent(mgr, netievent_stop);
+		isc__nm_enqueue_ievent(&mgr->workers[i], ievent);
+	}
+
+	LOCK(&mgr->lock);
+	while (mgr->workers_running > 0) {
+		WAIT(&mgr->wkstatecond, &mgr->lock);
+	}
+	UNLOCK(&mgr->lock);
+
+	isc_nm_detach(mgr0);
 }
 
 void
@@ -171,8 +182,10 @@ isc_nm_pause(isc_nm_t *mgr) {
 		LOCK(&mgr->workers[i].lock);
 		mgr->workers[i].paused = true;
 		UNLOCK(&mgr->workers[i].lock);
-		/* We have to issue a stop, otherwise the uv_run loop will
-		 * run indefinitely! */
+		/*
+		 * We have to issue a stop, otherwise the uv_run loop will
+		 * run indefinitely!
+		 */
 		isc__netievent_t *ievent =
 			isc__nm_get_ievent(mgr, netievent_stop);
 		isc__nm_enqueue_ievent(&mgr->workers[i], ievent);
@@ -207,10 +220,13 @@ isc_nm_resume(isc_nm_t *mgr) {
 
 void
 isc_nm_attach(isc_nm_t *mgr, isc_nm_t **dst) {
+	int refs;
+
 	REQUIRE(mgr != NULL);
 	REQUIRE(dst != NULL && *dst == NULL);
 
-	INSIST(isc_refcount_increment(&mgr->references) > 0);
+	refs = isc_refcount_increment(&mgr->references);
+	INSIST(refs > 0);
 
 	*dst = mgr;
 }
@@ -229,7 +245,7 @@ isc_nm_detach(isc_nm_t **mgr0) {
 	references = isc_refcount_decrement(&mgr->references);
 	INSIST(references > 0);
 	if (references == 1) {
-		/* XXXWPK TODO */
+		nm_destroy(&mgr);
 	}
 }
 
@@ -400,74 +416,97 @@ isc_nmsocket_attach(isc_nmsocket_t *sock, isc_nmsocket_t **target) {
 }
 
 /*
- * Destroy socket (and its children), freeing all resources and optionally
- * socket itself.
+ * Free all resources inside a socket (including its children if any).
  */
 static void
-isc__nmsocket_destroy(isc_nmsocket_t *sock, bool dofree) {
+nmsocket_cleanup(isc_nmsocket_t *sock, bool dofree) {
 	isc_nmhandle_t *handle = NULL;
 	isc__nm_uvreq_t *uvreq = NULL;
-	isc_nm_t *mgr = NULL;
+
+	REQUIRE(VALID_NMSOCK(sock));
+	REQUIRE(!isc__nmsocket_active(sock));
 
 	atomic_store(&sock->destroying, true);
 
-	if (sock->tcphandle != NULL) {
-		isc_nmhandle_detach(&sock->tcphandle);
-	}
-
-	REQUIRE(VALID_NMSOCK(sock));
-	REQUIRE(sock->ah_cpos == 0);  /* We don't have active handles */
-	REQUIRE(!isc__nmsocket_active(sock));
-
-	mgr = sock->mgr;
-
-	if (sock->children != NULL) {
+	if (sock->parent == NULL && sock->children != NULL) {
+		/*
+		 * We shouldn't be here unless there are no active handles,
+		 * so we can clean up and free the children.
+		 */
 		for (int i = 0; i < sock->nchildren; i++) {
-			isc__nmsocket_destroy(&sock->children[i], false);
+			if (!atomic_load(&sock->children[i].destroying)) {
+				nmsocket_cleanup(&sock->children[i], false);
+			}
 		}
 
-		isc_mem_put(mgr->mctx, sock->children,
-			    mgr->nworkers * sizeof(*sock));
+		/*
+		 * This was a parent socket; free the children.
+		 */
+		isc_mem_put(sock->mgr->mctx, sock->children,
+			    sock->nchildren * sizeof(*sock));
+		sock->children = NULL;
+		sock->nchildren = 0;
 	}
 
-
-	if (sock->buf != NULL) {
-		isc_mem_put(sock->mgr->mctx, sock->buf, sock->buf_size);
-	}
-	if (sock->quota != NULL) {
-		isc_quota_detach(&sock->quota);
+	if (sock->tcphandle != NULL) {
+		isc_nmhandle_detach(&sock->tcphandle);
 	}
 
 	while ((handle = isc_astack_pop(sock->inactivehandles)) != NULL) {
 		nmhandle_free(sock, handle);
 	}
 
+	if (sock->buf != NULL) {
+		isc_mem_put(sock->mgr->mctx, sock->buf, sock->buf_size);
+	}
+
+	if (sock->quota != NULL) {
+		isc_quota_detach(&sock->quota);
+	}
+
 	isc_astack_destroy(sock->inactivehandles);
 
 	while ((uvreq = isc_astack_pop(sock->inactivereqs)) != NULL) {
-		isc_mem_put(mgr->mctx, uvreq, sizeof(*uvreq));
+		isc_mem_put(sock->mgr->mctx, uvreq, sizeof(*uvreq));
 	}
 
 	isc_astack_destroy(sock->inactivereqs);
 
-	isc_mem_free(mgr->mctx, sock->ah_frees);
-	isc_mem_free(mgr->mctx, sock->ah_handles);
+	isc_mem_free(sock->mgr->mctx, sock->ah_frees);
+	isc_mem_free(sock->mgr->mctx, sock->ah_handles);
 
 	if (dofree) {
+		isc_nm_t *mgr = sock->mgr;
 		isc_mem_put(mgr->mctx, sock, sizeof(*sock));
+		isc_nm_detach(&mgr);
+	} else {
+		isc_nm_detach(&sock->mgr);
 	}
 
-	isc_nm_detach(&mgr);
 }
 
 static void
-isc__nmsocket_maybe_destroy(isc_nmsocket_t *sock) {
+nmsocket_maybe_destroy(isc_nmsocket_t *sock) {
 	int active_handles = 0;
 	bool destroy = false;
 
 	REQUIRE(!isc__nmsocket_active(sock));
 
-	/* XXXWPK TODO destroy non-inflight handles, launching callbacks */
+	if (sock->parent != NULL) {
+		/*
+		 * This is a child socket and cannot be destroyed except
+		 * as a side effect of destroying the parent, so let's go
+		 * see if the parent is ready to be destroyed.
+		 */
+		nmsocket_maybe_destroy(sock->parent);
+		return;
+	}
+
+	/*
+	 * This is a parent socket (or a standalone). See whether the
+	 * children have active handles before deciding whether to
+	 * accept destruction.
+	 */
 	LOCK(&sock->lock);
 	active_handles += sock->ah_cpos;
 	if (sock->children != NULL) {
@@ -478,7 +517,7 @@ isc__nmsocket_maybe_destroy(isc_nmsocket_t *sock) {
 		}
 	}
 
-	if (sock->references == 0 && sock->closed &&
+	if (sock->closed && sock->references == 0 &&
 	    (active_handles == 0 || sock->tcphandle != NULL))
 	{
 		destroy = true;
@@ -486,7 +525,7 @@ isc__nmsocket_maybe_destroy(isc_nmsocket_t *sock) {
 	UNLOCK(&sock->lock);
 
 	if (destroy) {
-		isc__nmsocket_destroy(sock, true);
+		nmsocket_cleanup(sock, true);
 	}
 }
 
@@ -500,6 +539,16 @@ isc__nmsocket_prep_destroy(isc_nmsocket_t *sock) {
 	 * handles to finish first.
 	 */
 	atomic_store(&sock->active, false);
+
+	/*
+	 * If the socket has children, they'll need to be marked inactive
+	 * so they can be cleaned up too.
+	 */
+	if (sock->children != NULL) {
+		for (int i = 0; i < sock->nchildren; i++) {
+			atomic_store(&sock->children[i].active, false);
+		}
+	}
 
 	/*
 	 * If we're here then we already stopped listening; otherwise
@@ -520,7 +569,7 @@ isc__nmsocket_prep_destroy(isc_nmsocket_t *sock) {
 		}
 	}
 
-	isc__nmsocket_maybe_destroy(sock);
+	nmsocket_maybe_destroy(sock);
 }
 
 void
@@ -528,7 +577,7 @@ isc_nmsocket_detach(isc_nmsocket_t **sockp) {
 	REQUIRE(sockp != NULL && *sockp != NULL);
 	REQUIRE(VALID_NMSOCK(*sockp));
 
-	isc_nmsocket_t *sock = *sockp, *rsock;
+	isc_nmsocket_t *sock = *sockp, *rsock = NULL;
 	int references;
 
 	/*
@@ -760,10 +809,11 @@ isc_nmhandle_detach(isc_nmhandle_t **handlep) {
 			nmhandle_free(sock, handle);
 		}
 
-		if (!atomic_load(&sock->active) &&
+		if (sock->ah_cpos == 0 &&
+		    !atomic_load(&sock->active) &&
 		    !atomic_load(&sock->destroying))
 		{
-			isc__nmsocket_maybe_destroy(sock);
+			nmsocket_maybe_destroy(sock);
 		}
 	}
 }
@@ -804,6 +854,9 @@ isc__nm_uvreq_t *
 isc__nm_uvreq_get(isc_nm_t *mgr, isc_nmsocket_t *sock) {
 	isc__nm_uvreq_t *req = NULL;
 
+	REQUIRE(VALID_NM(mgr));
+	REQUIRE(VALID_NMSOCK(sock));
+
 	if (sock != NULL && atomic_load(&sock->active)) {
 		/* Try to reuse one */
 		req = isc_astack_pop(sock->inactivereqs);
@@ -815,7 +868,7 @@ isc__nm_uvreq_get(isc_nm_t *mgr, isc_nmsocket_t *sock) {
 
 	*req = (isc__nm_uvreq_t) {};
 	req->uv_req.req.data = req;
-	isc_nm_attach(mgr, &req->mgr);
+	isc_nmsocket_attach(sock, &req->sock);
 	req->magic = UVREQ_MAGIC;
 
 	return (req);
@@ -824,7 +877,7 @@ isc__nm_uvreq_get(isc_nm_t *mgr, isc_nmsocket_t *sock) {
 void
 isc__nm_uvreq_put(isc__nm_uvreq_t **req0, isc_nmsocket_t *sock) {
 	isc__nm_uvreq_t *req = NULL;
-	isc_nm_t *mgr = NULL;
+	isc_nmhandle_t *handle = NULL;
 
 	REQUIRE(req0 != NULL);
 	REQUIRE(VALID_UVREQ(*req0));
@@ -832,25 +885,28 @@ isc__nm_uvreq_put(isc__nm_uvreq_t **req0, isc_nmsocket_t *sock) {
 	req = *req0;
 	*req0 = NULL;
 
+	INSIST(sock == req->sock);
+
 	req->magic = 0;
 
-	if (req->handle != NULL) {
-		isc_nmhandle_detach(&req->handle);
-	}
-
 	/*
-	 * We need to do this first to make sure that mgr won't disappear,
-	 * taking mctx with it.
+	 * We need to save this first to make sure that handle,
+	 * sock, and the netmgr won't all disappear.
 	 */
-	mgr = req->mgr;
-	req->mgr = NULL;
-	if (sock == NULL || !atomic_load(&sock->active) ||
+	handle = req->handle;
+	req->handle = NULL;
+
+	if (!atomic_load(&sock->active) ||
 	    !isc_astack_trypush(sock->inactivereqs, req))
 	{
-		isc_mem_put(mgr->mctx, req, sizeof(isc__nm_uvreq_t));
+		isc_mem_put(sock->mgr->mctx, req, sizeof(isc__nm_uvreq_t));
 	}
 
-	isc_nm_detach(&mgr);
+	if (handle != NULL) {
+		isc_nmhandle_detach(&handle);
+	}
+
+	isc_nmsocket_detach(&sock);
 }
 
 /*

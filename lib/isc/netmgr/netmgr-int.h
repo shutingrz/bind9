@@ -154,14 +154,14 @@ typedef union {
 
 typedef struct isc__nm_uvreq {
 	int			magic;
-	isc_nm_t *		mgr;
+	isc_nmsocket_t *	sock;
+	isc_nmhandle_t *	handle;
 	uv_buf_t		uvbuf;	/* translated isc_region_t, to be
 					   sent or received */
 	isc_sockaddr_t		local;	/* local address */
 	isc_sockaddr_t		peer;	/* peer address */
 	isc__nm_cb_t		cb;	/* callback */
 	void *			cbarg;	/* callback argument */
-	isc_nmhandle_t *	handle;
 	union {
 		uv_req_t		req;
 		uv_getaddrinfo_t	getaddrinfo;
@@ -294,6 +294,7 @@ struct isc_nmsocket {
 	 */
 	atomic_bool        	active;
 	atomic_bool	   	destroying;
+
 	/*%
 	 * Socket is closed if it's not active and all the possible
 	 * callbacks were fired, there are no active handles, etc.
@@ -503,6 +504,8 @@ isc__nm_tcpdns_close(isc_nmsocket_t *sock);
  * Close a TCPDNS socket.
  */
 
+#define isc__nm_uverr2result(x) \
+	isc___nm_uverr2result(x, true, __FILE__, __LINE__)
 isc_result_t
 isc___nm_uverr2result(int uverr, bool dolog,
 		     const char *file, unsigned int line);
@@ -512,5 +515,3 @@ isc___nm_uverr2result(int uverr, bool dolog,
  * of this function should add any expected errors that are
  * not already there.
  */
-
-#define isc__nm_uverr2result(x) isc___nm_uverr2result(x, true, __FILE__, __LINE__)

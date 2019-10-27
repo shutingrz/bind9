@@ -26,23 +26,31 @@ typedef enum {
 	NMEV_SHUTDOWN
 } isc_nm_eventtype;
 
-/*
- * isc_nm_start creates and starts a netmgr
- */
 isc_nm_t *
 isc_nm_start(isc_mem_t *mctx, uint32_t workers);
-
-/*
- * isc_nm_shutdown shutdowns netmgr, freeing all the resources
+/*%<
+ * Creates a new network manager with 'workers' worker threads,
+ * and starts it running.
  */
+
 void
 isc_nm_shutdown(isc_nm_t **mgr);
+/*
+ * Signals that the network manager should begin an orderly shutdown.
+ * All pending callbacks are executed with status UV_CANCELED so that
+ * handles can be freed. Once all references to the manager are detached,
+ * its resources are freed and '*mgr' is set to NULL.
+ */
 
 void
 isc_nm_attach(isc_nm_t *mgr, isc_nm_t **dst);
-
 void
 isc_nm_detach(isc_nm_t **mgr0);
+/*%<
+ * Attach/detach a network manager. When all references have been
+ * released, the network manager is shut down, freeing all resources.
+ * (This cannot ordinarily occur until after a shutdown has been started.)
+ */
 
 /* Return thread id of current thread, or ISC_NETMGR_TID_UNKNOWN */
 int

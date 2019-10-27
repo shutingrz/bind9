@@ -64,7 +64,7 @@ tcp_connect_direct(isc_nmsocket_t *sock, isc__nm_uvreq_t *req) {
 
 	REQUIRE(isc_nm_tid() >= 0);
 
-	worker = &req->mgr->workers[isc_nm_tid()];
+	worker = &sock->mgr->workers[isc_nm_tid()];
 
 	r = uv_tcp_init(&worker->loop, &sock->uv_handle.tcp);
 	if (r != 0) {
@@ -93,7 +93,7 @@ isc__nm_async_tcpconnect(isc__networker_t *worker, isc__netievent_t *ievent0) {
 	int r;
 
 	REQUIRE(sock->type == isc_nm_tcpsocket);
-	REQUIRE(worker->id == ievent->req->mgr->workers[isc_nm_tid()].id);
+	REQUIRE(worker->id == ievent->req->sock->mgr->workers[isc_nm_tid()].id);
 
 	r = tcp_connect_direct(sock, req);
 	if (r != 0) {

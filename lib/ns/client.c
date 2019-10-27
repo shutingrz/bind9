@@ -2158,13 +2158,15 @@ ns__client_request(isc_nmhandle_t *handle, isc_region_t *region, void *arg) {
 				      "request has invalid signature: %s (%s)",
 				      isc_result_totext(result), tsigrcode);
 		}
+
 		/*
 		 * Accept update messages signed by unknown keys so that
 		 * update forwarding works transparently through slaves
 		 * that don't have all the same keys as the master.
 		 */
 		if (!(client->message->tsigstatus == dns_tsigerror_badkey &&
-		      client->message->opcode == dns_opcode_update)) {
+		      client->message->opcode == dns_opcode_update))
+		{
 			ns_client_error(client, sigresult);
 			isc_task_unpause(client->task);
 			return;
@@ -2193,7 +2195,9 @@ ns__client_request(isc_nmhandle_t *handle, isc_region_t *region, void *arg) {
 	    ns_client_checkaclsilent(client, &client->destaddr,
 				     client->view->cacheonacl,
 				     true) == ISC_R_SUCCESS)
+	{
 		ra = true;
+	}
 
 	if (ra == true) {
 		client->attributes |= NS_CLIENTATTR_RA;

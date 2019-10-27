@@ -335,7 +335,7 @@ udp_send_cb(uv_udp_send_t *req, int status) {
 	}
 
 	uvreq->cb.send(uvreq->handle, result, uvreq->cbarg);
-	isc__nm_uvreq_put(&uvreq, uvreq->handle->sock);
+	isc__nm_uvreq_put(&uvreq, uvreq->sock);
 }
 
 /*
