@@ -53,6 +53,7 @@ respond(ns_client_t *client, isc_result_t result) {
 		msg_result = dns_message_reply(message, false);
 	if (msg_result != ISC_R_SUCCESS) {
 		ns_client_drop(client, msg_result);
+		isc_nmhandle_unref(client->handle);
 		return;
 	}
 	message->rcode = rcode;
@@ -60,7 +61,9 @@ respond(ns_client_t *client, isc_result_t result) {
 		message->flags |= DNS_MESSAGEFLAG_AA;
 	else
 		message->flags &= ~DNS_MESSAGEFLAG_AA;
+
 	ns_client_send(client);
+	isc_nmhandle_unref(client->handle);
 }
 
 void

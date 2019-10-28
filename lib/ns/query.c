@@ -563,6 +563,7 @@ query_send(ns_client_t *client) {
 
 	inc_stats(client, counter);
 	ns_client_send(client);
+	isc_nmhandle_unref(client->handle);
 }
 
 static void
@@ -588,17 +589,20 @@ query_error(ns_client_t *client, isc_result_t result, int line) {
 	log_queryerror(client, result, line, loglevel);
 
 	ns_client_error(client, result);
+	isc_nmhandle_unref(client->handle);
 }
 
 static void
 query_next(ns_client_t *client, isc_result_t result) {
-	if (result == DNS_R_DUPLICATE)
+	if (result == DNS_R_DUPLICATE) {
 		inc_stats(client, ns_statscounter_duplicate);
-	else if (result == DNS_R_DROP)
+	} else if (result == DNS_R_DROP) {
 		inc_stats(client, ns_statscounter_dropped);
-	else
+	} else {
 		inc_stats(client, ns_statscounter_failure);
+	}
 	ns_client_drop(client, result);
+	isc_nmhandle_unref(client->handle);
 }
 
 static inline void
@@ -5008,14 +5012,6 @@ qctx_init(ns_client_t *client, dns_fetchevent_t *event,
 	/* Set this first so CCTRACE will work */
 	qctx->client = client;
 
-	/*
-	 * We need to bump the reference counter on the handle to ensure
-	 * it won't get freed (along with client) before we're done -
-	 * this could happen if client_senddone is faster than us.
-	 */
-	if (client->handle != NULL) {
-		isc_nmhandle_ref(client->handle);
-	}
 	dns_view_attach(client->view, &qctx->view);
 
 	CCTRACE(ISC_LOG_DEBUG(3), "qctx_init");
@@ -5595,7 +5591,6 @@ fetch_callback(isc_task_t *task, isc_event_t *event) {
 	REQUIRE(task == client->task);
 	REQUIRE(RECURSING(client));
 
-
 	LOCK(&client->query.fetchlock);
 	if (client->query.fetch != NULL) {
 		/*
@@ -5639,6 +5634,7 @@ fetch_callback(isc_task_t *task, isc_event_t *event) {
 		} else {
 			query_next(client, ISC_R_CANCELED);
 		}
+
 		/*
 		 * This may trigger destruction of the client.
 		 */
@@ -5751,8 +5747,9 @@ ns_query_recurse(ns_client_t *client, dns_rdatatype_t qtype, dns_name_t *qname,
 
 	recparam_update(&client->query.recparam, qtype, qname, qdomain);
 
-	if (!resuming)
+	if (!resuming) {
 		inc_stats(client, ns_statscounter_recursion);
+	}
 
 	/*
 	 * We are about to recurse, which means that this client will
@@ -5811,8 +5808,10 @@ ns_query_recurse(ns_client_t *client, dns_rdatatype_t qtype, dns_name_t *qname,
 			}
 			ns_client_killoldestquery(client);
 		}
-		if (result != ISC_R_SUCCESS)
+		if (result != ISC_R_SUCCESS) {
 			return (result);
+		}
+
 		ns_client_recursing(client);
 	}
 
@@ -11067,8 +11066,9 @@ ns_query_start(ns_client_t *client) {
 			 * section.
 			 */
 			query_error(client, DNS_R_FORMERR, __LINE__);
-		} else
+		} else {
 			query_error(client, result, __LINE__);
+		}
 		return;
 	}
 
@@ -11101,10 +11101,11 @@ ns_query_start(ns_client_t *client) {
 			result = dns_tkey_processquery(client->message,
 						    client->sctx->tkeyctx,
 						    client->view->dynamickeys);
-			if (result == ISC_R_SUCCESS)
+			if (result == ISC_R_SUCCESS) {
 				query_send(client);
-			else
+			} else {
 				query_error(client, result, __LINE__);
+			}
 			return;
 		default: /* TSIG, etc. */
 			query_error(client, DNS_R_FORMERR, __LINE__);
@@ -11150,8 +11151,9 @@ ns_query_start(ns_client_t *client) {
 	{
 		client->query.dboptions |= DNS_DBFIND_PENDINGOK;
 		client->query.fetchoptions |= DNS_FETCHOPT_NOVALIDATE;
-	} else if (!client->view->enablevalidation)
+	} else if (!client->view->enablevalidation) {
 		client->query.fetchoptions |= DNS_FETCHOPT_NOVALIDATE;
+	}
 
 	if (client->view->qminimization) {
 		client->query.fetchoptions |= DNS_FETCHOPT_QMINIMIZE |

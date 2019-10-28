@@ -274,7 +274,6 @@ ns_client_endrequest(ns_client_t *client) {
 		client->sctx->fuzznotify();
 	}
 #endif /* ENABLE_AFL */
-
 }
 
 void
@@ -283,13 +282,12 @@ ns_client_drop(ns_client_t *client, isc_result_t result) {
 	REQUIRE(client->state == NS_CLIENTSTATE_WORKING ||
 		client->state == NS_CLIENTSTATE_RECURSING);
 
-	CTRACE("fail");
+	CTRACE("drop");
 	if (result != ISC_R_SUCCESS) {
 		ns_client_log(client, DNS_LOGCATEGORY_SECURITY,
 			      NS_LOGMODULE_CLIENT, ISC_LOG_DEBUG(3),
 			      "request failed: %s", isc_result_totext(result));
 	}
-	isc_nmhandle_unref(client->handle);
 }
 
 static void
@@ -298,9 +296,14 @@ client_senddone(isc_nmhandle_t *handle, isc_result_t result, void *cbarg) {
 
 	REQUIRE(client->handle == handle);
 
-	UNUSED(result);
+	CTRACE("senddone");
+	if (result != ISC_R_SUCCESS) {
+		ns_client_log(client, DNS_LOGCATEGORY_SECURITY,
+			      NS_LOGMODULE_CLIENT, ISC_LOG_DEBUG(3),
+			      "send failed: %s", isc_result_totext(result));
+	}
 
-	isc_nmhandle_unref(client->handle);
+	isc_nmhandle_unref(handle);
 }
 
 /*%
@@ -422,11 +425,12 @@ ns_client_sendraw(ns_client_t *client, dns_message_t *message) {
 			    NS_CLIENT_TCP_BUFFER_SIZE);
 		client->tcpbuf = NULL;
 	}
+
 	ns_client_drop(client, result);
 }
 
-static void
-client_send(ns_client_t *client) {
+void
+ns_client_send(ns_client_t *client) {
 	isc_result_t result;
 	unsigned char *data;
 	isc_buffer_t buffer = {};
@@ -444,6 +448,11 @@ client_send(ns_client_t *client) {
 	dns_dtmsgtype_t dtmsgtype;
 	isc_region_t zr;
 #endif /* HAVE_DNSTAP */
+
+	/*
+	 * XXXWPK TODO
+	 * Delay the response according to the -T delay option
+	 */
 
 	REQUIRE(NS_CLIENT_VALID(client));
 	/*
@@ -619,6 +628,8 @@ client_send(ns_client_t *client) {
 
 		/* don't count the 2-octet length header */
 		respsize = isc_buffer_usedlength(&tcpbuffer) - 2;
+
+		isc_nmhandle_ref(client->handle);
 		result = client_sendpkg(client, &tcpbuffer);
 
 		switch (isc_sockaddr_pf(&client->peeraddr)) {
@@ -650,6 +661,8 @@ client_send(ns_client_t *client) {
 #endif /* HAVE_DNSTAP */
 
 		respsize = isc_buffer_usedlength(&buffer);
+
+		isc_nmhandle_ref(client->handle);
 		result = client_sendpkg(client, &buffer);
 
 		switch (isc_sockaddr_pf(&client->peeraddr)) {
@@ -701,15 +714,6 @@ client_send(ns_client_t *client) {
 
 	if (cleanup_cctx)
 		dns_compress_invalidate(&cctx);
-}
-
-void
-ns_client_send(ns_client_t *client) {
-	/*
-	 * Delay the response according to the -T delay option
-	 * XXXWPK TODO
-	 */
-	client_send(client);
 }
 
 #if NS_CLIENT_DROPPORT
@@ -1706,7 +1710,6 @@ ns__client_request(isc_nmhandle_t *handle, isc_region_t *region, void *arg) {
 	if (isc_nmhandle_is_stream(handle)) {
 		client->attributes |= NS_CLIENTATTR_TCP;
 	}
-	isc_nmhandle_ref(client->handle);
 
 	INSIST(client->recursionquota == NULL);
 
@@ -1940,6 +1943,7 @@ ns__client_request(isc_nmhandle_t *handle, isc_region_t *region, void *arg) {
 
 		result = process_opt(client, opt);
 		if (result != ISC_R_SUCCESS) {
+			isc_nmhandle_unref(client->handle);
 			isc_task_unpause(client->task);
 			return;
 		}
@@ -2232,6 +2236,7 @@ ns__client_request(isc_nmhandle_t *handle, isc_region_t *region, void *arg) {
 			    &client->requesttime, NULL, buffer);
 #endif /* HAVE_DNSTAP */
 
+		isc_nmhandle_ref(client->handle);
 		ns_query_start(client);
 		break;
 	case dns_opcode_update:
@@ -2242,11 +2247,13 @@ ns__client_request(isc_nmhandle_t *handle, isc_region_t *region, void *arg) {
 			    &client->requesttime, NULL, buffer);
 #endif /* HAVE_DNSTAP */
 		ns_client_settimeout(client, 60);
+		isc_nmhandle_ref(client->handle);
 		ns_update_start(client, sigresult);
 		break;
 	case dns_opcode_notify:
 		CTRACE("notify");
 		ns_client_settimeout(client, 60);
+		isc_nmhandle_ref(client->handle);
 		ns_notify_start(client);
 		break;
 	case dns_opcode_iquery:
@@ -2257,6 +2264,7 @@ ns__client_request(isc_nmhandle_t *handle, isc_region_t *region, void *arg) {
 		CTRACE("unknown opcode");
 		ns_client_error(client, DNS_R_NOTIMP);
 	}
+
 	isc_task_unpause(client->task);
 }
 

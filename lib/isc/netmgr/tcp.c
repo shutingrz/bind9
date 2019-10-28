@@ -514,9 +514,14 @@ isc__nm_async_tcpsend(isc__networker_t *worker, isc__netievent_t *ievent0) {
 
 	REQUIRE(worker->id == ievent->sock->tid);
 
+	if (!atomic_load(&ievent->sock->active)) {
+		return;
+	}
+
 	result = tcp_send_direct(ievent->sock, ievent->req);
 	if (result != ISC_R_SUCCESS) {
-		ievent->req->cb.send(NULL, result, ievent->req->cbarg);
+		ievent->req->cb.send(ievent->req->handle,
+				     result, ievent->req->cbarg);
 		isc__nm_uvreq_put(&ievent->req, ievent->req->handle->sock);
 	}
 }

@@ -1210,7 +1210,6 @@ xfrout_ctx_create(isc_mem_t *mctx, ns_client_t *client, unsigned int id,
 	xfr->mctx = NULL;
 	isc_mem_attach(mctx, &xfr->mctx);
 	xfr->client = client;
-	isc_nmhandle_ref(client->handle);
 	xfr->id = id;
 	xfr->qname = qname;
 	xfr->qtype = qtype;
@@ -1561,6 +1560,7 @@ sendstream(xfrout_ctx_t *xfr) {
 		xfrout_log(xfr, ISC_LOG_DEBUG(8), "sending IXFR UDP response");
 		ns_client_send(xfr->client);
 		xfr->stream->methods->pause(xfr->stream);
+		isc_nmhandle_unref(xfr->client->handle);
 		xfrout_ctx_destroy(&xfr);
 		return;
 	}
@@ -1627,7 +1627,6 @@ xfrout_ctx_destroy(xfrout_ctx_t **xfrp) {
 	if (xfr->db != NULL)
 		dns_db_detach(&xfr->db);
 
-	isc_nmhandle_unref(xfr->client->handle);
 	isc_mem_putanddetach(&xfr->mctx, xfr, sizeof(*xfr));
 
 	*xfrp = NULL;
@@ -1639,7 +1638,7 @@ xfrout_senddone(isc_nmhandle_t *handle, isc_result_t result, void *arg) {
 
 	REQUIRE((xfr->client->attributes & NS_CLIENTATTR_TCP) != 0);
 
-	UNUSED(handle);
+	INSIST(handle == xfr->client->handle);
 
 	xfr->sends--;
 	INSIST(xfr->sends == 0);
@@ -1663,6 +1662,8 @@ xfrout_senddone(isc_nmhandle_t *handle, isc_result_t result, void *arg) {
 		xfrout_fail(xfr, result, "send");
 	} else if (xfr->end_of_stream == false) {
 		sendstream(xfr);
+		/* Return now so we don't unref the handle */
+		return;
 	} else {
 		/* End of zone transfer stream. */
 		uint64_t msecs, persec;
@@ -1687,9 +1688,10 @@ xfrout_senddone(isc_nmhandle_t *handle, isc_result_t result, void *arg) {
 			   (unsigned int) (msecs % 1000),
 			   (unsigned int) persec);
 
-		ns_client_drop(xfr->client, ISC_R_SUCCESS);
 		xfrout_ctx_destroy(&xfr);
 	}
+
+	isc_nmhandle_unref(handle);
 }
 
 static void
@@ -1712,6 +1714,7 @@ xfrout_maybe_destroy(xfrout_ctx_t *xfr) {
 				  ISC_SOCKCANCEL_SEND);
 	} else {
 		ns_client_drop(xfr->client, ISC_R_CANCELED);
+		isc_nmhandle_unref(xfr->client->handle);
 		xfrout_ctx_destroy(&xfr);
 	}
 }

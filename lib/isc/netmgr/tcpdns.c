@@ -146,8 +146,13 @@ dnslisten_readcb(isc_nmhandle_t *handle, isc_region_t *region, void *arg) {
 			dnshandle = isc__nmhandle_get(dnssock, NULL);
 			atomic_store(&dnssock->processing, true);
 			dnssock->rcb.recv(dnshandle, &r2, dnssock->rcbarg);
-			isc_nmhandle_unref(dnshandle);
 			dnssock->buf_len = 0;
+
+			/*
+			 * If the recv callback wants to hold on to the
+			 * handle, it needs to attach to it.
+			 */
+			isc_nmhandle_unref(dnshandle);
 		} else {
 			/*
 			 * If we don't have the whole packet make sure
@@ -177,6 +182,11 @@ dnslisten_readcb(isc_nmhandle_t *handle, isc_region_t *region, void *arg) {
 		dnshandle = isc__nmhandle_get(dnssock, NULL);
 		atomic_store(&dnssock->processing, true);
 		dnssock->rcb.recv(dnshandle, &r2, dnssock->rcbarg);
+
+		/*
+		 * If the recv callback wants to hold on to the
+		 * handle, it needs to attach to it.
+		 */
 		isc_nmhandle_unref(dnshandle);
 	}
 
@@ -214,6 +224,11 @@ processbuffer(isc_nmsocket_t *dnssock) {
 		dnshandle = isc__nmhandle_get(dnssock, NULL);
 		atomic_store(&dnssock->processing, true);
 		dnssock->rcb.recv(dnshandle, &r2, dnssock->rcbarg);
+
+		/*
+		 * If the recv callback wants to hold on to the
+		 * handle, it needs to attach to it.
+		 */
 		isc_nmhandle_unref(dnshandle);
 
 		len = dnslen(dnssock->buf) + 2;
@@ -331,6 +346,7 @@ tcpdnssend_cb(isc_nmhandle_t *handle, isc_result_t result, void *cbarg) {
 	isc_nmhandle_unref(ts->orighandle);
 	isc_mem_putanddetach(&ts->mctx, ts, sizeof(*ts));
 }
+
 /*
  * isc__nm_tcp_send sends buf to a peer on a socket.
  */

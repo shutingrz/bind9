@@ -196,7 +196,6 @@ isc__nm_async_udpstoplisten(isc__networker_t *worker,
 	BROADCAST(&sock->parent->cond);
 }
 
-
 /*
  * udp_recv_cb handles incoming UDP packet from uv.
  * The buffer here is reused for a series of packets,
@@ -238,7 +237,10 @@ udp_recv_cb(uv_udp_t *handle, ssize_t nrecv, const uv_buf_t *buf,
 	sock->rcb.recv(nmhandle, &region, sock->rcbarg);
 	isc__nm_free_uvbuf(sock, buf);
 
-	/* If recv callback wants it it should attach to it */
+	/*
+	 * If the recv callback wants to hold on to the handle,
+	 * it needs to attach to it.
+	 */
 	isc_nmhandle_unref(nmhandle);
 }
 
@@ -317,7 +319,13 @@ isc__nm_async_udpsend(isc__networker_t *worker, isc__netievent_t *ievent0) {
 
 	REQUIRE(worker->id == ievent->sock->tid);
 
-	udp_send_direct(ievent->sock, ievent->req, &ievent->peer);
+	if (atomic_load(&ievent->sock->active)) {
+		udp_send_direct(ievent->sock, ievent->req, &ievent->peer);
+	} else {
+		ievent->req->cb.send(ievent->req->handle,
+				     ISC_R_CANCELED, ievent->req->cbarg);
+		isc__nm_uvreq_put(&ievent->req, ievent->req->sock);
+	}
 }
 
 /*
@@ -336,6 +344,7 @@ udp_send_cb(uv_udp_send_t *req, int status) {
 	}
 
 	uvreq->cb.send(uvreq->handle, result, uvreq->cbarg);
+	isc_nmhandle_unref(uvreq->handle);
 	isc__nm_uvreq_put(&uvreq, uvreq->sock);
 }
 
@@ -352,6 +361,7 @@ udp_send_direct(isc_nmsocket_t *sock, isc__nm_uvreq_t *req,
 	REQUIRE(sock->tid == isc_nm_tid());
 	REQUIRE(sock->type == isc_nm_udpsocket);
 
+	isc_nmhandle_ref(req->handle);
 	rv = uv_udp_send(&req->uv_req.udp_send,
 			 &sock->uv_handle.udp, &req->uvbuf, 1,
 			 &peer->type.sa, udp_send_cb);
