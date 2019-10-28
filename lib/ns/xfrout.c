@@ -1209,8 +1209,8 @@ xfrout_ctx_create(isc_mem_t *mctx, ns_client_t *client, unsigned int id,
 	xfr = isc_mem_get(mctx, sizeof(*xfr));
 	xfr->mctx = NULL;
 	isc_mem_attach(mctx, &xfr->mctx);
-	xfr->client = NULL;
-	ns_client_attach(client, &xfr->client);
+	xfr->client = client;
+	isc_nmhandle_ref(client->handle);
 	xfr->id = id;
 	xfr->qname = qname;
 	xfr->qtype = qtype;
@@ -1604,7 +1604,6 @@ sendstream(xfrout_ctx_t *xfr) {
 static void
 xfrout_ctx_destroy(xfrout_ctx_t **xfrp) {
 	xfrout_ctx_t *xfr = *xfrp;
-	ns_client_t *client = NULL;
 
 	INSIST(xfr->sends == 0);
 
@@ -1628,14 +1627,8 @@ xfrout_ctx_destroy(xfrout_ctx_t **xfrp) {
 	if (xfr->db != NULL)
 		dns_db_detach(&xfr->db);
 
-	/*
-	 * We want to detch the client after we have released the memory
-	 * context as ns_client_detach checks the memory reference count.
-	 */
-	ns_client_attach(xfr->client, &client);
-	ns_client_detach(&xfr->client);
+	isc_nmhandle_unref(xfr->client->handle);
 	isc_mem_putanddetach(&xfr->mctx, xfr, sizeof(*xfr));
-	ns_client_detach(&client);
 
 	*xfrp = NULL;
 }

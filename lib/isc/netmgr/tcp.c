@@ -462,7 +462,8 @@ isc__nm_tcp_send(isc_nmhandle_t *handle, isc_region_t *region,
 	uvreq = isc__nm_uvreq_get(sock->mgr, sock);
 	uvreq->uvbuf.base = (char *) region->base;
 	uvreq->uvbuf.len = region->length;
-	isc_nmhandle_attach(handle, &uvreq->handle);
+	uvreq->handle = handle;
+	isc_nmhandle_ref(uvreq->handle);
 	uvreq->cb.send = cb;
 	uvreq->cbarg = cbarg;
 

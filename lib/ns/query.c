@@ -2476,7 +2476,7 @@ prefetch_done(isc_task_t *task, isc_event_t *event) {
 	UNLOCK(&client->query.fetchlock);
 
 	free_devent(client, &event, &devent);
-	isc_nmhandle_detach(&client->cont_handle);
+	isc_nmhandle_unref(client->handle);
 }
 
 static void
@@ -2517,7 +2517,7 @@ query_prefetch(ns_client_t *client, dns_name_t *qname,
 		peeraddr = NULL;
 	}
 
-	isc_nmhandle_attach(client->handle, &client->cont_handle);
+	isc_nmhandle_ref(client->handle);
 	options = client->query.fetchoptions | DNS_FETCHOPT_PREFETCH;
 	result = dns_resolver_createfetch(client->view->resolver,
 					  qname, rdataset->type, NULL, NULL,
@@ -2528,7 +2528,7 @@ query_prefetch(ns_client_t *client, dns_name_t *qname,
 					  &client->query.prefetch);
 	if (result != ISC_R_SUCCESS) {
 		ns_client_putrdataset(client, &tmprdataset);
-		isc_nmhandle_detach(&client->cont_handle);
+		isc_nmhandle_unref(client->handle);
 	}
 
 	dns_rdataset_clearprefetch(rdataset);
@@ -2728,7 +2728,7 @@ query_rpzfetch(ns_client_t *client, dns_name_t *qname, dns_rdatatype_t type) {
 	}
 
 	options = client->query.fetchoptions;
-	isc_nmhandle_attach(client->handle, &client->cont_handle);
+	isc_nmhandle_ref(client->handle);
 	result = dns_resolver_createfetch(client->view->resolver, qname, type,
 					  NULL, NULL, NULL, peeraddr,
 					  client->message->id, options, 0,
@@ -2737,7 +2737,7 @@ query_rpzfetch(ns_client_t *client, dns_name_t *qname, dns_rdatatype_t type) {
 					  &client->query.prefetch);
 	if (result != ISC_R_SUCCESS) {
 		ns_client_putrdataset(client, &tmprdataset);
-		isc_nmhandle_detach(&client->cont_handle);
+		isc_nmhandle_unref(client->handle);
 	}
 }
 
@@ -5009,12 +5009,12 @@ qctx_init(ns_client_t *client, dns_fetchevent_t *event,
 	qctx->client = client;
 
 	/*
-	 * We need to keep the handle to make sure it won't
-	 * get freed (along with client) before we're done -
+	 * We need to bump the reference counter on the handle to ensure
+	 * it won't get freed (along with client) before we're done -
 	 * this could happen if client_senddone is faster than us.
 	 */
 	if (client->handle != NULL) {
-		isc_nmhandle_attach(client->handle, &qctx->handle);
+		isc_nmhandle_ref(client->handle);
 	}
 	dns_view_attach(client->view, &qctx->view);
 
@@ -5093,12 +5093,6 @@ qctx_destroy(query_ctx_t *qctx) {
 	CALL_HOOK_NORETURN(NS_QUERY_QCTX_DESTROYED, qctx);
 
 	dns_view_detach(&qctx->view);
-	if (qctx->detach_client) {
-		ns_client_detach(&qctx->client);
-	}
-	if (qctx->handle != NULL) {
-		isc_nmhandle_detach(&qctx->handle);
-	}
 }
 
 /*%
@@ -5626,7 +5620,7 @@ fetch_callback(isc_task_t *task, isc_event_t *event) {
 
 	if (ZEROTTL_REFETCH(client)) {
 		client->query.attributes &= ~NS_QUERYATTR_ZEROTTL_REFETCH;
-		isc_nmhandle_detach(&client->cont_handle);
+		isc_nmhandle_unref(client->handle);
 	}
 
 	client->query.attributes &= ~NS_QUERYATTR_RECURSING;
@@ -5646,9 +5640,9 @@ fetch_callback(isc_task_t *task, isc_event_t *event) {
 			query_next(client, ISC_R_CANCELED);
 		}
 		/*
-		 * This may destroy the client.
+		 * This may trigger destruction of the client.
 		 */
-		ns_client_detach(&client);
+		isc_nmhandle_unref(client->handle);
 	} else {
 		query_ctx_t qctx;
 
@@ -9458,8 +9452,7 @@ query_zerottl_refetch(query_ctx_t *qctx) {
 
 	INSIST(!REDIRECT(qctx->client));
 
-	isc_nmhandle_attach(qctx->client->handle,
-			    &qctx->client->cont_handle);
+	isc_nmhandle_ref(qctx->client->handle);
 	result = ns_query_recurse(qctx->client, qctx->qtype,
 				  qctx->client->query.qname,
 				  NULL, NULL, qctx->resuming);
@@ -9477,7 +9470,7 @@ query_zerottl_refetch(query_ctx_t *qctx) {
 				NS_QUERYATTR_DNS64EXCLUDE;
 		}
 	} else {
-		isc_nmhandle_detach(&qctx->client->cont_handle);
+		isc_nmhandle_unref(qctx->client->handle);
 		QUERY_ERROR(qctx, result);
 	}
 
@@ -10988,7 +10981,6 @@ ns_query_start(ns_client_t *client) {
 	isc_result_t result;
 	dns_message_t *message;
 	dns_rdataset_t *rdataset;
-	ns_client_t *qclient = NULL;
 	dns_rdatatype_t qtype;
 	unsigned int saved_extflags;
 	unsigned int saved_flags;
@@ -11212,6 +11204,5 @@ ns_query_start(ns_client_t *client) {
 	if (WANTDNSSEC(client) || WANTAD(client))
 		message->flags |= DNS_MESSAGEFLAG_AD;
 
-	ns_client_attach(client, &qclient);
-	(void)query_setup(qclient, qtype);
+	(void)query_setup(client, qtype);
 }

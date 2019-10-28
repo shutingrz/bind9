@@ -260,9 +260,6 @@ ns_client_endrequest(ns_client_t *client) {
 				   ns_statscounter_recursclients);
 	}
 
-	if (client->handle != NULL) {
-		isc_nmhandle_detach(&client->handle);
-	}
 	/*
 	 * Clear all client attributes that are specific to
 	 * the request
@@ -292,7 +289,7 @@ ns_client_drop(ns_client_t *client, isc_result_t result) {
 			      NS_LOGMODULE_CLIENT, ISC_LOG_DEBUG(3),
 			      "request failed: %s", isc_result_totext(result));
 	}
-	isc_nmhandle_detach(&client->handle);
+	isc_nmhandle_unref(client->handle);
 }
 
 static void
@@ -303,7 +300,7 @@ client_senddone(isc_nmhandle_t *handle, isc_result_t result, void *cbarg) {
 
 	UNUSED(result);
 
-	isc_nmhandle_detach(&client->handle);
+	isc_nmhandle_unref(client->handle);
 }
 
 /*%
@@ -1595,10 +1592,6 @@ client_put_cb(void *client0) {
 	client->magic = 0;
 	client->shuttingdown = true;
 
-	if (client->handle != NULL) {
-		isc_nmhandle_detach(&client->handle);
-	}
-
 	if (client->manager != NULL) {
 		clientmgr_detach(&client->manager);
 	}
@@ -1698,7 +1691,6 @@ ns__client_request(isc_nmhandle_t *handle, isc_region_t *region, void *arg) {
 		INSIST(client->recursionquota == NULL);
 
 		client->dscp = ifp->dscp;
-		isc_refcount_increment0(&client->references);
 
 		ns_client_log(client, DNS_LOGCATEGORY_SECURITY,
 			      NS_LOGMODULE_CLIENT, ISC_LOG_DEBUG(3),
@@ -1709,11 +1701,12 @@ ns__client_request(isc_nmhandle_t *handle, isc_region_t *region, void *arg) {
 	if (client->handle == NULL) {
 		isc_nmhandle_setdata(handle, client,
 				     client_reset_cb, client_put_cb);
-		isc_nmhandle_attach(handle, &client->handle);
+		client->handle = handle;
 	}
 	if (isc_nmhandle_is_stream(handle)) {
 		client->attributes |= NS_CLIENTATTR_TCP;
 	}
+	isc_nmhandle_ref(client->handle);
 
 	INSIST(client->recursionquota == NULL);
 
@@ -1745,7 +1738,7 @@ ns__client_request(isc_nmhandle_t *handle, isc_region_t *region, void *arg) {
 		ns_client_log(client, DNS_LOGCATEGORY_SECURITY,
 			      NS_LOGMODULE_CLIENT, ISC_LOG_DEBUG(10),
 			      "dropped request: suspicious port");
-		isc_nmhandle_detach(&client->handle);
+		isc_nmhandle_unref(client->handle);
 		isc_task_unpause(client->task);
 		return;
 	}
@@ -1770,7 +1763,7 @@ ns__client_request(isc_nmhandle_t *handle, isc_region_t *region, void *arg) {
 			ns_client_log(client, DNS_LOGCATEGORY_SECURITY,
 				      NS_LOGMODULE_CLIENT, ISC_LOG_DEBUG(10),
 				      "blackholed UDP datagram");
-			isc_nmhandle_detach(&client->handle);
+			isc_nmhandle_unref(client->handle);
 			isc_task_unpause(client->task);
 			return;
 		}
@@ -1782,7 +1775,7 @@ ns__client_request(isc_nmhandle_t *handle, isc_region_t *region, void *arg) {
 		 * There isn't enough header to determine whether
 		 * this was a request or a response.  Drop it.
 		 */
-		isc_nmhandle_detach(&client->handle);
+		isc_nmhandle_unref(client->handle);
 		isc_task_unpause(client->task);
 		return;
 	}
@@ -1794,7 +1787,7 @@ ns__client_request(isc_nmhandle_t *handle, isc_region_t *region, void *arg) {
 	 */
 	if ((flags & DNS_MESSAGEFLAG_QR) != 0) {
 		CTRACE("unexpected response");
-		isc_nmhandle_detach(&client->handle);
+		isc_nmhandle_unref(client->handle);
 		isc_task_unpause(client->task);
 		return;
 	}
@@ -2344,13 +2337,11 @@ client_setup(ns_clientmgr_t *manager, isc_mem_t *mctx, ns_client_t *client) {
 	client->nrecvs = 0;
 	client->nupdates = 0;
 	client->nctls = 0;
-	isc_refcount_init(&client->references, 0);
 	client->attributes = 0;
 	client->view = NULL;
 	client->dispatch = NULL;
 	client->udpsocket = NULL;
 	client->handle = NULL;
-	client->cont_handle = NULL;
 	client->tcplistener = NULL;
 	client->tcpsocket = NULL;
 	client->tcpbuf = NULL;
@@ -2409,38 +2400,6 @@ client_setup(ns_clientmgr_t *manager, isc_mem_t *mctx, ns_client_t *client) {
 		isc_task_detach(&client->task);
 	}
 	return (result);
-}
-
-void
-ns_client_attach(ns_client_t *source, ns_client_t **targetp) {
-	uint32_t oldrefs;
-	REQUIRE(NS_CLIENT_VALID(source));
-	REQUIRE(targetp != NULL && *targetp == NULL);
-
-	oldrefs = isc_refcount_increment(&source->references);
-	ns_client_log(source, NS_LOGCATEGORY_CLIENT,
-		      NS_LOGMODULE_CLIENT, ISC_LOG_DEBUG(10),
-		      "ns_client_attach: ref = %d", oldrefs + 1);
-
-	*targetp = source;
-}
-
-void
-ns_client_detach(ns_client_t **clientp) {
-	int32_t oldrefs;
-	ns_client_t *client = *clientp;
-	oldrefs = isc_refcount_decrement(&client->references);
-	INSIST(oldrefs > 0);
-
-	ns_client_log(client, NS_LOGCATEGORY_CLIENT,
-		      NS_LOGMODULE_CLIENT, ISC_LOG_DEBUG(10),
-		      "ns_client_detach: ref = %d", oldrefs - 1);
-
-	if (oldrefs == 1 && client->handle != NULL) {
-		isc_nmhandle_detach(&client->handle);
-	}
-
-	*clientp = NULL;
 }
 
 bool

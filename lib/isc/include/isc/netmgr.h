@@ -79,10 +79,21 @@ isc_nmsocket_detach(isc_nmsocket_t **socketp);
  */
 
 void
-isc_nmhandle_attach(isc_nmhandle_t *handle, isc_nmhandle_t **handlep);
-
+isc_nmhandle_ref(isc_nmhandle_t *handle);
 void
-isc_nmhandle_detach(isc_nmhandle_t **handlep);
+isc_nmhandle_unref(isc_nmhandle_t *handle);
+/*%<
+ * Increment/decrement the reference counter in a netmgr handle,
+ * but (unlike the attach/detach functions) do not change the pointer
+ * value. If reference counters drop to zero, the handle can be
+ * marked inactive, possibly triggering deletion of its associated
+ * socket.
+ *
+ * (This will be used to prevent a client from being cleaned up when
+ * it's passed to an isc_task event handler. The libuv code would not
+ * otherwise know that the handle was in use and might free it, along
+ * with the client.)
+ */
 
 void *
 isc_nmhandle_getdata(isc_nmhandle_t *handle);

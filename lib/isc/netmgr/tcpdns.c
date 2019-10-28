@@ -146,7 +146,7 @@ dnslisten_readcb(isc_nmhandle_t *handle, isc_region_t *region, void *arg) {
 			dnshandle = isc__nmhandle_get(dnssock, NULL);
 			atomic_store(&dnssock->processing, true);
 			dnssock->rcb.recv(dnshandle, &r2, dnssock->rcbarg);
-			isc_nmhandle_detach(&dnshandle);
+			isc_nmhandle_unref(dnshandle);
 			dnssock->buf_len = 0;
 		} else {
 			/*
@@ -177,7 +177,7 @@ dnslisten_readcb(isc_nmhandle_t *handle, isc_region_t *region, void *arg) {
 		dnshandle = isc__nmhandle_get(dnssock, NULL);
 		atomic_store(&dnssock->processing, true);
 		dnssock->rcb.recv(dnshandle, &r2, dnssock->rcbarg);
-		isc_nmhandle_detach(&dnshandle);
+		isc_nmhandle_unref(dnshandle);
 	}
 
 	/*
@@ -214,7 +214,7 @@ processbuffer(isc_nmsocket_t *dnssock) {
 		dnshandle = isc__nmhandle_get(dnssock, NULL);
 		atomic_store(&dnssock->processing, true);
 		dnssock->rcb.recv(dnshandle, &r2, dnssock->rcbarg);
-		isc_nmhandle_detach(&dnshandle);
+		isc_nmhandle_unref(dnshandle);
 
 		len = dnslen(dnssock->buf) + 2;
 		dnssock->buf_len -= len;
@@ -328,7 +328,7 @@ tcpdnssend_cb(isc_nmhandle_t *handle, isc_result_t result, void *cbarg) {
 		isc_nm_resumeread(handle->sock);
 	}
 
-	isc_nmhandle_detach(&ts->orighandle);
+	isc_nmhandle_unref(ts->orighandle);
 	isc_mem_putanddetach(&ts->mctx, ts, sizeof(*ts));
 }
 /*
@@ -361,7 +361,8 @@ isc__nm_tcpdns_send(isc_nmhandle_t *handle, isc_region_t *region,
 	};
 
 	isc_mem_attach(sock->mgr->mctx, &t->mctx);
-	isc_nmhandle_attach(handle, &t->orighandle);
+	t->orighandle = handle;
+	isc_nmhandle_ref(t->orighandle);
 
 	t->region = (isc_region_t) {
 		.base = isc_mem_get(t->mctx, region->length + 2),

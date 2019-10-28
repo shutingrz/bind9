@@ -239,7 +239,7 @@ udp_recv_cb(uv_udp_t *handle, ssize_t nrecv, const uv_buf_t *buf,
 	isc__nm_free_uvbuf(sock, buf);
 
 	/* If recv callback wants it it should attach to it */
-	isc_nmhandle_detach(&nmhandle);
+	isc_nmhandle_unref(nmhandle);
 }
 
 /*
@@ -279,7 +279,8 @@ isc__nm_udp_send(isc_nmhandle_t *handle, isc_region_t *region,
 	uvreq->uvbuf.base = (char *) region->base;
 	uvreq->uvbuf.len = region->length;
 
-	isc_nmhandle_attach(handle, &uvreq->handle);
+	uvreq->handle = handle;
+	isc_nmhandle_ref(uvreq->handle);
 
 	uvreq->cb.send = cb;
 	uvreq->cbarg = cbarg;

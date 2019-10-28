@@ -782,14 +782,14 @@ ns_test_qctx_create(const ns_test_qctx_create_params_t *params,
 	 * Reference count for "client" is now at 2, so decrement it in order
 	 * for it to drop to zero when "qctx" gets destroyed.
 	 */
-	ns_client_detach(&client);
+	//ns_client_detach(&client);
 
 	return (ISC_R_SUCCESS);
 
 destroy_query:
 	dns_message_destroy(&client->message);
 detach_client:
-	ns_client_detach(&client);
+	//ns_client_detach(&client);
 
 	return (result);
 }
@@ -803,7 +803,7 @@ ns_test_qctx_destroy(query_ctx_t **qctxp) {
 
 	qctx = *qctxp;
 
-	ns_client_detach(&qctx->client);
+	//ns_client_detach(&qctx->client);
 
 	if (qctx->zone != NULL) {
 		dns_zone_detach(&qctx->zone);

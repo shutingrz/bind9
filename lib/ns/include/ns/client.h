@@ -147,7 +147,6 @@ struct ns_client {
 	int			nrecvs;
 	int			nupdates;
 	int			nctls;
-	isc_refcount_t		references;
 	bool			tcpactive;
 	bool			shuttingdown;
 	bool			needshutdown; 	/*
@@ -162,7 +161,6 @@ struct ns_client {
 	dns_view_t		*view;
 	dns_dispatch_t		*dispatch;
 	isc_nmhandle_t		*handle;
-	isc_nmhandle_t		*cont_handle;
 	isc_socket_t		*udpsocket;
 	isc_socket_t		*tcplistener;
 	isc_socket_t		*tcpsocket;
@@ -302,18 +300,6 @@ bool
 ns_client_shuttingdown(ns_client_t *client);
 /*%<
  * Return true iff the client is currently shutting down.
- */
-
-void
-ns_client_attach(ns_client_t *source, ns_client_t **target);
-/*%<
- * Attach '*targetp' to 'source'.
- */
-
-void
-ns_client_detach(ns_client_t **clientp);
-/*%<
- * Detach '*clientp' from its client.
  */
 
 isc_result_t

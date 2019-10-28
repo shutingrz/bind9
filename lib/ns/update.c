@@ -1529,7 +1529,6 @@ send_update_event(ns_client_t *client, dns_zone_t *zone) {
 	isc_result_t result = ISC_R_SUCCESS;
 	update_event_t *event = NULL;
 	isc_task_t *zonetask = NULL;
-	ns_client_t *evclient;
 
 	event = (update_event_t *)
 		isc_event_allocate(client->mctx, client, DNS_EVENT_UPDATE,
@@ -1537,11 +1536,10 @@ send_update_event(ns_client_t *client, dns_zone_t *zone) {
 	event->zone = zone;
 	event->result = ISC_R_SUCCESS;
 
-	evclient = NULL;
-	ns_client_attach(client, &evclient);
+	isc_nmhandle_ref(client->handle);
 	INSIST(client->nupdates == 0);
 	client->nupdates++;
-	event->ev_arg = evclient;
+	event->ev_arg = client;
 
 	dns_zone_gettask(zone, &zonetask);
 	isc_task_send(zonetask, ISC_EVENT_PTR(&event));
@@ -3390,7 +3388,7 @@ updatedone_action(isc_task_t *task, isc_event_t *event) {
 	client->nupdates--;
 	respond(client, uev->result);
 	isc_event_free(&event);
-	ns_client_detach(&client);
+	isc_nmhandle_unref(client->handle);
 }
 
 /*%
@@ -3407,7 +3405,7 @@ forward_fail(isc_task_t *task, isc_event_t *event) {
 	client->nupdates--;
 	respond(client, DNS_R_SERVFAIL);
 	isc_event_free(&event);
-	ns_client_detach(&client);
+	isc_nmhandle_unref(client->handle);
 }
 
 static void
@@ -3443,7 +3441,7 @@ forward_done(isc_task_t *task, isc_event_t *event) {
 	ns_client_sendraw(client, uev->answer);
 	dns_message_destroy(&uev->answer);
 	isc_event_free(&event);
-	ns_client_detach(&client);
+	isc_nmhandle_unref(client->handle);
 }
 
 static void
@@ -3473,7 +3471,6 @@ send_forward_event(ns_client_t *client, dns_zone_t *zone) {
 	isc_result_t result = ISC_R_SUCCESS;
 	update_event_t *event = NULL;
 	isc_task_t *zonetask = NULL;
-	ns_client_t *evclient;
 
 	event = (update_event_t *)
 		isc_event_allocate(client->mctx, client, DNS_EVENT_UPDATE,
@@ -3481,11 +3478,10 @@ send_forward_event(ns_client_t *client, dns_zone_t *zone) {
 	event->zone = zone;
 	event->result = ISC_R_SUCCESS;
 
-	evclient = NULL;
-	ns_client_attach(client, &evclient);
+	isc_nmhandle_ref(client->handle);
 	INSIST(client->nupdates == 0);
 	client->nupdates++;
-	event->ev_arg = evclient;
+	event->ev_arg = client;
 
 	dns_name_format(dns_zone_getorigin(zone), namebuf,
 			sizeof(namebuf));

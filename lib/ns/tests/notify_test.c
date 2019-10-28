@@ -136,8 +136,7 @@ notify_start(void **state) {
 	 * Clean up
 	 */
 	ns_test_cleanup_zone();
-
-	ns_client_detach(&client);
+	isc_nmhandle_unref(client->handle);
 }
 
 int
