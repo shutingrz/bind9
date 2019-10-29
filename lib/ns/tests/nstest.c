@@ -157,7 +157,7 @@ cleanup_managers(void) {
 		isc_socketmgr_destroy(&socketmgr);
 	}
 	if (nm != NULL ){
-		isc_nm_shutdown(&nm);
+		isc_nm_detach(&nm);
 	}
 	if (taskmgr != NULL) {
 		isc_taskmgr_destroy(&taskmgr);

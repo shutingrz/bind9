@@ -137,25 +137,6 @@ nm_destroy(isc_nm_t **mgr0) {
 	isc_nm_t *mgr = *mgr0;
 
 	for (size_t i = 0; i < mgr->nworkers; i++) {
-		isc_queue_destroy(mgr->workers[i].ievents);
-		isc_mempool_destroy(&mgr->workers[i].mpool_bufs);
-	}
-
-	isc_condition_destroy(&mgr->wkstatecond);
-	isc_mutex_destroy(&mgr->lock);
-	isc_mem_put(mgr->mctx, mgr->workers,
-		    mgr->nworkers * sizeof(isc__networker_t));
-	isc_mem_putanddetach(&mgr->mctx, mgr, sizeof(*mgr));
-	*mgr0 = NULL;
-}
-
-void
-isc_nm_shutdown(isc_nm_t **mgr0) {
-	REQUIRE(VALID_NM(*mgr0));
-
-	isc_nm_t *mgr = *mgr0;
-
-	for (size_t i = 0; i < mgr->nworkers; i++) {
 		LOCK(&mgr->workers[i].lock);
 		mgr->workers[i].finished = true;
 		UNLOCK(&mgr->workers[i].lock);
@@ -170,7 +151,17 @@ isc_nm_shutdown(isc_nm_t **mgr0) {
 	}
 	UNLOCK(&mgr->lock);
 
-	isc_nm_detach(mgr0);
+	for (size_t i = 0; i < mgr->nworkers; i++) {
+		isc_queue_destroy(mgr->workers[i].ievents);
+		isc_mempool_destroy(&mgr->workers[i].mpool_bufs);
+	}
+
+	isc_condition_destroy(&mgr->wkstatecond);
+	isc_mutex_destroy(&mgr->lock);
+	isc_mem_put(mgr->mctx, mgr->workers,
+		    mgr->nworkers * sizeof(isc__networker_t));
+	isc_mem_putanddetach(&mgr->mctx, mgr, sizeof(*mgr));
+	*mgr0 = NULL;
 }
 
 void

@@ -923,7 +923,7 @@ destroy_managers(void) {
 	isc_taskmgr_destroy(&named_g_taskmgr);
 	isc_timermgr_destroy(&named_g_timermgr);
 	isc_socketmgr_destroy(&named_g_socketmgr);
-	isc_nm_shutdown(&named_g_nm);
+	isc_nm_detach(&named_g_nm);
 }
 
 static void
