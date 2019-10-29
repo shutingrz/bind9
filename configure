@@ -747,6 +747,8 @@ OPENSSL_LIBS
 OPENSSL_CFLAGS
 INSTALL_LIBRARY
 ALWAYS_DEFINES
+LIBUV_LIBS
+LIBUV_CFLAGS
 PTHREAD_CFLAGS
 PTHREAD_LIBS
 PTHREAD_CC
@@ -968,6 +970,8 @@ PKG_CONFIG_LIBDIR
 MAXMINDDB_CFLAGS
 MAXMINDDB_LIBS
 MAXMINDDB_PREFIX
+LIBUV_CFLAGS
+LIBUV_LIBS
 OPENSSL_CFLAGS
 OPENSSL_LIBS
 LIBXML2_CFLAGS
@@ -1738,6 +1742,9 @@ Some influential environment variables:
               linker flags for MAXMINDDB, overriding pkg-config
   MAXMINDDB_PREFIX
               value of prefix for libmaxminddb, overriding pkg-config
+  LIBUV_CFLAGS
+              C compiler flags for LIBUV, overriding pkg-config
+  LIBUV_LIBS  linker flags for LIBUV, overriding pkg-config
   OPENSSL_CFLAGS
               C compiler flags for OPENSSL, overriding pkg-config
   OPENSSL_LIBS
@@ -15781,64 +15788,150 @@ done
 
 
 # libuv
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing uv_run" >&5
-$as_echo_n "checking for library containing uv_run... " >&6; }
-if ${ac_cv_search_uv_run+:} false; then :
-  $as_echo_n "(cached) " >&6
+
+pkg_failed=no
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for libuv >= 1.0.0" >&5
+$as_echo_n "checking for libuv >= 1.0.0... " >&6; }
+
+if test -n "$LIBUV_CFLAGS"; then
+    pkg_cv_LIBUV_CFLAGS="$LIBUV_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"libuv >= 1.0.0\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "libuv >= 1.0.0") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_LIBUV_CFLAGS=`$PKG_CONFIG --cflags "libuv >= 1.0.0" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
 else
-  ac_func_search_save_LIBS=$LIBS
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char uv_run ();
-int
-main ()
-{
-return uv_run ();
-  ;
-  return 0;
-}
-_ACEOF
-for ac_lib in '' uv; do
-  if test -z "$ac_lib"; then
-    ac_res="none required"
-  else
-    ac_res=-l$ac_lib
-    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
-  fi
-  if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_search_uv_run=$ac_res
+  pkg_failed=yes
 fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext
-  if ${ac_cv_search_uv_run+:} false; then :
-  break
+ else
+    pkg_failed=untried
 fi
-done
-if ${ac_cv_search_uv_run+:} false; then :
-
+if test -n "$LIBUV_LIBS"; then
+    pkg_cv_LIBUV_LIBS="$LIBUV_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"libuv >= 1.0.0\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "libuv >= 1.0.0") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_LIBUV_LIBS=`$PKG_CONFIG --libs "libuv >= 1.0.0" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
 else
-  ac_cv_search_uv_run=no
+  pkg_failed=yes
 fi
-rm conftest.$ac_ext
-LIBS=$ac_func_search_save_LIBS
+ else
+    pkg_failed=untried
 fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search_uv_run" >&5
-$as_echo "$ac_cv_search_uv_run" >&6; }
-ac_res=$ac_cv_search_uv_run
-if test "$ac_res" != no; then :
-  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
 
+
+
+if test $pkg_failed = yes; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
 else
-  as_fn_error $? "The uv library was not found. Please install libuv!" "$LINENO" 5
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        LIBUV_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "libuv >= 1.0.0" 2>&1`
+        else
+	        LIBUV_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "libuv >= 1.0.0" 2>&1`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$LIBUV_PKG_ERRORS" >&5
+
+	as_fn_error $? "The uv library was not found. Please install libuv!" "$LINENO" 5
+elif test $pkg_failed = untried; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+	as_fn_error $? "The uv library was not found. Please install libuv!" "$LINENO" 5
+else
+	LIBUV_CFLAGS=$pkg_cv_LIBUV_CFLAGS
+	LIBUV_LIBS=$pkg_cv_LIBUV_LIBS
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
 fi
 
+
+  CCASFLAGS_libuv_ax_save_flags=$CCASFLAGS
+
+
+
+  CFLAGS_libuv_ax_save_flags=$CFLAGS
+
+
+
+  CPPFLAGS_libuv_ax_save_flags=$CPPFLAGS
+
+
+
+  CXXFLAGS_libuv_ax_save_flags=$CXXFLAGS
+
+
+
+  ERLCFLAGS_libuv_ax_save_flags=$ERLCFLAGS
+
+
+
+  FCFLAGS_libuv_ax_save_flags=$FCFLAGS
+
+
+
+  FCLIBS_libuv_ax_save_flags=$FCLIBS
+
+
+
+  FFLAGS_libuv_ax_save_flags=$FFLAGS
+
+
+
+  FLIBS_libuv_ax_save_flags=$FLIBS
+
+
+
+  GCJFLAGS_libuv_ax_save_flags=$GCJFLAGS
+
+
+
+  JAVACFLAGS_libuv_ax_save_flags=$JAVACFLAGS
+
+
+
+  LDFLAGS_libuv_ax_save_flags=$LDFLAGS
+
+
+
+  LIBS_libuv_ax_save_flags=$LIBS
+
+
+
+  OBJCFLAGS_libuv_ax_save_flags=$OBJCFLAGS
+
+
+
+  OBJCXXFLAGS_libuv_ax_save_flags=$OBJCXXFLAGS
+
+
+
+  UPCFLAGS_libuv_ax_save_flags=$UPCFLAGS
+
+
+
+  VALAFLAGS_libuv_ax_save_flags=$VALAFLAGS
+
+
+
+
+CFLAGS="$CFLAGS $LIBUV_CFLAGS"
+LIBS="$LIBS $LIBUV_LIBS"
 
 #
 # flockfile is usually provided by pthreads

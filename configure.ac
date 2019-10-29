@@ -642,7 +642,12 @@ AC_CHECK_FUNCS([pthread_setname_np pthread_set_name_np])
 AC_CHECK_HEADERS([pthread_np.h], [], [], [#include <pthread.h>])
 
 # libuv
-AC_SEARCH_LIBS([uv_run], [uv], [], AC_MSG_ERROR([The uv library was not found. Please install libuv!]))
+PKG_CHECK_MODULES([LIBUV], [libuv >= 1.0.0], [],
+		  [AC_MSG_ERROR([The uv library was not found. Please install libuv!])])
+AX_SAVE_FLAGS([libuv])
+
+CFLAGS="$CFLAGS $LIBUV_CFLAGS"
+LIBS="$LIBS $LIBUV_LIBS"
 
 #
 # flockfile is usually provided by pthreads
