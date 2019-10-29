@@ -115,28 +115,17 @@ isc_nm_listenudp(isc_nm_t *mgr, isc_nmiface_t *iface,
 
 void
 isc_nm_udp_stoplistening(isc_nmsocket_t *sock) {
+	isc__netievent_udpstoplisten_t *ievent = NULL;
+
 	/* We can't be launched from network thread, we'd deadlock */
 	REQUIRE(!isc__nm_in_netthread());
 	REQUIRE(VALID_NMSOCK(sock));
 	REQUIRE(sock->type == isc_nm_udplistener);
 
-	for (int i = 0; i < sock->nchildren; i++) {
-		isc__netievent_udpstoplisten_t *ievent;
-		ievent = isc__nm_get_ievent(sock->mgr,
-					    netievent_udpstoplisten);
-		ievent->sock = &sock->children[i];
-		isc__nm_enqueue_ievent(&sock->mgr->workers[i],
-				       (isc__netievent_t *) ievent);
-	}
-
-	LOCK(&sock->lock);
-	while (atomic_load(&sock->rchildren) > 0) {
-		WAIT(&sock->cond, &sock->lock);
-	}
-	atomic_store(&sock->closed, true);
-	UNLOCK(&sock->lock);
-
-	isc__nmsocket_prep_destroy(sock);
+	ievent = isc__nm_get_ievent(sock->mgr, netievent_udpstoplisten);
+	ievent->sock = sock;
+	isc__nm_enqueue_ievent(&sock->mgr->workers[sock->tid],
+			       (isc__netievent_t *) ievent);
 }
 
 /*
@@ -176,6 +165,19 @@ udp_close_cb(uv_handle_t *handle) {
 	isc_nmsocket_detach((isc_nmsocket_t **)&sock->uv_handle.udp.data);
 }
 
+static void
+stop_udp_child(isc_nmsocket_t *sock) {
+	INSIST(sock->type == isc_nm_udpsocket);
+
+	uv_udp_recv_stop(&sock->uv_handle.udp);
+	uv_close((uv_handle_t *) &sock->uv_handle.udp, udp_close_cb);
+
+	LOCK(&sock->parent->lock);
+	atomic_fetch_sub(&sock->parent->rchildren, 1);
+	UNLOCK(&sock->parent->lock);
+	BROADCAST(&sock->parent->cond);
+}
+
 /*
  * handle 'udpstoplisten' async call - stop listening on a socket.
  */
@@ -187,24 +189,43 @@ isc__nm_async_udpstoplisten(isc__networker_t *worker,
 		(isc__netievent_udplisten_t *) ievent0;
 	isc_nmsocket_t *sock = ievent->sock;
 
-	REQUIRE(sock->type == isc_nm_udpsocket);
 	REQUIRE(sock->iface != NULL);
-	REQUIRE(sock->parent != NULL);
 
 	UNUSED(worker);
 
-	/* XXXWPK TODO do it properly! */
 	if (uv_is_closing((uv_handle_t *) &sock->uv_handle.udp)) {
 		return;
 	}
 
-	uv_udp_recv_stop(&sock->uv_handle.udp);
-	uv_close((uv_handle_t *) &sock->uv_handle.udp, udp_close_cb);
+	if (sock->parent != NULL) {
+		stop_udp_child(sock);
+		return;
+	}
 
-	LOCK(&sock->parent->lock);
-	atomic_fetch_sub(&sock->parent->rchildren, 1);
-	UNLOCK(&sock->parent->lock);
-	BROADCAST(&sock->parent->cond);
+	INSIST(sock->type == isc_nm_udplistener);
+
+	for (int i = 0; i < sock->nchildren; i++) {
+		isc__netievent_udplisten_t *event = NULL;
+
+		if (i == sock->tid) {
+			stop_udp_child(&sock->children[i]);
+			continue;
+		}
+
+		event = isc__nm_get_ievent(sock->mgr, netievent_udpstoplisten);
+		event->sock = &sock->children[i];
+		isc__nm_enqueue_ievent(&sock->mgr->workers[i],
+				       (isc__netievent_t *) event);
+	}
+
+	LOCK(&sock->lock);
+	while (atomic_load(&sock->rchildren) > 0) {
+		WAIT(&sock->cond, &sock->lock);
+	}
+	atomic_store(&sock->closed, true);
+	UNLOCK(&sock->lock);
+
+	isc__nmsocket_prep_destroy(sock);
 }
 
 /*

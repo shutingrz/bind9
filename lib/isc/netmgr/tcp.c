@@ -208,17 +208,6 @@ isc_nm_tcp_stoplistening(isc_nmsocket_t *sock) {
 	isc_nmsocket_attach(sock, &ievent->sock);
 	isc__nm_enqueue_ievent(&sock->mgr->workers[sock->tid],
 			       (isc__netievent_t *) ievent);
-
-	LOCK(&sock->lock);
-	while (atomic_load(&sock->listening) == true) {
-		isc_condition_wait(&sock->cond, &sock->lock);
-	}
-	UNLOCK(&sock->lock);
-	if (sock->quota != NULL) {
-		isc_quota_detach(&sock->quota);
-	}
-
-	isc_nmsocket_detach(&sock);
 }
 
 static void
@@ -230,6 +219,12 @@ stoplistening_cb(uv_handle_t *handle) {
 	atomic_store(&sock->closed, true);
 	SIGNAL(&sock->cond);
 	UNLOCK(&sock->lock);
+
+	if (sock->quota != NULL) {
+		isc_quota_detach(&sock->quota);
+	}
+
+	isc_nmsocket_detach(&sock);
 }
 
 void
