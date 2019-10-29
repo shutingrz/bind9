@@ -501,6 +501,7 @@ tcp_send_cb(uv_write_t *req, int status) {
 	}
 
 	uvreq->cb.send(uvreq->handle, result, uvreq->cbarg);
+	isc_nmhandle_unref(uvreq->handle);
 	isc__nm_uvreq_put(&uvreq, uvreq->handle->sock);
 }
 
@@ -533,6 +534,7 @@ tcp_send_direct(isc_nmsocket_t *sock, isc__nm_uvreq_t *req) {
 	REQUIRE(sock->tid == isc_nm_tid());
 	REQUIRE(sock->type == isc_nm_tcpsocket);
 
+	isc_nmhandle_ref(req->handle);
 	r = uv_write(&req->uv_req.write, &sock->uv_handle.stream,
 		     &req->uvbuf, 1, tcp_send_cb);
 	if (r < 0) {

@@ -1741,7 +1741,6 @@ ns__client_request(isc_nmhandle_t *handle, isc_region_t *region, void *arg) {
 		ns_client_log(client, DNS_LOGCATEGORY_SECURITY,
 			      NS_LOGMODULE_CLIENT, ISC_LOG_DEBUG(10),
 			      "dropped request: suspicious port");
-		isc_nmhandle_unref(client->handle);
 		isc_task_unpause(client->task);
 		return;
 	}
@@ -1766,7 +1765,6 @@ ns__client_request(isc_nmhandle_t *handle, isc_region_t *region, void *arg) {
 			ns_client_log(client, DNS_LOGCATEGORY_SECURITY,
 				      NS_LOGMODULE_CLIENT, ISC_LOG_DEBUG(10),
 				      "blackholed UDP datagram");
-			isc_nmhandle_unref(client->handle);
 			isc_task_unpause(client->task);
 			return;
 		}
@@ -1778,7 +1776,6 @@ ns__client_request(isc_nmhandle_t *handle, isc_region_t *region, void *arg) {
 		 * There isn't enough header to determine whether
 		 * this was a request or a response.  Drop it.
 		 */
-		isc_nmhandle_unref(client->handle);
 		isc_task_unpause(client->task);
 		return;
 	}
@@ -1790,7 +1787,6 @@ ns__client_request(isc_nmhandle_t *handle, isc_region_t *region, void *arg) {
 	 */
 	if ((flags & DNS_MESSAGEFLAG_QR) != 0) {
 		CTRACE("unexpected response");
-		isc_nmhandle_unref(client->handle);
 		isc_task_unpause(client->task);
 		return;
 	}
@@ -1943,7 +1939,6 @@ ns__client_request(isc_nmhandle_t *handle, isc_region_t *region, void *arg) {
 
 		result = process_opt(client, opt);
 		if (result != ISC_R_SUCCESS) {
-			isc_nmhandle_unref(client->handle);
 			isc_task_unpause(client->task);
 			return;
 		}

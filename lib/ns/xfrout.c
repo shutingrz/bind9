@@ -1184,6 +1184,7 @@ ns_xfr_start(ns_client_t *client, dns_rdatatype_t reqtype) {
 			      NS_LOGMODULE_XFER_OUT,
 			      ISC_LOG_DEBUG(3), "zone transfer setup failed");
 		ns_client_error(client, result);
+		isc_nmhandle_unref(client->handle);
 	}
 }
 
