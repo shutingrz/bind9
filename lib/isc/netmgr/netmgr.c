@@ -288,8 +288,15 @@ nm_thread(void *worker0) {
 		}
 
 		if (r == 0) {
-			/* TODO */
+			/*
+			 * TODO it should never happen - we don't have
+			 * any sockets we're listening on?
+			 */
+#ifdef WIN32
+			_sleep(100);
+#else
 			usleep(100000);
+#endif
 		}
 	}
 
@@ -754,7 +761,7 @@ nmhandle_free(isc_nmsocket_t *sock, isc_nmhandle_t *handle) {
 		handle->dofree(handle->opaque);
 	}
 
-	*handle = (isc_nmhandle_t) {};
+	*handle = (isc_nmhandle_t) { .magic = 0 };
 	isc_mem_put(sock->mgr->mctx, handle, sizeof(isc_nmhandle_t) + extra);
 }
 
@@ -854,7 +861,7 @@ isc__nm_uvreq_get(isc_nm_t *mgr, isc_nmsocket_t *sock) {
 		req = isc_mem_get(mgr->mctx, sizeof(isc__nm_uvreq_t));
 	}
 
-	*req = (isc__nm_uvreq_t) {};
+	*req = (isc__nm_uvreq_t) { .magic = 0 };
 	req->uv_req.req.data = req;
 	isc_nmsocket_attach(sock, &req->sock);
 	req->magic = UVREQ_MAGIC;

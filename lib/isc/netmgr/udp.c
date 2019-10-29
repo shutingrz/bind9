@@ -88,8 +88,19 @@ isc_nm_listenudp(isc_nm_t *mgr, isc_nmiface_t *iface,
 		csock->fd = socket(AF_INET, SOCK_DGRAM, 0);
 		INSIST(csock->fd >= 0);
 
+		/*
+		 * This is SO_REUSE**** hell:
+		 * On Linux SO_REUSEPORT allows multiple sockets to bind to
+		 * the same host:port pair.
+		 * On Windows the same thing is achieved with SO_REUSEADDR
+		 */
+#ifdef WIN32
+		res = setsockopt(csock->fd, SOL_SOCKET, SO_REUSEADDR,
+				 &(int){1}, sizeof(int));
+#else
 		res = setsockopt(csock->fd, SOL_SOCKET, SO_REUSEPORT,
 				 &(int){1}, sizeof(int));
+#endif
 		RUNTIME_CHECK(res == 0);
 
 		ievent = isc__nm_get_ievent(mgr, netievent_udplisten);

@@ -433,8 +433,8 @@ void
 ns_client_send(ns_client_t *client) {
 	isc_result_t result;
 	unsigned char *data;
-	isc_buffer_t buffer = {};
-	isc_buffer_t tcpbuffer = {};
+	isc_buffer_t buffer = { .magic = 0 };
+	isc_buffer_t tcpbuffer = { .magic = 0 };
 	isc_region_t r;
 	dns_compress_t cctx;
 	bool cleanup_cctx = false;
@@ -2322,7 +2322,7 @@ client_setup(ns_clientmgr_t *manager, isc_mem_t *mctx, ns_client_t *client) {
 
 	REQUIRE(client != NULL);
 
-	*client = (ns_client_t){};
+	*client = (ns_client_t) { .magic = 0 };
 
 	client->mctx = mctx;
 
@@ -2502,7 +2502,7 @@ ns_clientmgr_create(isc_mem_t *mctx, ns_server_t *sctx, isc_taskmgr_t *taskmgr,
 #endif
 
 	manager = isc_mem_get(mctx, sizeof(*manager));
-	*manager = (ns_clientmgr_t){};
+	*manager = (ns_clientmgr_t) { .magic = 0 };
 
 	isc_mutex_init(&manager->lock);
 	isc_mutex_init(&manager->reclock);

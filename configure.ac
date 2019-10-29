@@ -1799,6 +1799,8 @@ AC_CHECK_HEADERS(
   ])
 LIBS="$LIBS $ISC_ATOMIC_LIBS"
 
+AC_CHECK_HEADERS([stdalign.h])
+
 AC_CHECK_HEADERS([uchar.h])
 
 #

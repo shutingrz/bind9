@@ -10,8 +10,8 @@
  */
 
 #include <inttypes.h>
-#include <stdalign.h>
 
+#include <isc/align.h>
 #include <isc/atomic.h>
 #include <isc/queue.h>
 #include <isc/string.h>

@@ -4,7 +4,6 @@ LIBRARY libns
 EXPORTS
 
 ns__client_request
-ns__clientmgr_getclient
 ns__interfacemgr_getif
 ns__interfacemgr_nextif
 ns__query_sfcache
@@ -32,14 +31,12 @@ ns_client_putrdataset
 ns_client_qnamereplace
 ns_client_recursing
 ns_client_releasename
-ns_client_replace
 ns_client_send
 ns_client_sendraw
 ns_client_settimeout
 ns_client_shuttingdown
 ns_client_sourceip
 ns_clientmgr_create
-ns_clientmgr_createclients
 ns_clientmgr_destroy
 ns_hook_add
 ns_hooktable_create

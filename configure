@@ -19744,6 +19744,19 @@ done
 
 LIBS="$LIBS $ISC_ATOMIC_LIBS"
 
+for ac_header in stdalign.h
+do :
+  ac_fn_c_check_header_mongrel "$LINENO" "stdalign.h" "ac_cv_header_stdalign_h" "$ac_includes_default"
+if test "x$ac_cv_header_stdalign_h" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_STDALIGN_H 1
+_ACEOF
+
+fi
+
+done
+
+
 for ac_header in uchar.h
 do :
   ac_fn_c_check_header_mongrel "$LINENO" "uchar.h" "ac_cv_header_uchar_h" "$ac_includes_default"
