@@ -272,7 +272,7 @@ isc_nm_listentcpdns(isc_nm_t *mgr, isc_nmiface_t *iface,
 				  dnslistensock, extrahandlesize,
 				  quota, &dnslistensock->outer);
 
-	dnslistensock->listening = true;
+	atomic_store(&dnslistensock->listening, true);
 	*rv = dnslistensock;
 	return (result);
 }

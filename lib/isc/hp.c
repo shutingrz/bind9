@@ -61,7 +61,8 @@
 
 #define TID_UNKNOWN -1
 
-static atomic_int_fast32_t tid_v_base = 0;
+static atomic_int_fast32_t tid_v_base;
+static bool tid_v_initialized;
 
 #if defined(HAVE_TLS)
 #if defined(HAVE_THREAD_LOCAL)
@@ -93,6 +94,10 @@ struct isc_hp {
 
 static inline int
 tid() {
+	if (!tid_v_initialized) {
+		atomic_init(&tid_v_base, 0);
+		tid_v_initialized = true;
+	}
 	if (tid_v == TID_UNKNOWN) {
 		tid_v = atomic_fetch_add(&tid_v_base, 1);
 		REQUIRE(tid_v < HP_MAX_THREADS);
@@ -181,9 +186,9 @@ isc_hp_protect(isc_hp_t *hp, int ihp, atomic_uintptr_t *atom) {
  * Progress Condition: wait-free population oblivious
  */
 uintptr_t
-isc_hp_protect_ptr(isc_hp_t *hp, int ihp, const atomic_uintptr_t ptr) {
-	atomic_store(&hp->hp[tid()][ihp], ptr);
-	return (ptr);
+isc_hp_protect_ptr(isc_hp_t *hp, int ihp, atomic_uintptr_t ptr) {
+	atomic_store(&hp->hp[tid()][ihp], atomic_load(&ptr));
+	return (atomic_load(&ptr));
 }
 
 /*
@@ -193,16 +198,16 @@ isc_hp_protect_ptr(isc_hp_t *hp, int ihp, const atomic_uintptr_t ptr) {
  * Progress Condition: wait-free population oblivious
  */
 uintptr_t
-isc_hp_protect_release(isc_hp_t *hp, int ihp, const atomic_uintptr_t ptr) {
-	atomic_store_release(&hp->hp[tid()][ihp], ptr);
-	return (ptr);
+isc_hp_protect_release(isc_hp_t *hp, int ihp, atomic_uintptr_t ptr) {
+	atomic_store_release(&hp->hp[tid()][ihp], atomic_load(&ptr));
+	return (atomic_load(&ptr));
 }
 
 /*
  * Progress Condition: wait-free bounded (by the number of threads squared)
  */
 void
-isc_hp_retire(isc_hp_t *hp, const atomic_uintptr_t ptr) {
+isc_hp_retire(isc_hp_t *hp, uintptr_t ptr) {
 	hp->rl[tid()]->list[hp->rl[tid()]->size++] = ptr;
 	INSIST(hp->rl[tid()]->size < MAX_RETIRED);
 

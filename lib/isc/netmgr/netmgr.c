@@ -146,7 +146,7 @@ nm_destroy(isc_nm_t **mgr0) {
 	}
 
 	LOCK(&mgr->lock);
-	while (mgr->workers_running > 0) {
+	while (atomic_load(&mgr->workers_running) > 0) {
 		WAIT(&mgr->wkstatecond, &mgr->lock);
 	}
 	UNLOCK(&mgr->lock);
@@ -516,7 +516,8 @@ nmsocket_maybe_destroy(isc_nmsocket_t *sock) {
 		}
 	}
 
-	if (sock->closed && sock->references == 0 &&
+	if (atomic_load(&sock->closed) &&
+	    atomic_load(&sock->references) == 0 &&
 	    (active_handles == 0 || sock->tcphandle != NULL))
 	{
 		destroy = true;

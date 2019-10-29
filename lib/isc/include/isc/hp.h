@@ -68,10 +68,10 @@ uintptr_t
 isc_hp_protect(isc_hp_t *hp, int ihp, atomic_uintptr_t *atom);
 
 uintptr_t
-isc_hp_protect_ptr(isc_hp_t *hp, int ihp, const atomic_uintptr_t ptr);
+isc_hp_protect_ptr(isc_hp_t *hp, int ihp, atomic_uintptr_t ptr);
 
 uintptr_t
-isc_hp_protect_release(isc_hp_t *hp, int ihp, const atomic_uintptr_t ptr);
+isc_hp_protect_release(isc_hp_t *hp, int ihp, atomic_uintptr_t ptr);
 
 void
-isc_hp_retire(isc_hp_t *hp, const atomic_uintptr_t ptr);
+isc_hp_retire(isc_hp_t *hp, uintptr_t ptr);

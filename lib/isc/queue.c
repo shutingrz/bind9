@@ -48,12 +48,14 @@ struct isc_queue {
 static node_t *
 node_new(isc_mem_t *mctx, uintptr_t item) {
 	node_t *node = isc_mem_get(mctx, sizeof(*node));
-	*node = (node_t){
-		.deqidx = 0,
-		.enqidx = 1,
-		.next = 0,
-		.items = { item, 0 }
-	};
+	*node = (node_t){ .mctx = NULL };
+	atomic_init(&node->deqidx, 0);
+	atomic_init(&node->enqidx, 1);
+	atomic_init(&node->next, 0);
+	atomic_init(&node->items[0], item);
+	for (int i=1; i<BUFFER_SIZE; i++) {
+		atomic_init(&node->items[i], 0);
+	}
 	isc_mem_attach(mctx, &node->mctx);
 	return (node);
 }
@@ -115,7 +117,7 @@ isc_queue_enqueue(isc_queue_t *queue, uintptr_t item) {
 
 	while (true) {
 		node_t *lt = NULL;
-		atomic_uint_fast32_t idx;
+		uint_fast32_t idx;
 		uintptr_t n = nulluintptr;
 
 		lt = (node_t *)isc_hp_protect(queue->hp, 0, &queue->tail);
@@ -154,7 +156,7 @@ uintptr_t
 isc_queue_dequeue(isc_queue_t *queue) {
 	while (true) {
 		node_t *lh = NULL;
-		atomic_uint_fast32_t idx;
+		uint_fast32_t idx;
 		uintptr_t item;
 
 		lh = (node_t *)isc_hp_protect(queue->hp, 0, &queue->head);

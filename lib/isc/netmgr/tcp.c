@@ -192,7 +192,7 @@ isc__nm_async_tcplisten(isc__networker_t *worker, isc__netievent_t *ievent0) {
 	r = uv_listen((uv_stream_t *) &sock->uv_handle.tcp,
 		      10,
 		      tcp_connection_cb);
-	sock->listening = true;
+	atomic_store(&sock->listening, true);
 	return;
 	/* issue callback? */
 }
