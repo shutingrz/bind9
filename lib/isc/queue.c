@@ -49,20 +49,25 @@ static node_t *
 node_new(isc_mem_t *mctx, uintptr_t item) {
 	node_t *node = isc_mem_get(mctx, sizeof(*node));
 	*node = (node_t){ .mctx = NULL };
+
 	atomic_init(&node->deqidx, 0);
 	atomic_init(&node->enqidx, 1);
 	atomic_init(&node->next, 0);
 	atomic_init(&node->items[0], item);
-	for (int i=1; i<BUFFER_SIZE; i++) {
+
+	for (int i = 1; i < BUFFER_SIZE; i++) {
 		atomic_init(&node->items[i], 0);
 	}
+
 	isc_mem_attach(mctx, &node->mctx);
+
 	return (node);
 }
 
 static void
 node_destroy(void *node0) {
 	node_t *node = (node_t *)node0;
+
 	isc_mem_putanddetach(&node->mctx, node, sizeof(*node));
 }
 
@@ -113,7 +118,7 @@ isc_queue_new(isc_mem_t *mctx, int max_threads) {
 
 void
 isc_queue_enqueue(isc_queue_t *queue, uintptr_t item) {
-	INSIST(item != nulluintptr);
+	REQUIRE(item != nulluintptr);
 
 	while (true) {
 		node_t *lt = NULL;
