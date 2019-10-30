@@ -149,13 +149,6 @@ struct ns_client {
 	int			nctls;
 	bool			tcpactive;
 	bool			shuttingdown;
-	bool			needshutdown; 	/*
-						 * Used by clienttest to get
-						 * the client to go from
-						 * inactive to free state
-						 * by shutting down the
-						 * client's task.
-						 */
 	unsigned int		attributes;
 	isc_task_t		*task;
 	dns_view_t		*view;
