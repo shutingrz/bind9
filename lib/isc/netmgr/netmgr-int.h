@@ -232,8 +232,8 @@ struct isc_nm {
 	isc__networker_t	*workers;
 	atomic_uint_fast32_t	workers_running;
 	atomic_uint_fast32_t	workers_paused;
+	atomic_uint_fast32_t	maxudp;
 };
-
 
 typedef enum isc_nmsocket_type {
 	isc_nm_udpsocket,

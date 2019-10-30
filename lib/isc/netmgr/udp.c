@@ -259,6 +259,7 @@ udp_recv_cb(uv_udp_t *handle, ssize_t nrecv, const uv_buf_t *buf,
 	isc_sockaddr_t sockaddr;
 	isc_nmsocket_t *sock = (isc_nmsocket_t *) handle->data;
 	isc_region_t region;
+	uint32_t maxudp;
 
 	REQUIRE(VALID_NMSOCK(sock));
 
@@ -271,6 +272,15 @@ udp_recv_cb(uv_udp_t *handle, ssize_t nrecv, const uv_buf_t *buf,
 	 */
 	if (addr == NULL) {
 		isc__nm_free_uvbuf(sock, buf);
+		return;
+	}
+
+	/*
+	 * Simulate a firewall blocking UDP packets bigger than
+	 * 'maxudp' bytes.
+	 */
+	maxudp = atomic_load(&sock->mgr->maxudp);
+	if (maxudp != 0 && (uint32_t)nrecv > maxudp) {
 		return;
 	}
 
@@ -307,6 +317,16 @@ isc__nm_udp_send(isc_nmhandle_t *handle, isc_region_t *region,
 	isc__netievent_udpsend_t *ievent;
 	isc__nm_uvreq_t *uvreq = NULL;
 	int ntid = sock->tid;
+	uint32_t maxudp = atomic_load(&sock->mgr->maxudp);
+
+	/*
+	 * Simulate a firewall blocking UDP packets bigger than
+	 * 'maxudp' bytes.
+	 */
+	if (maxudp != 0 && region->length > maxudp) {
+		isc_nmhandle_unref(handle);
+		return (ISC_R_SUCCESS);
+	}
 
 	if (sock->type == isc_nm_udpsocket) {
 		INSIST(sock->parent != NULL);
@@ -314,6 +334,7 @@ isc__nm_udp_send(isc_nmhandle_t *handle, isc_region_t *region,
 	} else if (sock->type == isc_nm_udplistener) {
 		psock = sock;
 	} else {
+		isc_nmhandle_unref(handle);
 		return (ISC_R_UNEXPECTED);
 	}
 

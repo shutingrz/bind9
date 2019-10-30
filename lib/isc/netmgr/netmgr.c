@@ -261,6 +261,13 @@ isc_nm_detach(isc_nm_t **mgr0) {
 	}
 }
 
+void
+isc_nm_maxudp(isc_nm_t *mgr, uint32_t maxudp) {
+	REQUIRE(VALID_NM(mgr));
+
+	atomic_store(&mgr->maxudp, maxudp);
+}
+
 /*
  * nm_thread is a single worker thread, that runs uv_run event loop
  * until asked to stop.
