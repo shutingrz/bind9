@@ -269,3 +269,16 @@ isc_nm_tcpdns_sequential(isc_nmhandle_t *handle);
  *
  * This cannot be reversed once set for a given connection
  */
+
+void
+isc_nm_maxudp(isc_nm_t *mgr, uint32_t maxudp);
+/*%<
+ * Simulate a broken firewall that blocks UDP messages larger
+ * than a given size.
+ */
+
+bool
+isc_nm_paused(isc_nm_t *mgr);
+/*%<
+ * Returns 'true' if all workers are paused, false otherwise.
+ */

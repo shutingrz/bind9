@@ -113,21 +113,6 @@ isc_nm_listenudp(isc_nm_t *mgr, isc_nmiface_t *iface,
 	return (ISC_R_SUCCESS);
 }
 
-void
-isc_nm_udp_stoplistening(isc_nmsocket_t *sock) {
-	isc__netievent_udpstoplisten_t *ievent = NULL;
-
-	/* We can't be launched from network thread, we'd deadlock */
-	REQUIRE(!isc__nm_in_netthread());
-	REQUIRE(VALID_NMSOCK(sock));
-	REQUIRE(sock->type == isc_nm_udplistener);
-
-	ievent = isc__nm_get_ievent(sock->mgr, netievent_udpstoplisten);
-	ievent->sock = sock;
-	isc__nm_enqueue_ievent(&sock->mgr->workers[sock->tid],
-			       (isc__netievent_t *) ievent);
-}
-
 /*
  * handle 'udplisten' async call - start listening on a socket.
  */
@@ -178,21 +163,8 @@ stop_udp_child(isc_nmsocket_t *sock) {
 	BROADCAST(&sock->parent->cond);
 }
 
-/*
- * handle 'udpstoplisten' async call - stop listening on a socket.
- */
-void
-isc__nm_async_udpstoplisten(isc__networker_t *worker,
-			    isc__netievent_t *ievent0)
-{
-	isc__netievent_udplisten_t *ievent =
-		(isc__netievent_udplisten_t *) ievent0;
-	isc_nmsocket_t *sock = ievent->sock;
-
-	REQUIRE(sock->iface != NULL);
-
-	UNUSED(worker);
-
+static void
+stoplistening(isc_nmsocket_t *sock) {
 	if (uv_is_closing((uv_handle_t *) &sock->uv_handle.udp)) {
 		return;
 	}
@@ -226,6 +198,50 @@ isc__nm_async_udpstoplisten(isc__networker_t *worker,
 	UNLOCK(&sock->lock);
 
 	isc__nmsocket_prep_destroy(sock);
+}
+
+void
+isc_nm_udp_stoplistening(isc_nmsocket_t *sock) {
+	isc__netievent_udpstoplisten_t *ievent = NULL;
+
+	/* We can't be launched from network thread, we'd deadlock */
+	REQUIRE(!isc__nm_in_netthread());
+	REQUIRE(VALID_NMSOCK(sock));
+	REQUIRE(sock->type == isc_nm_udplistener);
+
+	/*
+	 * If the worker is paused, enqueue this as an asynchronous
+	 * event. Otherwise, go ahead and stop listening now.
+	 */
+	if (isc_nm_paused(sock->mgr)) {
+		LOCK(&sock->mgr->lock);
+		ievent = isc__nm_get_ievent(sock->mgr, netievent_udpstoplisten);
+		ievent->sock = sock;
+		isc__nm_enqueue_ievent(&sock->mgr->workers[sock->tid],
+				       (isc__netievent_t *) ievent);
+		UNLOCK(&sock->mgr->lock);
+		return;
+	}
+
+	stoplistening(sock);
+}
+
+/*
+ * handle 'udpstoplisten' async call - stop listening on a socket.
+ */
+void
+isc__nm_async_udpstoplisten(isc__networker_t *worker,
+			    isc__netievent_t *ievent0)
+{
+	isc__netievent_udplisten_t *ievent =
+		(isc__netievent_udplisten_t *) ievent0;
+	isc_nmsocket_t *sock = ievent->sock;
+
+	REQUIRE(sock->iface != NULL);
+
+	UNUSED(worker);
+
+	stoplistening(sock);
 }
 
 /*

@@ -438,6 +438,8 @@ isc_nmhandle_unref
 isc_nm_detach
 isc_nm_listentcpdns
 isc_nm_listenudp
+isc_nm_maxudp
+isc_nm_paused
 isc_nm_send
 isc_nm_start
 isc_nmsocket_detach

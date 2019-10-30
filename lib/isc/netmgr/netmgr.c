@@ -136,16 +136,17 @@ nm_destroy(isc_nm_t **mgr0) {
 
 	isc_nm_t *mgr = *mgr0;
 
+	LOCK(&mgr->lock);
 	for (size_t i = 0; i < mgr->nworkers; i++) {
+		isc__netievent_t *event = NULL;
+
 		LOCK(&mgr->workers[i].lock);
 		mgr->workers[i].finished = true;
 		UNLOCK(&mgr->workers[i].lock);
-		isc__netievent_t *ievent =
-			isc__nm_get_ievent(mgr, netievent_stop);
-		isc__nm_enqueue_ievent(&mgr->workers[i], ievent);
+		event = isc__nm_get_ievent(mgr, netievent_stop);
+		isc__nm_enqueue_ievent(&mgr->workers[i], event);
 	}
 
-	LOCK(&mgr->lock);
 	while (atomic_load(&mgr->workers_running) > 0) {
 		WAIT(&mgr->wkstatecond, &mgr->lock);
 	}
@@ -169,20 +170,28 @@ isc_nm_pause(isc_nm_t *mgr) {
 	REQUIRE(VALID_NM(mgr));
 	REQUIRE(!isc__nm_in_netthread());
 
+	/*
+	 * We lock this entire loop under the manager lock to ensure that
+	 * if this runs at the same time as isc_nm_udp_stoplistening(), the
+	 * 'stop' and 'stoplistening' events will appear on all queues in a
+	 * consistent order.
+	 */
+	LOCK(&mgr->lock);
 	for (size_t i = 0; i < mgr->nworkers; i++) {
+		isc__netievent_t *event = NULL;
+
 		LOCK(&mgr->workers[i].lock);
 		mgr->workers[i].paused = true;
 		UNLOCK(&mgr->workers[i].lock);
+
 		/*
 		 * We have to issue a stop, otherwise the uv_run loop will
 		 * run indefinitely!
 		 */
-		isc__netievent_t *ievent =
-			isc__nm_get_ievent(mgr, netievent_stop);
-		isc__nm_enqueue_ievent(&mgr->workers[i], ievent);
+		event = isc__nm_get_ievent(mgr, netievent_stop);
+		isc__nm_enqueue_ievent(&mgr->workers[i], event);
 	}
 
-	LOCK(&mgr->lock);
 	while (atomic_load_relaxed(&mgr->workers_paused) !=
 	       atomic_load_relaxed(&mgr->workers_running))
 	{
@@ -207,6 +216,18 @@ isc_nm_resume(isc_nm_t *mgr) {
 	 * We're not waiting for all the workers to come back to life;
 	 * they eventually will, we don't care.
 	 */
+}
+
+bool
+isc_nm_paused(isc_nm_t *mgr) {
+	bool paused;
+
+	LOCK(&mgr->lock);
+	paused = (atomic_load(&mgr->workers_paused) ==
+		  atomic_load(&mgr->workers_running));
+	UNLOCK(&mgr->lock);
+
+	return (paused);
 }
 
 void
