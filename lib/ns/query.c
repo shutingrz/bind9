@@ -144,9 +144,6 @@ do { \
 #define REDIRECT(c)		(((c)->query.attributes & \
 				  NS_QUERYATTR_REDIRECT) != 0)
 
-#define ZEROTTL_REFETCH(c)	(((c)->query.attributes & \
-				  NS_QUERYATTR_ZEROTTL_REFETCH) != 0)
-
 /*% Does the rdataset 'r' have an attached 'No QNAME Proof'? */
 #define NOQNAME(r)		(((r)->attributes & \
 				  DNS_RDATASETATTR_NOQNAME) != 0)
@@ -5591,6 +5588,8 @@ fetch_callback(isc_task_t *task, isc_event_t *event) {
 	REQUIRE(task == client->task);
 	REQUIRE(RECURSING(client));
 
+	CTRACE(ISC_LOG_DEBUG(3), "fetch_callback");
+
 	LOCK(&client->query.fetchlock);
 	if (client->query.fetch != NULL) {
 		/*
@@ -5613,11 +5612,6 @@ fetch_callback(isc_task_t *task, isc_event_t *event) {
 	UNLOCK(&client->query.fetchlock);
 	INSIST(client->query.fetch == NULL);
 
-	if (ZEROTTL_REFETCH(client)) {
-		client->query.attributes &= ~NS_QUERYATTR_ZEROTTL_REFETCH;
-		isc_nmhandle_unref(client->handle);
-	}
-
 	client->query.attributes &= ~NS_QUERYATTR_RECURSING;
 	SAVE(fetch, devent->fetch);
 
@@ -5634,11 +5628,6 @@ fetch_callback(isc_task_t *task, isc_event_t *event) {
 		} else {
 			query_next(client, ISC_R_CANCELED);
 		}
-
-		/*
-		 * This may trigger destruction of the client.
-		 */
-		isc_nmhandle_unref(client->handle);
 	} else {
 		query_ctx_t qctx;
 
@@ -5668,6 +5657,7 @@ fetch_callback(isc_task_t *task, isc_event_t *event) {
 	}
 
 	dns_resolver_destroyfetch(&fetch);
+	isc_nmhandle_unref(client->handle);
 }
 
 /*%
@@ -5844,6 +5834,7 @@ ns_query_recurse(ns_client_t *client, dns_rdatatype_t qtype, dns_name_t *qname,
 		peeraddr = &client->peeraddr;
 	}
 
+	isc_nmhandle_ref(client->handle);
 	result = dns_resolver_createfetch(client->view->resolver,
 					  qname, qtype, qdomain, nameservers,
 					  NULL, peeraddr, client->message->id,
@@ -5852,6 +5843,7 @@ ns_query_recurse(ns_client_t *client, dns_rdatatype_t qtype, dns_name_t *qname,
 					  client, rdataset, sigrdataset,
 					  &client->query.fetch);
 	if (result != ISC_R_SUCCESS) {
+		isc_nmhandle_unref(client->handle);
 		ns_client_putrdataset(client, &rdataset);
 		if (sigrdataset != NULL) {
 			ns_client_putrdataset(client, &sigrdataset);
@@ -5881,6 +5873,8 @@ query_resume(query_ctx_t *qctx) {
 	char qbuf[DNS_NAME_FORMATSIZE];
 	char tbuf[DNS_RDATATYPE_FORMATSIZE];
 #endif
+
+	CCTRACE(ISC_LOG_DEBUG(3), "query_resume");
 
 	CALL_HOOK(NS_QUERY_RESUME_BEGIN, qctx);
 
@@ -9451,14 +9445,12 @@ query_zerottl_refetch(query_ctx_t *qctx) {
 
 	INSIST(!REDIRECT(qctx->client));
 
-	isc_nmhandle_ref(qctx->client->handle);
 	result = ns_query_recurse(qctx->client, qctx->qtype,
 				  qctx->client->query.qname,
 				  NULL, NULL, qctx->resuming);
 	if (result == ISC_R_SUCCESS) {
 		CALL_HOOK(NS_QUERY_ZEROTTL_RECURSE, qctx);
 		qctx->client->query.attributes |= NS_QUERYATTR_RECURSING;
-		qctx->client->query.attributes |= NS_QUERYATTR_ZEROTTL_REFETCH;
 
 		if (qctx->dns64) {
 			qctx->client->query.attributes |=
@@ -9469,7 +9461,6 @@ query_zerottl_refetch(query_ctx_t *qctx) {
 				NS_QUERYATTR_DNS64EXCLUDE;
 		}
 	} else {
-		isc_nmhandle_unref(qctx->client->handle);
 		QUERY_ERROR(qctx, result);
 	}
 

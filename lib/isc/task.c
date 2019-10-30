@@ -1135,6 +1135,7 @@ dispatch(isc__taskmgr_t *manager, unsigned int threadid) {
 							event);
 						LOCK(&task->lock);
 					}
+					XTRACE("execution complete");
 					dispatch_count++;
 				}
 
