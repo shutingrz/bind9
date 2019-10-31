@@ -120,7 +120,7 @@ dnssec_dsfromkey_errmsg() (
     if test -n "$msg"; then
 	grep -E -v "$msg" dsfromkey.err.$n >&2 && r=1
     else
-	grep . dsfromkey.err.$n >&2 && r=1
+	grep ".*" dsfromkey.err.$n >&2 && r=1
     fi
     exit "$r"
 )
