@@ -328,9 +328,11 @@ nm_thread(void *worker0) {
 		}
 	}
 
+	LOCK(&worker->mgr->lock);
 	atomic_fetch_sub_explicit(&worker->mgr->workers_running, 1,
 				  memory_order_relaxed);
 	SIGNAL(&worker->mgr->wkstatecond);
+	UNLOCK(&worker->mgr->lock);
 
 	return (NULL);
 }
