@@ -98,7 +98,7 @@ dnssec_keygen_errmsg() (
     if test -n "$msg"; then
 	grep -E -v "$msg" keygen.err.$n >&2 && r=1
     else
-	grep . keygen.err.$n >&2 && r=1
+	grep ".*" keygen.err.$n >&2 && r=1
     fi
     exit "$r"
 )
