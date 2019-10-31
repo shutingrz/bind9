@@ -155,18 +155,14 @@ dnslisten_readcb(isc_nmhandle_t *handle, isc_region_t *region, void *arg) {
 			 * handle, it needs to attach to it.
 			 */
 			isc_nmhandle_unref(dnshandle);
-		} else {
-			/*
-			 * If we don't have the whole packet make sure
-			 * we copied everything.
-			 */
-			INSIST(len == 0);
 		}
 	}
 
 	/*
-	 * We don't have anything in buffer, and we're either pipelining
-	 * or not processing anything else; process what's incoming.
+	 * At this point we've processed whatever was previously in the
+	 * socket buffer. If there are more messages to be found in what
+	 * we've read, and if we're either pipelining or not processing
+	 * anything else, then we can process those messages now.
 	 */
 	while (len >= 2 && dnslen(base) <= len - 2 &&
 	       !(atomic_load(&dnssock->sequential) &&
@@ -193,7 +189,8 @@ dnslisten_readcb(isc_nmhandle_t *handle, isc_region_t *region, void *arg) {
 	}
 
 	/*
-	 * Put the remainder in the buffer
+	 * We have less than a full message remaining; it can be
+	 * stored in the socket buffer for next time.
 	 */
 	if (len > 0) {
 		if (len > dnssock->buf_size) {
