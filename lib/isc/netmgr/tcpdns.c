@@ -120,12 +120,14 @@ dnslisten_readcb(isc_nmhandle_t *handle, isc_region_t *region, void *arg) {
 		if (dnssock->buf_len == 1) {
 			/* Make sure we have the length */
 			dnssock->buf[1] = base[0];
+			dnssock->buf_len = 2;
 			base++;
 			len--;
 		}
 
 		/* At this point we definitely have 2 bytes there. */
-		plen = ISC_MIN(len, dnslen(dnssock->buf));
+		plen = ISC_MIN(len, (dnslen(dnssock->buf) + 2 -
+				     dnssock->buf_len));
 		if (plen > dnssock->buf_size) {
 			alloc_dnsbuf(dnssock, plen);
 		}
@@ -139,7 +141,7 @@ dnslisten_readcb(isc_nmhandle_t *handle, isc_region_t *region, void *arg) {
 		if (dnslen(dnssock->buf) == dnssock->buf_len - 2) {
 			isc_nmhandle_t *dnshandle = NULL;
 			isc_region_t r2 = {
-				.base = dnssock->buf + 1,
+				.base = dnssock->buf + 2,
 				.length = dnslen(dnssock->buf)
 			};
 
@@ -166,7 +168,7 @@ dnslisten_readcb(isc_nmhandle_t *handle, isc_region_t *region, void *arg) {
 	 * We don't have anything in buffer, and we're either pipelining
 	 * or not processing anything else; process what's incoming.
 	 */
-	while (len >= 2 && dnslen(base) <= len-2 &&
+	while (len >= 2 && dnslen(base) <= len - 2 &&
 	       !(atomic_load(&dnssock->sequential) &&
 		 atomic_load(&dnssock->processing)))
 	{
@@ -202,7 +204,6 @@ dnslisten_readcb(isc_nmhandle_t *handle, isc_region_t *region, void *arg) {
 		memmove(dnssock->buf, base, len);
 		dnssock->buf_len = len;
 	}
-
 }
 
 /* Process all complete packets out of incoming buffer */
