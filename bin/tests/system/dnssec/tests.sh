@@ -1525,6 +1525,7 @@ grep "flags:[^;]* ad[^;]*;" dig.out.ns4.test$n.3 > /dev/null || ret=1
 
 if [ "$ret" -ne 0 ]; then echo_i "failed - checking initial state"; fi
 status=$((status+ret))
+ret=0
 
 #
 # add negative trust anchors
@@ -1548,6 +1549,7 @@ start=$($PERL -e 'print time()."\n";')
 
 if [ "$ret" -ne 0 ]; then echo_i "failed - adding NTA's failed"; fi
 status=$((status+ret))
+ret=0
 
 #
 # check behavior with NTA's in place
@@ -1572,6 +1574,7 @@ grep "fakenode[.]secure[.]example: expiry" ns4/named.secroots > /dev/null || ret
 
 if [ "$ret" -ne 0 ]; then echo_i "failed - with NTA's in place failed"; fi
 status=$((status+ret))
+ret=0
 
 echo_i "waiting for NTA rechecks/expirations"
 
