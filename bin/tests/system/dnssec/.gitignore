@@ -1,5 +1,7 @@
 /dnssec-signzone.expected
 /keygen.err.*
+/keygen.out.*
 /signer.err.*
 /dsfromkey.err.*
 /dnssectools.out.*
+/delv.out.*
