@@ -659,7 +659,8 @@ query_reset(ns_client_t *client, bool everything) {
 	 */
 	for (dbversion = ISC_LIST_HEAD(client->query.activeversions);
 	     dbversion != NULL;
-	     dbversion = dbversion_next) {
+	     dbversion = dbversion_next)
+	{
 		dbversion_next = ISC_LIST_NEXT(dbversion, link);
 		dns_db_closeversion(dbversion->db, &dbversion->version,
 				    false);

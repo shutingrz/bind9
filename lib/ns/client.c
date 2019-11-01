@@ -177,10 +177,10 @@ static void ns_client_dumpmessage(ns_client_t *client, const char *reason);
 static void compute_cookie(ns_client_t *client, uint32_t when,
 			   uint32_t nonce, const unsigned char *secret,
 			   isc_buffer_t *buf);
-static isc_result_t
+static void
 get_clientmctx(ns_clientmgr_t *manager, isc_mem_t **mctxp);
 static isc_result_t
-client_setup(ns_clientmgr_t *manager, isc_mem_t *mctx, ns_client_t *client);
+client_setup(ns_client_t *client, ns_clientmgr_t *mgr, bool new);
 
 void
 ns_client_recursing(ns_client_t *client) {
@@ -1513,8 +1513,8 @@ process_opt(ns_client_t *client, dns_rdataset_t *opt) {
 			case DNS_OPT_TCP_KEEPALIVE:
 				if (!USEKEEPALIVE(client))
 					ns_stats_increment(
-						   client->sctx->nsstats,
-						   ns_statscounter_keepaliveopt);
+						 client->sctx->nsstats,
+						 ns_statscounter_keepaliveopt);
 				client->attributes |=
 					NS_CLIENTATTR_USEKEEPALIVE;
 				isc_buffer_forward(&optbuf, optlen);
@@ -1575,6 +1575,12 @@ client_reset_cb(void *client0) {
 			    NS_CLIENT_TCP_BUFFER_SIZE);
 	}
 
+	if (client->keytag != NULL) {
+		isc_mem_put(client->mctx, client->keytag,
+			    client->keytag_len);
+		client->keytag_len = 0;
+	}
+
 	client->state = NS_CLIENTSTATE_READY;
 	INSIST(client->recursionquota == NULL);
 }
@@ -1606,11 +1612,6 @@ client_put_cb(void *client0) {
 		dns_rdataset_disassociate(client->opt);
 		dns_message_puttemprdataset(client->message,
 					    &client->opt);
-	}
-	if (client->keytag != NULL) {
-		isc_mem_put(client->mctx, client->keytag,
-			    client->keytag_len);
-		client->keytag_len = 0;
 	}
 
 	dns_message_destroy(&client->message);
@@ -1673,33 +1674,25 @@ ns__client_request(isc_nmhandle_t *handle, isc_region_t *region, void *arg) {
 
 	client = isc_nmhandle_getdata(handle);
 	if (client == NULL) {
-		isc_mem_t *mctx = NULL;
-
-		LOCK(&mgr->lock);
-		get_clientmctx(mgr, &mctx);
-		UNLOCK(&mgr->lock);
-
-		if (mctx == NULL) {
-			return;
-		}
-
 		client = isc_nmhandle_getextra(handle);
 
-		result = client_setup(mgr, mctx, client);
+		result = client_setup(client, mgr, true);
 		if (result != ISC_R_SUCCESS) {
 			return;
 		}
 
-		clientmgr_attach(mgr, &client->manager);
-		client->state = NS_CLIENTSTATE_READY;
-		INSIST(client->recursionquota == NULL);
-
-		client->dscp = ifp->dscp;
-
 		ns_client_log(client, DNS_LOGCATEGORY_SECURITY,
 			      NS_LOGMODULE_CLIENT, ISC_LOG_DEBUG(3),
 			      "allocate new client");
+	} else {
+		result = client_setup(client, NULL, false);
+		if (result != ISC_R_SUCCESS) {
+			return;
+		}
 	}
+
+	client->state = NS_CLIENTSTATE_READY;
+	client->dscp = ifp->dscp;
 
 	isc_task_pause(client->task);
 	if (client->handle == NULL) {
@@ -2263,7 +2256,7 @@ ns__client_request(isc_nmhandle_t *handle, isc_region_t *region, void *arg) {
 	isc_task_unpause(client->task);
 }
 
-static isc_result_t
+static void
 get_clientmctx(ns_clientmgr_t *manager, isc_mem_t **mctxp) {
 	isc_mem_t *clientmctx;
 #if CLIENT_NMCTXS > 0
@@ -2272,11 +2265,8 @@ get_clientmctx(ns_clientmgr_t *manager, isc_mem_t **mctxp) {
 
 	MTRACE("clientmctx");
 
-	/*
-	 * Caller must be holding the manager lock.
-	 */
-
 #if CLIENT_NMCTXS > 0
+	LOCK(&manager->lock);
 	if (isc_nm_tid()>=0) {
 		nextmctx = isc_nm_tid();
 	} else {
@@ -2286,25 +2276,23 @@ get_clientmctx(ns_clientmgr_t *manager, isc_mem_t **mctxp) {
 
 		INSIST(nextmctx < CLIENT_NMCTXS);
 	}
-	clientmctx = manager->mctxpool[nextmctx];
 
+	clientmctx = manager->mctxpool[nextmctx];
 	if (clientmctx == NULL) {
 		isc_mem_create(&clientmctx);
 		isc_mem_setname(clientmctx, "client", NULL);
-
 		manager->mctxpool[nextmctx] = clientmctx;
 	}
+	UNLOCK(&manager->lock);
 #else
 	clientmctx = manager->mctx;
 #endif
 
 	isc_mem_attach(clientmctx, mctxp);
-
-	return (ISC_R_SUCCESS);
 }
 
 static isc_result_t
-client_setup(ns_clientmgr_t *manager, isc_mem_t *mctx, ns_client_t *client) {
+client_setup(ns_client_t *client, ns_clientmgr_t *mgr, bool new) {
 	isc_result_t result;
 
 	/*
@@ -2315,93 +2303,91 @@ client_setup(ns_clientmgr_t *manager, isc_mem_t *mctx, ns_client_t *client) {
 	 * The caller is responsible for that.
 	 */
 
-	REQUIRE(client != NULL);
+	REQUIRE(NS_CLIENT_VALID(client) || (new && client != NULL));
+	REQUIRE(VALID_MANAGER(mgr) || !new);
 
-	*client = (ns_client_t) { .magic = 0 };
+	if (new) {
+		*client = (ns_client_t) {
+			.magic = 0
+		};
 
-	client->mctx = mctx;
+		get_clientmctx(mgr, &client->mctx);
+		clientmgr_attach(mgr, &client->manager);
+		ns_server_attach(mgr->sctx, &client->sctx);
+		isc_task_create(mgr->taskmgr, 20,  &client->task);
+		result = dns_message_create(client->mctx,
+					    DNS_MESSAGE_INTENTPARSE,
+					    &client->message);
+		if (result != ISC_R_SUCCESS) {
+			goto cleanup;
+		}
 
-	ns_server_attach(manager->sctx, &client->sctx);
-	isc_task_create(manager->taskmgr, 20,  &client->task);
-	result = dns_message_create(client->mctx, DNS_MESSAGE_INTENTPARSE,
-				    &client->message);
-	if (result != ISC_R_SUCCESS) {
-		goto cleanup_timer;
+		client->recvbuf = isc_mem_get(client->mctx,
+					      NS_CLIENT_RECV_BUFFER_SIZE);
+
+		/*
+		 * Set magic earlier than usual because ns_query_init()
+		 * and the functions it calls will require it.
+		 */
+		client->magic = NS_CLIENT_MAGIC;
+		result = ns_query_init(client);
+		if (result != ISC_R_SUCCESS) {
+			goto cleanup;
+		}
+	} else {
+		ns_clientmgr_t *oldmgr = client->manager;
+		ns_server_t *sctx = client->sctx;
+		isc_task_t *task = client->task;
+		unsigned char *recvbuf = client->recvbuf;
+		dns_message_t *message = client->message;
+		isc_mem_t *oldmctx = client->mctx;
+		ns_query_t query = client->query;
+
+		*client = (ns_client_t) {
+			.magic = 0,
+			.mctx = oldmctx,
+			.manager = oldmgr,
+			.sctx = sctx,
+			.task = task,
+			.recvbuf = recvbuf,
+			.message = message,
+			.query = query
+		};
 	}
 
-	client->recvbuf = isc_mem_get(client->mctx, NS_CLIENT_RECV_BUFFER_SIZE);
-
-	client->manager = NULL;
-	client->allocated = false;
 	client->state = NS_CLIENTSTATE_INACTIVE;
-	client->naccepts = 0;
-	client->nreads = 0;
-	client->nsends = 0;
-	client->nrecvs = 0;
-	client->nupdates = 0;
-	client->nctls = 0;
-	client->attributes = 0;
-	client->view = NULL;
-	client->dispatch = NULL;
-	client->udpsocket = NULL;
-	client->handle = NULL;
-	client->tcplistener = NULL;
-	client->tcpsocket = NULL;
-	client->tcpbuf = NULL;
-	client->opt = NULL;
 	client->udpsize = 512;
 	client->dscp = -1;
-	client->extflags = 0;
 	client->ednsversion = -1;
-	client->cleanup = NULL;
-	client->shuttingdown = false;
-	client->shutdown = NULL;
-	client->shutdown_arg = NULL;
-	client->signer = NULL;
 	dns_name_init(&client->signername, NULL);
-	client->mortal = false;
-	client->sendcb = NULL;
-	client->recursionquota = NULL;
-	client->peeraddr_valid = false;
 	dns_ecs_init(&client->ecs);
-
-	/*
-	 * Initialize FORMERR cache to sentinel value that will not match
-	 * any actual FORMERR response.
-	 */
 	isc_sockaddr_any(&client->formerrcache.addr);
 	client->formerrcache.time = 0;
 	client->formerrcache.id = 0;
 	ISC_LINK_INIT(client, link);
 	ISC_LINK_INIT(client, rlink);
-	client->keytag = NULL;
-	client->keytag_len = 0;
 	client->rcode_override = -1; 	/* not set */
 
 	client->magic = NS_CLIENT_MAGIC;
 
-	/*
-	 * We call the init routines for the various kinds of client here,
-	 * after we have created an otherwise valid client, because some
-	 * of them call routines that REQUIRE(NS_CLIENT_VALID(client)).
-	 */
-	result = ns_query_init(client);
-	if (result != ISC_R_SUCCESS)
-		goto cleanup_recvevent;
-
-	CTRACE("create");
+	CTRACE("client_setup");
 
 	return (ISC_R_SUCCESS);
 
- cleanup_recvevent:
-	isc_mem_put(client->mctx, client->recvbuf, NS_CLIENT_RECV_BUFFER_SIZE);
+ cleanup:
+	if (client->recvbuf != NULL) {
+		isc_mem_put(client->mctx, client->recvbuf,
+			    NS_CLIENT_RECV_BUFFER_SIZE);
+	}
 
-	dns_message_destroy(&client->message);
+	if (client->message != NULL) {
+		dns_message_destroy(&client->message);
+	}
 
- cleanup_timer:
-	if (client->task) {
+	if (client->task != NULL) {
 		isc_task_detach(&client->task);
 	}
+
 	return (result);
 }
 
