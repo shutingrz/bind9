@@ -52,7 +52,6 @@ isc_nm_listenudp(isc_nm_t *mgr, isc_nmiface_t *iface,
 		 size_t extrahandlesize, isc_nmsocket_t **sockp)
 {
 	isc_nmsocket_t *nsock = NULL;
-	int res;
 
 	/*
 	 * We are creating mgr->nworkers duplicated sockets, one
@@ -73,6 +72,9 @@ isc_nm_listenudp(isc_nm_t *mgr, isc_nmiface_t *iface,
 	nsock->extrahandlesize = extrahandlesize;
 
 	for (size_t i = 0; i < mgr->nworkers; i++) {
+		uint16_t family = iface->addr.type.sa.sa_family;
+		int res;
+
 		isc__netievent_udplisten_t *ievent = NULL;
 		isc_nmsocket_t *csock = &nsock->children[i];
 
@@ -85,7 +87,7 @@ isc_nm_listenudp(isc_nm_t *mgr, isc_nmiface_t *iface,
 		INSIST(csock->rcb.recv == NULL && csock->rcbarg == NULL);
 		csock->rcb.recv = cb;
 		csock->rcbarg = cbarg;
-		csock->fd = socket(AF_INET, SOCK_DGRAM, 0);
+		csock->fd = socket(family, SOCK_DGRAM, 0);
 		INSIST(csock->fd >= 0);
 
 		/*
