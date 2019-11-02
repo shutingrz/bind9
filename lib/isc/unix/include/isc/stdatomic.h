@@ -178,4 +178,4 @@ typedef uint_fast64_t	atomic_uintptr_t;
 #define atomic_compare_exchange_weak(obj, expected, desired)	\
 	atomic_compare_exchange_weak_explicit(obj, expected, desired, memory_order_seq_cst, memory_order_seq_cst)
 #define atomic_exchange(obj, desired)	\
-	atomic_exchange_explicit(obj, expected, memory_order_seq_cst)
+	atomic_exchange_explicit(obj, desired, memory_order_seq_cst)
