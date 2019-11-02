@@ -453,4 +453,4 @@ atomic_exchange_abort() {
 		    : atomic_exchange_abort())))
 
 #define atomic_exchange(obj, desired)					\
-	atomic_exchange_explicit(obj, expected, memory_order_seq_cst)	\
+	atomic_exchange_explicit(obj, desired, memory_order_seq_cst)	\
