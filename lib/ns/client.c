@@ -53,6 +53,7 @@
 #include <dns/view.h>
 #include <dns/zone.h>
 
+#include <ns/client.h>
 #include <ns/interfacemgr.h>
 #include <ns/log.h>
 #include <ns/notify.h>
@@ -106,59 +107,6 @@
 
 #define MANAGER_MAGIC			ISC_MAGIC('N', 'S', 'C', 'm')
 #define VALID_MANAGER(m)		ISC_MAGIC_VALID(m, MANAGER_MAGIC)
-
-/*!
- * Client object states.  Ordering is significant: higher-numbered
- * states are generally "more active", meaning that the client can
- * have more dynamically allocated data, outstanding events, etc.
- * In the list below, any such properties listed for state N
- * also apply to any state > N.
- */
-
-#define NS_CLIENTSTATE_FREED    0
-/*%<
- * The client object no longer exists.
- */
-
-#define NS_CLIENTSTATE_INACTIVE 1
-/*%<
- * The client object exists and has a task and timer.
- * Its "query" struct and sendbuf are initialized.
- * It has a message and OPT, both in the reset state.
- */
-
-#define NS_CLIENTSTATE_READY    2
-/*%<
- * The client object is either a TCP or a UDP one, and
- * it is associated with a network interface.  It is on the
- * client manager's list of active clients.
- *
- * If it is a TCP client object, it has a TCP listener socket
- * and an outstanding TCP listen request.
- *
- * If it is a UDP client object, it has a UDP listener socket
- * and an outstanding UDP receive request.
- */
-
-
-#define NS_CLIENTSTATE_WORKING  4
-/*%<
- * The client object has received a request and is working
- * on it.  It has a view, and it may have any of a non-reset OPT,
- * recursion quota, and an outstanding write request.
- */
-
-#define NS_CLIENTSTATE_RECURSING  5
-/*%<
- * The client object is recursing.  It will be on the 'recursing'
- * list.
- */
-
-#define NS_CLIENTSTATE_MAX      9
-/*%<
- * Sentinel value used to indicate "no state".
- * Must be greater than any valid state.
- */
 
 /*
  * Enable ns_client_dropport() by default.
@@ -255,9 +203,9 @@ ns_client_endrequest(ns_client_t *client) {
 	dns_message_reset(client->message, DNS_MESSAGE_INTENTPARSE);
 
 	/*
-	 * This would normally be released in fetch_callback(),
-	 * but if we're shutting down and canceling then it
-	 * might not have happened.
+	 * Clean up from recursion - normally this would be done in
+	 * fetch_callback(), but if we're shutting down and canceling then
+	 * it might not have happened.
 	 */
 	if (client->recursionquota != NULL) {
 		isc_quota_detach(&client->recursionquota);
@@ -265,9 +213,14 @@ ns_client_endrequest(ns_client_t *client) {
 				   ns_statscounter_recursclients);
 	}
 
+	LOCK(&client->manager->reclock);
+	if (ISC_LINK_LINKED(client, rlink)) {
+		ISC_LIST_UNLINK(client->manager->recursing, client, rlink);
+	}
+	UNLOCK(&client->manager->reclock);
+
 	/*
-	 * Clear all client attributes that are specific to
-	 * the request
+	 * Clear all client attributes that are specific to the request
 	 */
 	client->attributes = 0;
 #ifdef ENABLE_AFL
@@ -1559,20 +1512,9 @@ static void
 client_reset_cb(void *client0) {
 	ns_client_t *client = client0;
 
-	if (client->state == NS_CLIENTSTATE_RECURSING) {
-		ns_client_log(client, DNS_LOGCATEGORY_SECURITY,
-			      NS_LOGMODULE_CLIENT, ISC_LOG_DEBUG(3),
-			      "reset recursing client");
-		LOCK(&client->manager->reclock);
-		if (ISC_LINK_LINKED(client, rlink))
-			ISC_LIST_UNLINK(client->manager->recursing,
-					client, rlink);
-		UNLOCK(&client->manager->reclock);
-	} else {
-		ns_client_log(client, DNS_LOGCATEGORY_SECURITY,
-			      NS_LOGMODULE_CLIENT, ISC_LOG_DEBUG(3),
-			      "reset client");
-	}
+	ns_client_log(client, DNS_LOGCATEGORY_SECURITY,
+		      NS_LOGMODULE_CLIENT, ISC_LOG_DEBUG(3),
+		      "reset client");
 
 	ns_client_endrequest(client);
 	if (client->tcpbuf != NULL) {
@@ -1589,7 +1531,6 @@ client_reset_cb(void *client0) {
 	client->state = NS_CLIENTSTATE_READY;
 	INSIST(client->recursionquota == NULL);
 }
-
 
 static void
 client_put_cb(void *client0) {

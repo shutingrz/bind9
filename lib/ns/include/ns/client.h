@@ -99,37 +99,90 @@
  * Number of tasks to be used by clients - those are used only when recursing
  */
 
+/*!
+ * Client object states.  Ordering is significant: higher-numbered
+ * states are generally "more active", meaning that the client can
+ * have more dynamically allocated data, outstanding events, etc.
+ * In the list below, any such properties listed for state N
+ * also apply to any state > N.
+ */
+
+typedef enum {
+	NS_CLIENTSTATE_FREED = 0,
+	/*%<
+	 * The client object no longer exists.
+	 */
+
+	NS_CLIENTSTATE_INACTIVE = 1,
+	/*%<
+	 * The client object exists and has a task and timer.
+	 * Its "query" struct and sendbuf are initialized.
+	 * It has a message and OPT, both in the reset state.
+	 */
+
+	NS_CLIENTSTATE_READY = 2,
+	/*%<
+	 * The client object is either a TCP or a UDP one, and
+	 * it is associated with a network interface.  It is on the
+	 * client manager's list of active clients.
+	 *
+	 * If it is a TCP client object, it has a TCP listener socket
+	 * and an outstanding TCP listen request.
+	 *
+	 * If it is a UDP client object, it has a UDP listener socket
+	 * and an outstanding UDP receive request.
+	 */
+
+	NS_CLIENTSTATE_WORKING = 3,
+	/*%<
+	 * The client object has received a request and is working
+	 * on it.  It has a view, and it may have any of a non-reset OPT,
+	 * recursion quota, and an outstanding write request.
+	 */
+
+	NS_CLIENTSTATE_RECURSING = 4,
+	/*%<
+	 * The client object is recursing.  It will be on the
+	 * 'recursing' list.
+	 */
+
+	NS_CLIENTSTATE_MAX = 5
+	/*%<
+	 * Sentinel value used to indicate "no state".
+	 */
+} ns_clientstate_t;
+
 typedef ISC_LIST(ns_client_t) client_list_t;
 
 /*% nameserver client manager structure */
 struct ns_clientmgr {
 	/* Unlocked. */
-	unsigned int			magic;
+	unsigned int		magic;
 
-	isc_mem_t *			mctx;
-	ns_server_t *			sctx;
-	isc_taskmgr_t *			taskmgr;
-	isc_timermgr_t *		timermgr;
-	isc_task_t *			excl;
-	isc_refcount_t			references;
+	isc_mem_t *		mctx;
+	ns_server_t *		sctx;
+	isc_taskmgr_t *		taskmgr;
+	isc_timermgr_t *	timermgr;
+	isc_task_t *		excl;
+	isc_refcount_t		references;
 
 	/* Attached by clients, needed for e.g. recursion */
-	isc_task_t **			taskpool;
+	isc_task_t **		taskpool;
 
-	ns_interface_t			*interface;
+	ns_interface_t		*interface;
 
 	/* Lock covers manager state. */
-	isc_mutex_t			lock;
+	isc_mutex_t		lock;
 	bool			exiting;
 
 	/* Lock covers the recursing list */
-	isc_mutex_t			reclock;
-	client_list_t			recursing;    /*%< Recursing clients */
+	isc_mutex_t		reclock;
+	client_list_t		recursing;    /*%< Recursing clients */
 
 #if CLIENT_NMCTXS > 0
 	/*%< mctx pool for clients. */
-	unsigned int			nextmctx;
-	isc_mem_t *			mctxpool[CLIENT_NMCTXS];
+	unsigned int		nextmctx;
+	isc_mem_t *		mctxpool[CLIENT_NMCTXS];
 #endif
 };
 
@@ -140,7 +193,7 @@ struct ns_client {
 	bool			allocated;	/* Do we need to free it? */
 	ns_server_t		*sctx;
 	ns_clientmgr_t		*manager;
-	int			state;
+	ns_clientstate_t	state;
 	int			naccepts;
 	int			nreads;
 	int			nsends;

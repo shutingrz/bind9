@@ -5613,17 +5613,27 @@ fetch_callback(isc_task_t *task, isc_event_t *event) {
 	UNLOCK(&client->query.fetchlock);
 	INSIST(client->query.fetch == NULL);
 
+	SAVE(fetch, devent->fetch);
+
 	/*
-	 * We're done recursing, detach from quota.
+	 * We're done recursing, detach from quota and unlink from
+	 * the manager's recursing-clients list.
 	 */
+
 	if (client->recursionquota != NULL) {
 		isc_quota_detach(&client->recursionquota);
 		ns_stats_decrement(client->sctx->nsstats,
 				   ns_statscounter_recursclients);
 	}
 
+	LOCK(&client->manager->reclock);
+	if (ISC_LINK_LINKED(client, rlink)) {
+		ISC_LIST_UNLINK(client->manager->recursing, client, rlink);
+	}
+	UNLOCK(&client->manager->reclock);
+
 	client->query.attributes &= ~NS_QUERYATTR_RECURSING;
-	SAVE(fetch, devent->fetch);
+	client->state = NS_CLIENTSTATE_WORKING;
 
 	/*
 	 * If this client is shutting down, or this transaction
