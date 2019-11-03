@@ -183,7 +183,14 @@ cleanup_managers(void) {
 	if (socketmgr != NULL) {
 		isc_socketmgr_destroy(&socketmgr);
 	}
+	ns_test_nap(500000);
 	if (nm != NULL ){
+		/*
+		 * Force something in the workqueue as a workaround
+		 * for libuv bug - not sending uv_close callback.
+		 */
+		isc_nm_pause(nm);
+		isc_nm_resume(nm);
 		isc_nm_detach(&nm);
 	}
 	if (taskmgr != NULL) {
