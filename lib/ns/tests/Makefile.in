@@ -15,6 +15,8 @@ VERSION=@BIND9_VERSION@
 
 @BIND9_MAKE_INCLUDES@
 
+WRAPS =		-Wl,--wrap=isc_nmhandle_unref
+
 CINCLUDES =	-I. -Iinclude ${NS_INCLUDES} ${DNS_INCLUDES} ${ISC_INCLUDES} \
 		${OPENSSL_CFLAGS} \
 		@CMOCKA_CFLAGS@
@@ -47,22 +49,22 @@ TARGETS =	listenlist_test@EXEEXT@ \
 
 listenlist_test@EXEEXT@: listenlist_test.@O@ nstest.@O@ ${NSDEPLIBS} ${ISCDEPLIBS} ${DNSDEPLIBS}
 	${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${CFLAGS} \
-		${LDFLAGS} -o $@ listenlist_test.@O@ nstest.@O@ \
+		${LDFLAGS} ${WRAPS} -o $@ listenlist_test.@O@ nstest.@O@ \
 		${NSLIBS} ${DNSLIBS} ${ISCLIBS} ${LIBS}
 
 notify_test@EXEEXT@: notify_test.@O@ nstest.@O@ ${NSDEPLIBS} ${ISCDEPLIBS} ${DNSDEPLIBS}
 	${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${CFLAGS} \
-		${LDFLAGS} -o $@ notify_test.@O@ nstest.@O@ \
+		${LDFLAGS} ${WRAPS} -o $@ notify_test.@O@ nstest.@O@ \
 		${NSLIBS} ${DNSLIBS} ${ISCLIBS} ${LIBS}
 
 plugin_test@EXEEXT@: plugin_test.@O@ nstest.@O@ ${NSDEPLIBS} ${ISCDEPLIBS} ${DNSDEPLIBS}
 	${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${CFLAGS} \
-		${LDFLAGS} -o $@ plugin_test.@O@ nstest.@O@ \
+		${LDFLAGS} ${WRAPS} -o $@ plugin_test.@O@ nstest.@O@ \
 		${NSLIBS} ${DNSLIBS} ${ISCLIBS} ${LIBS}
 
 query_test@EXEEXT@: query_test.@O@ nstest.@O@ ${NSDEPLIBS} ${ISCDEPLIBS} ${DNSDEPLIBS}
 	${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${CFLAGS} \
-		${LDFLAGS} -o $@ query_test.@O@ nstest.@O@ \
+		${LDFLAGS} ${WRAPS} -o $@ query_test.@O@ nstest.@O@ \
 		${NSLIBS} ${DNSLIBS} ${ISCLIBS} ${LIBS}
 
 unit::

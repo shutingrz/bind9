@@ -181,11 +181,15 @@ stoplistening(isc_nmsocket_t *sock) {
 	for (int i = 0; i < sock->nchildren; i++) {
 		isc__netievent_udplisten_t *event = NULL;
 
-		if (i == sock->tid) {
-			stop_udp_child(&sock->children[i]);
-			continue;
-		}
-
+/*
+ *		XXXWPK commented out for now - for some reason libuv
+ *		won't send the uv_close callback if nothing else was
+ *		in the workqueue. Has to be investigated.
+ *		if (i == sock->tid) {
+ *			stop_udp_child(&sock->children[i]);
+ *			continue;
+ *		}
+ */
 		event = isc__nm_get_ievent(sock->mgr, netievent_udpstoplisten);
 		event->sock = &sock->children[i];
 		isc__nm_enqueue_ievent(&sock->mgr->workers[i],

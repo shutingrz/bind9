@@ -127,8 +127,6 @@ static void compute_cookie(ns_client_t *client, uint32_t when,
 			   isc_buffer_t *buf);
 static void
 get_clientmctx(ns_clientmgr_t *manager, isc_mem_t **mctxp);
-static isc_result_t
-client_setup(ns_client_t *client, ns_clientmgr_t *mgr, bool new);
 
 void
 ns_client_recursing(ns_client_t *client) {
@@ -1508,8 +1506,8 @@ process_opt(ns_client_t *client, dns_rdataset_t *opt) {
 	return (result);
 }
 
-static void
-client_reset_cb(void *client0) {
+void
+ns__client_reset_cb(void *client0) {
 	ns_client_t *client = client0;
 
 	ns_client_log(client, DNS_LOGCATEGORY_SECURITY,
@@ -1532,8 +1530,8 @@ client_reset_cb(void *client0) {
 	INSIST(client->recursionquota == NULL);
 }
 
-static void
-client_put_cb(void *client0) {
+void
+ns__client_put_cb(void *client0) {
 	ns_client_t *client = client0;
 
 	ns_client_log(client, DNS_LOGCATEGORY_SECURITY,
@@ -1622,7 +1620,7 @@ ns__client_request(isc_nmhandle_t *handle, isc_region_t *region, void *arg) {
 	if (client == NULL) {
 		client = isc_nmhandle_getextra(handle);
 
-		result = client_setup(client, mgr, true);
+		result = ns__client_setup(client, mgr, true);
 		if (result != ISC_R_SUCCESS) {
 			return;
 		}
@@ -1631,7 +1629,7 @@ ns__client_request(isc_nmhandle_t *handle, isc_region_t *region, void *arg) {
 			      NS_LOGMODULE_CLIENT, ISC_LOG_DEBUG(3),
 			      "allocate new client");
 	} else {
-		result = client_setup(client, NULL, false);
+		result = ns__client_setup(client, NULL, false);
 		if (result != ISC_R_SUCCESS) {
 			return;
 		}
@@ -1643,7 +1641,7 @@ ns__client_request(isc_nmhandle_t *handle, isc_region_t *region, void *arg) {
 	isc_task_pause(client->task);
 	if (client->handle == NULL) {
 		isc_nmhandle_setdata(handle, client,
-				     client_reset_cb, client_put_cb);
+				     ns__client_reset_cb, ns__client_put_cb);
 		client->handle = handle;
 	}
 	if (isc_nmhandle_is_stream(handle)) {
@@ -2237,8 +2235,8 @@ get_clientmctx(ns_clientmgr_t *manager, isc_mem_t **mctxp) {
 	isc_mem_attach(clientmctx, mctxp);
 }
 
-static isc_result_t
-client_setup(ns_client_t *client, ns_clientmgr_t *mgr, bool new) {
+isc_result_t
+ns__client_setup(ns_client_t *client, ns_clientmgr_t *mgr, bool new) {
 	isc_result_t result;
 
 	/*

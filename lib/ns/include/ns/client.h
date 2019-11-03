@@ -566,4 +566,24 @@ ns_client_findversion(ns_client_t *client, dns_db_t *db);
  * allocated by ns_client_newdbversion().
  */
 
+isc_result_t
+ns__client_setup(ns_client_t *client, ns_clientmgr_t *manager, bool new);
+/*%<
+ * Perform initial setup of an allocated client.
+ */
+
+void
+ns__client_reset_cb(void *client0);
+/*%<
+ * Reset the client object so that it can be reused.
+ */
+
+void
+ns__client_put_cb(void *client0);
+/*%<
+ * Free all resources allocated to this client object, so that
+ * it can be freed.
+ */
+
+
 #endif /* NS_CLIENT_H */
