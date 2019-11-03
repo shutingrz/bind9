@@ -5613,6 +5613,15 @@ fetch_callback(isc_task_t *task, isc_event_t *event) {
 	UNLOCK(&client->query.fetchlock);
 	INSIST(client->query.fetch == NULL);
 
+	/*
+	 * We're done recursing, detach from quota.
+	 */
+	if (client->recursionquota != NULL) {
+		isc_quota_detach(&client->recursionquota);
+		ns_stats_decrement(client->sctx->nsstats,
+				   ns_statscounter_recursclients);
+	}
+
 	client->query.attributes &= ~NS_QUERYATTR_RECURSING;
 	SAVE(fetch, devent->fetch);
 

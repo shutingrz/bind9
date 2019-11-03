@@ -254,6 +254,11 @@ ns_client_endrequest(ns_client_t *client) {
 	dns_ecs_init(&client->ecs);
 	dns_message_reset(client->message, DNS_MESSAGE_INTENTPARSE);
 
+	/*
+	 * This would normally be released in fetch_callback(),
+	 * but if we're shutting down and canceling then it
+	 * might not have happened.
+	 */
 	if (client->recursionquota != NULL) {
 		isc_quota_detach(&client->recursionquota);
 		ns_stats_decrement(client->sctx->nsstats,
