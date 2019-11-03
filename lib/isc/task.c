@@ -406,7 +406,8 @@ task_ready(isc__task_t *task) {
 	LOCK(&manager->queues[task->threadid].lock);
 	push_readyq(manager, task, task->threadid);
 	if (atomic_load(&manager->mode) == isc_taskmgrmode_normal ||
-	    has_privilege) {
+	    has_privilege)
+	{
 		SIGNAL(&manager->queues[task->threadid].work_available);
 	}
 	UNLOCK(&manager->queues[task->threadid].lock);
@@ -1139,9 +1140,11 @@ dispatch(isc__taskmgr_t *manager, unsigned int threadid) {
 					dispatch_count++;
 				}
 
-				if (isc_refcount_current(&task->references) == 0 &&
+				if (isc_refcount_current(
+						 &task->references) == 0 &&
 				    EMPTY(task->events) &&
-				    !TASK_SHUTTINGDOWN(task)) {
+				    !TASK_SHUTTINGDOWN(task))
+				{
 					bool was_idle;
 
 					/*
@@ -1176,16 +1179,19 @@ dispatch(isc__taskmgr_t *manager, unsigned int threadid) {
 					 * right now.
 					 */
 					XTRACE("empty");
-					if (isc_refcount_current(&task->references) == 0 &&
-					    TASK_SHUTTINGDOWN(task)) {
+					if (isc_refcount_current(
+						     &task->references) == 0 &&
+					    TASK_SHUTTINGDOWN(task))
+					{
 						/*
 						 * The task is done.
 						 */
 						XTRACE("done");
 						finished = true;
 						task->state = task_state_done;
-					} else
+					} else {
 						task->state = task_state_idle;
+					}
 					done = true;
 				} else if (dispatch_count >= task->quantum) {
 					/*
@@ -1642,12 +1648,19 @@ isc_task_pause(isc_task_t *task0) {
 	REQUIRE(ISCAPI_TASK_VALID(task0));
 	isc__task_t *task = (isc__task_t *)task0;
 	isc__taskmgr_t *manager = task->manager;
+	bool running = false;
 
 	LOCK(&task->lock);
 	INSIST(task->state == task_state_idle ||
-	       task->state == task_state_ready);
+	       task->state == task_state_ready ||
+	       task->state == task_state_running);
+	running = (task->state == task_state_running);
 	task->state = task_state_paused;
 	UNLOCK(&task->lock);
+
+	if (running) {
+		return;
+	}
 
 	/* XXXWPK TODO optimize it - 'lazy' removal in runner? */
 	LOCK(&manager->queues[task->threadid].lock);
