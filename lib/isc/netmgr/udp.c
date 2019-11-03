@@ -167,29 +167,37 @@ stop_udp_child(isc_nmsocket_t *sock) {
 
 static void
 stoplistening(isc_nmsocket_t *sock) {
+	/*
+	 * Socket is already closing; there's nothing to do.
+	 */
 	if (uv_is_closing((uv_handle_t *) &sock->uv_handle.udp)) {
 		return;
 	}
 
+	/*
+	 * If this is a child socket; stop listening and return.
+	 */
 	if (sock->parent != NULL) {
 		stop_udp_child(sock);
 		return;
 	}
+
+	/*
+	 * ... but if it's a parent socket, we need to send stop-
+	 * listening events to all the children first, and wait for
+	 * them to be executed.
+	 */
 
 	INSIST(sock->type == isc_nm_udplistener);
 
 	for (int i = 0; i < sock->nchildren; i++) {
 		isc__netievent_udplisten_t *event = NULL;
 
-/*
- *		XXXWPK commented out for now - for some reason libuv
- *		won't send the uv_close callback if nothing else was
- *		in the workqueue. Has to be investigated.
- *		if (i == sock->tid) {
- *			stop_udp_child(&sock->children[i]);
- *			continue;
- *		}
- */
+		if (i == sock->tid) {
+			stop_udp_child(&sock->children[i]);
+			continue;
+		}
+
 		event = isc__nm_get_ievent(sock->mgr, netievent_udpstoplisten);
 		event->sock = &sock->children[i];
 		isc__nm_enqueue_ievent(&sock->mgr->workers[i],
@@ -216,16 +224,14 @@ isc_nm_udp_stoplistening(isc_nmsocket_t *sock) {
 	REQUIRE(sock->type == isc_nm_udplistener);
 
 	/*
-	 * If the worker is paused, enqueue this as an asynchronous
-	 * event. Otherwise, go ahead and stop listening now.
+	 * If the manager is paused, re-enqueue this as an asynchronous
+	 * event. Otherwise, go ahead and stop listening right away.
 	 */
 	if (isc_nm_paused(sock->mgr)) {
-		LOCK(&sock->mgr->lock);
 		ievent = isc__nm_get_ievent(sock->mgr, netievent_udpstoplisten);
 		ievent->sock = sock;
 		isc__nm_enqueue_ievent(&sock->mgr->workers[sock->tid],
 				       (isc__netievent_t *) ievent);
-		UNLOCK(&sock->mgr->lock);
 		return;
 	}
 
@@ -246,6 +252,19 @@ isc__nm_async_udpstoplisten(isc__networker_t *worker,
 	REQUIRE(sock->iface != NULL);
 
 	UNUSED(worker);
+
+	/*
+	 * The network manager is pausing; re-enqueue this event for later.
+	 */
+	if (isc_nm_paused(sock->mgr)) {
+		isc__netievent_udplisten_t *event = NULL;
+
+		event = isc__nm_get_ievent(sock->mgr, netievent_udpstoplisten);
+		event->sock = sock;
+		isc__nm_enqueue_ievent(&sock->mgr->workers[sock->tid],
+				       (isc__netievent_t *) event);
+		return;
+	}
 
 	stoplistening(sock);
 }

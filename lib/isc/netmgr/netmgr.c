@@ -170,13 +170,8 @@ isc_nm_pause(isc_nm_t *mgr) {
 	REQUIRE(VALID_NM(mgr));
 	REQUIRE(!isc__nm_in_netthread());
 
-	/*
-	 * We lock this entire loop under the manager lock to ensure that
-	 * if this runs at the same time as isc_nm_udp_stoplistening(), the
-	 * 'stop' and 'stoplistening' events will appear on all queues in a
-	 * consistent order.
-	 */
-	LOCK(&mgr->lock);
+	atomic_store(&mgr->paused, true);
+
 	for (size_t i = 0; i < mgr->nworkers; i++) {
 		isc__netievent_t *event = NULL;
 
@@ -192,6 +187,7 @@ isc_nm_pause(isc_nm_t *mgr) {
 		isc__nm_enqueue_ievent(&mgr->workers[i], event);
 	}
 
+	LOCK(&mgr->lock);
 	while (atomic_load_relaxed(&mgr->workers_paused) !=
 	       atomic_load_relaxed(&mgr->workers_running))
 	{
@@ -220,14 +216,7 @@ isc_nm_resume(isc_nm_t *mgr) {
 
 bool
 isc_nm_paused(isc_nm_t *mgr) {
-	bool paused;
-
-	LOCK(&mgr->lock);
-	paused = (atomic_load(&mgr->workers_paused) ==
-		  atomic_load(&mgr->workers_running));
-	UNLOCK(&mgr->lock);
-
-	return (paused);
+	return (atomic_load(&mgr->paused));
 }
 
 void
@@ -305,8 +294,12 @@ nm_thread(void *worker0) {
 			WAIT(&worker->cond, &worker->lock);
 		}
 		if (pausing) {
-			atomic_fetch_sub_explicit(&worker->mgr->workers_paused,
-						  1, memory_order_release);
+			uint32_t wp = atomic_fetch_sub_explicit(
+					       &worker->mgr->workers_paused,
+					       1, memory_order_release);
+			if (wp == 1) {
+				atomic_store(&worker->mgr->paused, false);
+			}
 		}
 		UNLOCK(&worker->lock);
 
@@ -359,7 +352,9 @@ async_cb(uv_async_t *handle) {
 		switch (ievent->type) {
 		case netievent_stop:
 			uv_stop(handle->loop);
-			break;
+			isc_mem_put(worker->mgr->mctx, ievent,
+				    sizeof(isc__netievent_storage_t));
+			return;
 		case netievent_udplisten:
 			isc__nm_async_udplisten(worker, ievent);
 			break;

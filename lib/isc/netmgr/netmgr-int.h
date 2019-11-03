@@ -233,6 +233,7 @@ struct isc_nm {
 	atomic_uint_fast32_t	workers_running;
 	atomic_uint_fast32_t	workers_paused;
 	atomic_uint_fast32_t	maxudp;
+	atomic_bool		paused;
 };
 
 typedef enum isc_nmsocket_type {
