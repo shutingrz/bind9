@@ -85,8 +85,14 @@ void
 __wrap_isc_nmhandle_unref(isc_nmhandle_t *handle) {
 	ns_client_t *client = (ns_client_t *)handle;
 	int i;
-	for (i=0; i < 16 && client_addrs[i] != (uintptr_t) client; i++) {};
+
+	for (i = 0; i < 16; i++) {
+		if (client_addrs[i] == (uintptr_t) client) {
+			break;
+		}
+	}
 	REQUIRE(i < 16);
+
 	if (atomic_fetch_sub(&client_refs[i], 1) == 1) {
 		dns_view_detach(&client->view);
 		client->state = 4;
@@ -96,7 +102,6 @@ __wrap_isc_nmhandle_unref(isc_nmhandle_t *handle) {
 	}
 	return;
 }
-
 
 /*
  * Logging categories: this needs to match the list in lib/ns/log.c.
@@ -541,17 +546,28 @@ ns_test_getclient(ns_interface_t *ifp0, bool tcp,
 		  ns_client_t **clientp)
 {
 	isc_result_t result;
+	ns_client_t *client = isc_mem_get(mctx, sizeof(ns_client_t));
+	int i;
+
 	UNUSED(ifp0);
 	UNUSED(tcp);
-	ns_client_t *client = isc_mem_get(mctx, sizeof(ns_client_t));
+
 	result = ns__client_setup(client, clientmgr, true);
-	int i;
-	for (i=0; i < 16 && client_addrs[i] != 0 && client_addrs[i] != (uintptr_t) client; i++) {};
+
+	for (i = 0; i < 16; i++) {
+		if (client_addrs[i] == (uintptr_t) NULL ||
+		    client_addrs[i] == (uintptr_t) client)
+		{
+			break;
+		}
+	}
 	REQUIRE(i < 16);
+
 	atomic_store(&client_refs[i], 2);
 	atomic_store(&client_addrs[i], (uintptr_t) client);
 	client->handle = (isc_nmhandle_t *) client; /* Hack */
 	*clientp = client;
+
 	return (result);
 }
 
