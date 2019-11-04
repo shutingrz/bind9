@@ -114,8 +114,8 @@ isc_nm_start(isc_mem_t *mctx, uint32_t workers) {
 		worker->ievents = isc_queue_new(mgr->mctx, 128);
 
 		/*
-		 * We need to do it here and not in nm_thread to avoid a
-		 * race - we could exit isc_nm_start, launch nm_destroy
+		 * We need to do this here and not in nm_thread to avoid a
+		 * race - we could exit isc_nm_start, launch nm_destroy,
 		 * and nm_thread would still not be up.
 		 */
 		atomic_fetch_add_explicit(&mgr->workers_running, 1,
