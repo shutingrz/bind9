@@ -431,6 +431,7 @@ isc_netscope_pton
 isc_nmhandle_getdata
 isc_nmhandle_getextra
 isc_nmhandle_is_stream
+isc_nmhandle_localaddr
 isc_nmhandle_peeraddr
 isc_nmhandle_ref
 isc_nmhandle_setdata
