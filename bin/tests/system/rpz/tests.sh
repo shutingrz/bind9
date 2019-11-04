@@ -219,6 +219,7 @@ restart () {
     $PERL $SYSTEMTESTTOP/start.pl --noclean --restart --port ${PORT} rpz ns$1
     load_db
     dnsrps_loaded
+    sleep 1
 }
 
 # $1=server and irrelevant args
