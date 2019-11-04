@@ -361,7 +361,7 @@ isc__nm_tcpdns_send(isc_nmhandle_t *handle, isc_region_t *region,
 	REQUIRE(VALID_NMSOCK(sock));
 	REQUIRE(sock->type == isc_nm_tcpdnssocket);
 
-	if (sock == NULL || sock->outer == NULL) {
+	if (sock->outer == NULL) {
 		/* The socket is closed, just issue the callback */
 		cb(handle, ISC_R_FAILURE, cbarg);
 		return (ISC_R_NOTCONNECTED);
