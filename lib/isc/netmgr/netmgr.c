@@ -231,11 +231,6 @@ isc_nm_resume(isc_nm_t *mgr) {
 	 */
 }
 
-bool
-isc_nm_paused(isc_nm_t *mgr) {
-	return (atomic_load(&mgr->paused));
-}
-
 void
 isc_nm_attach(isc_nm_t *mgr, isc_nm_t **dst) {
 	int refs;

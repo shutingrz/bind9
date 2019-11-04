@@ -276,9 +276,3 @@ isc_nm_maxudp(isc_nm_t *mgr, uint32_t maxudp);
  * Simulate a broken firewall that blocks UDP messages larger
  * than a given size.
  */
-
-bool
-isc_nm_paused(isc_nm_t *mgr);
-/*%<
- * Returns 'true' if all workers are paused, false otherwise.
- */
