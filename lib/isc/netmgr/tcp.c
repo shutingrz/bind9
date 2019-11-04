@@ -366,6 +366,7 @@ read_cb(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf) {
 static isc_result_t
 accept_connection(isc_nmsocket_t *ssock) {
 	isc_result_t result;
+	isc_quota_t *quota = NULL;
 	isc_nmsocket_t *csock = NULL;
 	isc__networker_t *worker = NULL;
 	isc_nmhandle_t *handle = NULL;
@@ -381,7 +382,6 @@ accept_connection(isc_nmsocket_t *ssock) {
 		return (ISC_R_CANCELED);
 	}
 
-	isc_quota_t *quota = NULL;
 	if (ssock->quota != NULL) {
 		result = isc_quota_attach(ssock->quota, &quota);
 		if (result != ISC_R_SUCCESS) {
@@ -393,6 +393,7 @@ accept_connection(isc_nmsocket_t *ssock) {
 	isc__nmsocket_init(csock, ssock->mgr, isc_nm_tcpsocket);
 	csock->tid = isc_nm_tid();
 	csock->extrahandlesize = ssock->extrahandlesize;
+	csock->iface = ssock->iface;
 	csock->quota = quota;
 	quota = NULL;
 

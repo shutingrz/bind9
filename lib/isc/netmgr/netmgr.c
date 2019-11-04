@@ -750,9 +750,11 @@ isc__nmhandle_get(isc_nmsocket_t *sock, isc_sockaddr_t *peer,
 
 	if (local != NULL) {
 		memcpy(&handle->local, local, sizeof(isc_sockaddr_t));
-	} else {
+	} else if (sock->iface != NULL) {
 		memcpy(&handle->local, &sock->iface->addr,
 		       sizeof(isc_sockaddr_t));
+	} else {
+		INSIST(0);
 	}
 
 	LOCK(&sock->lock);
