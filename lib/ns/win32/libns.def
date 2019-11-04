@@ -3,7 +3,10 @@ LIBRARY libns
 ; Exported Functions
 EXPORTS
 
+ns__client_put_cb
 ns__client_request
+ns__client_reset_cb
+ns__client_setup
 ns__interfacemgr_getif
 ns__interfacemgr_nextif
 ns__query_sfcache
