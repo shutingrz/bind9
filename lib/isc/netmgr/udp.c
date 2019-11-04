@@ -239,7 +239,7 @@ isc__nm_async_udpstoplisten(isc__networker_t *worker,
 	UNUSED(worker);
 
 	/*
-	 * If this is a child socket; stop listening and return.
+	 * If this is a child socket, stop listening and return.
 	 */
 	if (sock->parent != NULL) {
 		stop_udp_child(sock);
@@ -247,7 +247,7 @@ isc__nm_async_udpstoplisten(isc__networker_t *worker,
 	}
 
 	/*
-	 * The network manager is pausing; re-enqueue this event for later.
+	 * If network manager is paused, re-enqueue the event for later.
 	 */
 	if (!isc__nm_acquire_interlocked(sock->mgr)) {
 		isc__netievent_udplisten_t *event = NULL;

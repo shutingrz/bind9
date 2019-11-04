@@ -234,11 +234,12 @@ struct isc_nm {
 	atomic_uint_fast32_t	workers_paused;
 	atomic_uint_fast32_t	maxudp;
 	atomic_bool		paused;
+
 	/*
-	 * A worker is actively waiting for other workers, to for example
-	 * stop listening, that means no other thread can do the same thing
-	 * or pause or we'll deadlock. We have to either re-enqueue our event
-	 * or wait for the finish if we want to pause.
+	 * A worker is actively waiting for other workers, for example to
+	 * stop listening; that means no other thread can do the same thing
+	 * or pause, or we'll deadlock. We have to either re-enqueue our
+	 * event or wait for the other one to finish if we want to pause.
 	 */
 	atomic_bool		interlocked;
 };
@@ -251,7 +252,6 @@ typedef enum isc_nmsocket_type {
 	isc_nm_tcpdnslistener,
 	isc_nm_tcpdnssocket
 } isc_nmsocket_type;
-
 
 /*%
  * A universal structure for either a single socket or a group of

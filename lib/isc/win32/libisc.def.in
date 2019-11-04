@@ -447,6 +447,9 @@ isc_nm_tcpdns_sequential
 isc_nm_tcpdns_stoplistening
 isc_nm_tid
 isc_nm_udp_stoplistening
+isc__nm_acquire_interlocked
+isc__nm_drop_interlocked
+isc__nm_acquire_interlocked_force
 isc_nonce_buf
 isc_ntpaths_get
 isc_ntpaths_init

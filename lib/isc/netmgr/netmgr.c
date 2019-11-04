@@ -334,7 +334,10 @@ nm_thread(void *worker0) {
 			usleep(100000);
 #endif
 		}
-		/* Clean the async queue */
+
+		/*
+		 * Empty the async queue.
+		 */
 		async_cb(&worker->async);
 	}
 
@@ -971,12 +974,13 @@ isc_nm_send(isc_nmhandle_t *handle, isc_region_t *region,
 }
 
 /*
- * Try to acquire interlocked state - true if successful.
+ * Try to acquire interlocked state; return true if successful.
  */
 bool
 isc__nm_acquire_interlocked(isc_nm_t *mgr) {
 	LOCK(&mgr->lock);
-	bool success = atomic_compare_exchange_strong(&mgr->interlocked, &(bool){false}, true);
+	bool success = atomic_compare_exchange_strong(&mgr->interlocked,
+						      &(bool){false}, true);
 	UNLOCK(&mgr->lock);
 	return (success);
 }
@@ -987,7 +991,8 @@ isc__nm_acquire_interlocked(isc_nm_t *mgr) {
 void
 isc__nm_drop_interlocked(isc_nm_t *mgr) {
 	LOCK(&mgr->lock);
-	bool success = atomic_compare_exchange_strong(&mgr->interlocked, &(bool){true}, false);
+	bool success = atomic_compare_exchange_strong(&mgr->interlocked,
+						      &(bool){true}, false);
 	INSIST(success == true);
 	BROADCAST(&mgr->wkstatecond);
 	UNLOCK(&mgr->lock);
@@ -999,7 +1004,9 @@ isc__nm_drop_interlocked(isc_nm_t *mgr) {
 void
 isc__nm_acquire_interlocked_force(isc_nm_t *mgr) {
 	LOCK(&mgr->lock);
-	while (!atomic_compare_exchange_strong(&mgr->interlocked, &(bool){false}, true)) {
+	while (!atomic_compare_exchange_strong(&mgr->interlocked,
+					       &(bool){false}, true))
+	{
 		WAIT(&mgr->wkstatecond, &mgr->lock);
 	}
 	UNLOCK(&mgr->lock);
