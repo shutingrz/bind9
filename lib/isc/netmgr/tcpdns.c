@@ -83,6 +83,7 @@ dnslisten_acceptcb(isc_nmhandle_t *handle, isc_result_t result, void *cbarg) {
 	dnssock->extrahandlesize = dnslistensock->extrahandlesize;
 	isc_nmsocket_attach(handle->sock, &dnssock->outer);
 	dnssock->peer = handle->sock->peer;
+	dnssock->iface = handle->sock->iface;
 
 	isc_nm_read(handle, dnslisten_readcb, dnssock);
 }
