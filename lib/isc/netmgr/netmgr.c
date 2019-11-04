@@ -411,6 +411,7 @@ async_cb(uv_async_t *handle) {
 			break;
 		default:
 			INSIST(0);
+			ISC_UNREACHABLE();
 		}
 		isc_mem_put(worker->mgr->mctx, ievent,
 			    sizeof(isc__netievent_storage_t));
@@ -755,6 +756,7 @@ isc__nmhandle_get(isc_nmsocket_t *sock, isc_sockaddr_t *peer,
 		       sizeof(isc_sockaddr_t));
 	} else {
 		INSIST(0);
+		ISC_UNREACHABLE();
 	}
 
 	LOCK(&sock->lock);
