@@ -174,20 +174,6 @@ stoplistening(isc_nmsocket_t *sock) {
 		return;
 	}
 
-	/*
-	 * If this is a child socket; stop listening and return.
-	 */
-	if (sock->parent != NULL) {
-		stop_udp_child(sock);
-		return;
-	}
-
-	/*
-	 * ... but if it's a parent socket, we need to send stop-
-	 * listening events to all the children first, and wait for
-	 * them to be executed.
-	 */
-
 	INSIST(sock->type == isc_nm_udplistener);
 
 	for (int i = 0; i < sock->nchildren; i++) {
@@ -224,18 +210,18 @@ isc_nm_udp_stoplistening(isc_nmsocket_t *sock) {
 	REQUIRE(sock->type == isc_nm_udplistener);
 
 	/*
-	 * If the manager is paused, re-enqueue this as an asynchronous
+	 * If the manager is interlocked, re-enqueue this as an asynchronous
 	 * event. Otherwise, go ahead and stop listening right away.
 	 */
-	if (isc_nm_paused(sock->mgr)) {
+	if (!isc__nm_acquire_interlocked(sock->mgr)) {
 		ievent = isc__nm_get_ievent(sock->mgr, netievent_udpstoplisten);
 		ievent->sock = sock;
 		isc__nm_enqueue_ievent(&sock->mgr->workers[sock->tid],
 				       (isc__netievent_t *) ievent);
-		return;
+	} else {
+		stoplistening(sock);
+		isc__nm_drop_interlocked(sock->mgr);
 	}
-
-	stoplistening(sock);
 }
 
 /*
@@ -250,23 +236,30 @@ isc__nm_async_udpstoplisten(isc__networker_t *worker,
 	isc_nmsocket_t *sock = ievent->sock;
 
 	REQUIRE(sock->iface != NULL);
-
 	UNUSED(worker);
+
+	/*
+	 * If this is a child socket; stop listening and return.
+	 */
+	if (sock->parent != NULL) {
+		stop_udp_child(sock);
+		return;
+	}
 
 	/*
 	 * The network manager is pausing; re-enqueue this event for later.
 	 */
-	if (isc_nm_paused(sock->mgr)) {
+	if (!isc__nm_acquire_interlocked(sock->mgr)) {
 		isc__netievent_udplisten_t *event = NULL;
 
 		event = isc__nm_get_ievent(sock->mgr, netievent_udpstoplisten);
 		event->sock = sock;
 		isc__nm_enqueue_ievent(&sock->mgr->workers[sock->tid],
 				       (isc__netievent_t *) event);
-		return;
+	} else {
+		stoplistening(sock);
+		isc__nm_drop_interlocked(sock->mgr);
 	}
-
-	stoplistening(sock);
 }
 
 /*

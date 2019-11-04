@@ -186,6 +186,7 @@ isc_nm_pause(isc_nm_t *mgr) {
 	REQUIRE(!isc__nm_in_netthread());
 
 	atomic_store(&mgr->paused, true);
+	isc__nm_acquire_interlocked_force(mgr);
 
 	for (size_t i = 0; i < mgr->nworkers; i++) {
 		isc__netievent_t *event = NULL;
@@ -222,6 +223,7 @@ isc_nm_resume(isc_nm_t *mgr) {
 		SIGNAL(&mgr->workers[i].cond);
 		UNLOCK(&mgr->workers[i].lock);
 	}
+	isc__nm_drop_interlocked(mgr);
 
 	/*
 	 * We're not waiting for all the workers to come back to life;
@@ -964,4 +966,39 @@ isc_nm_send(isc_nmhandle_t *handle, isc_region_t *region,
 		INSIST(0);
 		ISC_UNREACHABLE();
 	}
+}
+
+/*
+ * Try to acquire interlocked state - true if successful.
+ */
+bool
+isc__nm_acquire_interlocked(isc_nm_t *mgr) {
+	LOCK(&mgr->lock);
+	bool success = atomic_compare_exchange_strong(&mgr->interlocked, &(bool){false}, true);
+	UNLOCK(&mgr->lock);
+	return (success);
+}
+
+/*
+ * Lose interlocked state, signal waiters
+ */
+void
+isc__nm_drop_interlocked(isc_nm_t *mgr) {
+	LOCK(&mgr->lock);
+	bool success = atomic_compare_exchange_strong(&mgr->interlocked, &(bool){true}, false);
+	INSIST(success == true);
+	BROADCAST(&mgr->wkstatecond);
+	UNLOCK(&mgr->lock);
+}
+
+/*
+ * Actively wait for interlocked state
+ */
+void
+isc__nm_acquire_interlocked_force(isc_nm_t *mgr) {
+	LOCK(&mgr->lock);
+	while (!atomic_compare_exchange_strong(&mgr->interlocked, &(bool){false}, true)) {
+		WAIT(&mgr->wkstatecond, &mgr->lock);
+	}
+	UNLOCK(&mgr->lock);
 }

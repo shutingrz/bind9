@@ -234,6 +234,13 @@ struct isc_nm {
 	atomic_uint_fast32_t	workers_paused;
 	atomic_uint_fast32_t	maxudp;
 	atomic_bool		paused;
+	/*
+	 * A worker is actively waiting for other workers, to for example
+	 * stop listening, that means no other thread can do the same thing
+	 * or pause or we'll deadlock. We have to either re-enqueue our event
+	 * or wait for the finish if we want to pause.
+	 */
+	atomic_bool		interlocked;
 };
 
 typedef enum isc_nmsocket_type {
@@ -516,3 +523,12 @@ isc___nm_uverr2result(int uverr, bool dolog,
  * of this function should add any expected errors that are
  * not already there.
  */
+
+bool
+isc__nm_acquire_interlocked(isc_nm_t *mgr);
+
+void
+isc__nm_drop_interlocked(isc_nm_t *mgr);
+
+void
+isc__nm_acquire_interlocked_force(isc_nm_t *mgr);
