@@ -75,8 +75,8 @@ static dns_zone_t *served_zone = NULL;
 /*
  * We don't want to use netmgr-based client accounting, we need to emulate it.
  */
-static atomic_uint_fast32_t client_refs[16];
-static atomic_uintptr_t client_addrs[16];
+atomic_uint_fast32_t client_refs[16];
+atomic_uintptr_t client_addrs[16];
 
 void
 __wrap_isc_nmhandle_unref(isc_nmhandle_t *handle);
