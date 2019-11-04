@@ -334,6 +334,8 @@ nm_thread(void *worker0) {
 			usleep(100000);
 #endif
 		}
+		/* Clean the async queue */
+		async_cb(&worker->async);
 	}
 
 	LOCK(&worker->mgr->lock);
