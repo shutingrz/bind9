@@ -87,7 +87,7 @@ __wrap_isc_nmhandle_unref(isc_nmhandle_t *handle) {
 	int i;
 
 	for (i = 0; i < 16; i++) {
-		if (client_addrs[i] == (uintptr_t) client) {
+		if (atomic_load(&client_addrs[i]) == (uintptr_t) client) {
 			break;
 		}
 	}
@@ -562,8 +562,8 @@ ns_test_getclient(ns_interface_t *ifp0, bool tcp,
 	result = ns__client_setup(client, clientmgr, true);
 
 	for (i = 0; i < 16; i++) {
-		if (client_addrs[i] == (uintptr_t) NULL ||
-		    client_addrs[i] == (uintptr_t) client)
+		if (atomic_load(&client_addrs[i]) == (uintptr_t) NULL ||
+		    atomic_load(&client_addrs[i]) == (uintptr_t) client)
 		{
 			break;
 		}
