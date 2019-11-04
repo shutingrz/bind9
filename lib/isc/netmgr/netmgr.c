@@ -724,7 +724,9 @@ alloc_handle(isc_nmsocket_t *sock) {
 }
 
 isc_nmhandle_t *
-isc__nmhandle_get(isc_nmsocket_t *sock, isc_sockaddr_t *peer, isc_sockaddr_t *local) {
+isc__nmhandle_get(isc_nmsocket_t *sock, isc_sockaddr_t *peer,
+		  isc_sockaddr_t *local)
+{
 	isc_nmhandle_t *handle = NULL;
 	int pos;
 
@@ -749,7 +751,8 @@ isc__nmhandle_get(isc_nmsocket_t *sock, isc_sockaddr_t *peer, isc_sockaddr_t *lo
 	if (local != NULL) {
 		memcpy(&handle->local, local, sizeof(isc_sockaddr_t));
 	} else {
-		memcpy(&handle->local, &sock->iface->addr, sizeof(isc_sockaddr_t));
+		memcpy(&handle->local, &sock->iface->addr,
+		       sizeof(isc_sockaddr_t));
 	}
 
 	LOCK(&sock->lock);

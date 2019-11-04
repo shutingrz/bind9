@@ -1706,18 +1706,22 @@ xfrout_fail(xfrout_ctx_t *xfr, isc_result_t result, const char *msg) {
 static void
 xfrout_maybe_destroy(xfrout_ctx_t *xfr) {
 	INSIST(xfr->shuttingdown == true);
-/*	if (xfr->sends > 0) { */
+#if 0
+	if (xfr->sends > 0) {
 		/*
 		 * If we are currently sending, cancel it and wait for
 		 * cancel event before destroying the context.
 		 */
-/*		isc_socket_cancel(xfr->client->tcpsocket, xfr->client->task,
-				  ISC_SOCKCANCEL_SEND); */
-/*	} else { */
+		isc_socket_cancel(xfr->client->tcpsocket, xfr->client->task,
+				  ISC_SOCKCANCEL_SEND);
+	} else {
+#endif
 		ns_client_drop(xfr->client, ISC_R_CANCELED);
 		isc_nmhandle_unref(xfr->client->handle);
 		xfrout_ctx_destroy(&xfr);
-/*	} */
+#if 0
+	}
+#endif
 }
 
 static void

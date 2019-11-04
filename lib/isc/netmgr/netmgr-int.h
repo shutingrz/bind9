@@ -407,13 +407,17 @@ isc__nm_free_uvbuf(isc_nmsocket_t *sock, const uv_buf_t *buf);
 
 
 isc_nmhandle_t *
-isc__nmhandle_get(isc_nmsocket_t *sock, isc_sockaddr_t *peer, isc_sockaddr_t *local);
+isc__nmhandle_get(isc_nmsocket_t *sock, isc_sockaddr_t *peer,
+		  isc_sockaddr_t *local);
 /*%<
  * Get a handle for the socket 'sock', allocating a new one
  * if there isn't one availbale in 'sock->inactivehandles'.
  *
- * If 'peer' is not NULL, set the handle's peer to 'peer', otherwise
- * set it to 'sock->peer'.
+ * If 'peer' is not NULL, set the handle's peer address to 'peer',
+ * otherwise set it to 'sock->peer'.
+ *
+ * If 'local' is not NULL, set the handle's local address to 'local',
+ * otherwise set it to 'sock->iface->addr'.
  */
 
 isc__nm_uvreq_t *

@@ -1920,6 +1920,7 @@ ns__client_request(isc_nmhandle_t *handle, isc_region_t *region, void *arg) {
 	 * receiving socket (this needs a system call and can be heavy).
 	 * For IPv6 UDP queries, we get this from the pktinfo structure (if
 	 * supported).
+	 *
 	 * If all the attempts fail (this can happen due to memory shortage,
 	 * etc), we regard this as an error for safety.
 	 */
@@ -1927,7 +1928,8 @@ ns__client_request(isc_nmhandle_t *handle, isc_region_t *region, void *arg) {
 		isc_netaddr_fromsockaddr(&client->destaddr,
 					 &client->manager->interface->addr);
 	else {
-		isc_sockaddr_t sockaddr = isc_nmhandle_localaddr(client->handle);
+		isc_sockaddr_t sockaddr =
+			isc_nmhandle_localaddr(client->handle);
 		isc_netaddr_fromsockaddr(&client->destaddr, &sockaddr);
 	}
 

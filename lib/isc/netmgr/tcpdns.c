@@ -94,6 +94,7 @@ dnslisten_acceptcb(isc_nmhandle_t *handle, isc_result_t result, void *cbarg) {
 static void
 dnslisten_readcb(isc_nmhandle_t *handle, isc_region_t *region, void *arg) {
 	isc_nmsocket_t *dnssock = (isc_nmsocket_t *) arg;
+	isc_sockaddr_t local;
 	unsigned char *base = NULL;
 	size_t len;
 
@@ -108,7 +109,7 @@ dnslisten_readcb(isc_nmhandle_t *handle, isc_region_t *region, void *arg) {
 		return;
 	}
 
-	isc_sockaddr_t local = isc_nmhandle_localaddr(handle);
+	local = isc_nmhandle_localaddr(handle);
 
 	base = region->base;
 	len = region->length;

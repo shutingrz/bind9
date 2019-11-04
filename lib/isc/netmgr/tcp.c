@@ -370,6 +370,7 @@ accept_connection(isc_nmsocket_t *ssock) {
 	isc__networker_t *worker = NULL;
 	isc_nmhandle_t *handle = NULL;
 	struct sockaddr_storage ss;
+	isc_sockaddr_t local;
 	int r;
 
 	REQUIRE(VALID_NMSOCK(ssock));
@@ -418,10 +419,9 @@ accept_connection(isc_nmsocket_t *ssock) {
 	RUNTIME_CHECK(result == ISC_R_SUCCESS);
 	uv_tcp_getsockname(&csock->uv_handle.tcp, (struct sockaddr *) &ss,
 			   &(int){sizeof(ss)});
-
-	isc_sockaddr_t local;
 	result = isc_sockaddr_fromsockaddr(&local,
 					   (struct sockaddr *) &ss);
+	RUNTIME_CHECK(result == ISC_R_SUCCESS);
 
 	handle = isc__nmhandle_get(csock, NULL, &local);
 

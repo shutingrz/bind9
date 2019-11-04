@@ -308,7 +308,8 @@ udp_recv_cb(uv_udp_t *handle, ssize_t nrecv, const uv_buf_t *buf,
 	RUNTIME_CHECK(result == ISC_R_SUCCESS);
 	uv_udp_getsockname(handle, (struct sockaddr *) &laddr,
 			   &(int){sizeof(struct sockaddr_storage)});
-	result = isc_sockaddr_fromsockaddr(&localaddr, (struct sockaddr *) &laddr);
+	result = isc_sockaddr_fromsockaddr(&localaddr,
+					   (struct sockaddr *) &laddr);
 	RUNTIME_CHECK(result == ISC_R_SUCCESS);
 
 	nmhandle = isc__nmhandle_get(sock, &sockaddr, &localaddr);
