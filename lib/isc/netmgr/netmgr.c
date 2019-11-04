@@ -113,6 +113,13 @@ isc_nm_start(isc_mem_t *mctx, uint32_t workers) {
 		isc_mempool_create(mgr->mctx, 65536, &worker->mpool_bufs);
 		worker->ievents = isc_queue_new(mgr->mctx, 128);
 
+		/*
+		 * We need to do it here and not in nm_thread to avoid a
+		 * race - we could exit isc_nm_start, launch nm_destroy
+		 * and nm_thread would still not be up.
+		 */
+		atomic_fetch_add_explicit(&mgr->workers_running, 1,
+					  memory_order_relaxed);
 		isc_thread_create(nm_thread, &mgr->workers[i], &worker->thread);
 
 		snprintf(name, sizeof(name), "isc-net-%04zu", i);
@@ -273,8 +280,6 @@ static void *
 nm_thread(void *worker0) {
 	isc__networker_t *worker = (isc__networker_t *) worker0;
 
-	atomic_fetch_add_explicit(&worker->mgr->workers_running, 1,
-				  memory_order_relaxed);
 	isc__nm_tid_v = worker->id;
 	isc_thread_setaffinity(isc__nm_tid_v);
 
