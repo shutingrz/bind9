@@ -212,3 +212,5 @@ typedef struct atomic_bool_s {
 		REQUIRE(isc_mutex_unlock(&(obj)->m) == ISC_R_SUCCESS);	\
 		___v;							\
 	})
+#define atomic_exchange(obj, desired) \
+	atomic_exchange_explicit(obj, desired, memory_order_seq_cst)
