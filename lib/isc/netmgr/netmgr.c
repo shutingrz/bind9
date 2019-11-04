@@ -153,6 +153,14 @@ nm_destroy(isc_nm_t **mgr0) {
 	UNLOCK(&mgr->lock);
 
 	for (size_t i = 0; i < mgr->nworkers; i++) {
+		/* Empty the async event queue */
+		isc__netievent_t *ievent;
+		while ((ievent = (isc__netievent_t *)
+			isc_queue_dequeue(mgr->workers[i].ievents)) != NULL)
+		{
+			isc_mem_put(mgr->mctx, ievent,
+				    sizeof(isc__netievent_storage_t));
+		}
 		isc_queue_destroy(mgr->workers[i].ievents);
 		isc_mempool_destroy(&mgr->workers[i].mpool_bufs);
 	}
@@ -324,14 +332,6 @@ nm_thread(void *worker0) {
 	LOCK(&worker->mgr->lock);
 	atomic_fetch_sub_explicit(&worker->mgr->workers_running, 1,
 				  memory_order_relaxed);
-	/* Empty the async event queue */
-	isc__netievent_t *ievent;
-	while ((ievent = (isc__netievent_t *)
-		isc_queue_dequeue(worker->ievents)) != NULL)
-	{
-		isc_mem_put(worker->mgr->mctx, ievent,
-			    sizeof(isc__netievent_storage_t));
-	}
 	SIGNAL(&worker->mgr->wkstatecond);
 	UNLOCK(&worker->mgr->lock);
 	return (NULL);
