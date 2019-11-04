@@ -200,16 +200,12 @@ struct ns_client {
 	int			nrecvs;
 	int			nupdates;
 	int			nctls;
-	bool			tcpactive;
 	bool			shuttingdown;
 	unsigned int		attributes;
 	isc_task_t		*task;
 	dns_view_t		*view;
 	dns_dispatch_t		*dispatch;
 	isc_nmhandle_t		*handle;
-	isc_socket_t		*udpsocket;
-	isc_socket_t		*tcplistener;
-	isc_socket_t		*tcpsocket;
 	unsigned char		*tcpbuf;
 	dns_message_t		*message;
 	unsigned char		*recvbuf;
@@ -254,7 +250,6 @@ struct ns_client {
 	/*% Callback function to send a response when unit testing */
 	void			(*sendcb)(isc_buffer_t *buf);
 
-	ISC_LINK(ns_client_t)	link;
 	ISC_LINK(ns_client_t)	rlink;
 	unsigned char		cookie[8];
 	uint32_t		expire;

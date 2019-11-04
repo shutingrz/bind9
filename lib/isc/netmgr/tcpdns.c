@@ -108,6 +108,8 @@ dnslisten_readcb(isc_nmhandle_t *handle, isc_region_t *region, void *arg) {
 		return;
 	}
 
+	isc_sockaddr_t local = isc_nmhandle_localaddr(handle);
+
 	base = region->base;
 	len = region->length;
 
@@ -144,8 +146,7 @@ dnslisten_readcb(isc_nmhandle_t *handle, isc_region_t *region, void *arg) {
 				.base = dnssock->buf + 2,
 				.length = dnslen(dnssock->buf)
 			};
-
-			dnshandle = isc__nmhandle_get(dnssock, NULL);
+			dnshandle = isc__nmhandle_get(dnssock, NULL, &local);
 			atomic_store(&dnssock->processing, true);
 			dnssock->rcb.recv(dnshandle, &r2, dnssock->rcbarg);
 			dnssock->buf_len = 0;
@@ -177,7 +178,7 @@ dnslisten_readcb(isc_nmhandle_t *handle, isc_region_t *region, void *arg) {
 		len -= dnslen(base) + 2;
 		base += dnslen(base) + 2;
 
-		dnshandle = isc__nmhandle_get(dnssock, NULL);
+		dnshandle = isc__nmhandle_get(dnssock, NULL, &local);
 		atomic_store(&dnssock->processing, true);
 		dnssock->rcb.recv(dnshandle, &r2, dnssock->rcbarg);
 
@@ -219,7 +220,7 @@ processbuffer(isc_nmsocket_t *dnssock) {
 		};
 		size_t len;
 
-		dnshandle = isc__nmhandle_get(dnssock, NULL);
+		dnshandle = isc__nmhandle_get(dnssock, NULL, NULL);
 		atomic_store(&dnssock->processing, true);
 		dnssock->rcb.recv(dnshandle, &r2, dnssock->rcbarg);
 

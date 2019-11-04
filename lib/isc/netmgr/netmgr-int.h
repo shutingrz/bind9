@@ -88,6 +88,7 @@ struct isc_nmhandle {
 	atomic_bool		inflight;
 
 	isc_sockaddr_t		peer;
+	isc_sockaddr_t		local;
 	isc_nm_opaquecb		doreset; /* reset extra callback, external */
 	isc_nm_opaquecb		dofree;  /* free extra callback, external */
 	void *			opaque;
@@ -406,7 +407,7 @@ isc__nm_free_uvbuf(isc_nmsocket_t *sock, const uv_buf_t *buf);
 
 
 isc_nmhandle_t *
-isc__nmhandle_get(isc_nmsocket_t *sock, isc_sockaddr_t *peer);
+isc__nmhandle_get(isc_nmsocket_t *sock, isc_sockaddr_t *peer, isc_sockaddr_t *local);
 /*%<
  * Get a handle for the socket 'sock', allocating a new one
  * if there isn't one availbale in 'sock->inactivehandles'.
@@ -454,6 +455,7 @@ isc__nm_udp_send(isc_nmhandle_t *handle, isc_region_t *region,
 
 void
 isc__nm_async_udplisten(isc__networker_t *worker, isc__netievent_t *ievent0);
+
 void
 isc__nm_async_udpstoplisten(isc__networker_t *worker,
 			    isc__netievent_t *ievent0);

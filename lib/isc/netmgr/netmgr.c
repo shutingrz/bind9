@@ -724,7 +724,7 @@ alloc_handle(isc_nmsocket_t *sock) {
 }
 
 isc_nmhandle_t *
-isc__nmhandle_get(isc_nmsocket_t *sock, isc_sockaddr_t *peer) {
+isc__nmhandle_get(isc_nmsocket_t *sock, isc_sockaddr_t *peer, isc_sockaddr_t *local) {
 	isc_nmhandle_t *handle = NULL;
 	int pos;
 
@@ -744,6 +744,12 @@ isc__nmhandle_get(isc_nmsocket_t *sock, isc_sockaddr_t *peer) {
 		memcpy(&handle->peer, peer, sizeof(isc_sockaddr_t));
 	} else {
 		memcpy(&handle->peer, &sock->peer, sizeof(isc_sockaddr_t));
+	}
+
+	if (local != NULL) {
+		memcpy(&handle->local, local, sizeof(isc_sockaddr_t));
+	} else {
+		memcpy(&handle->local, &sock->iface->addr, sizeof(isc_sockaddr_t));
 	}
 
 	LOCK(&sock->lock);
@@ -888,6 +894,13 @@ isc_nmhandle_peeraddr(isc_nmhandle_t *handle) {
 	REQUIRE(VALID_NMHANDLE(handle));
 
 	return (handle->peer);
+}
+
+isc_sockaddr_t
+isc_nmhandle_localaddr(isc_nmhandle_t *handle) {
+	REQUIRE(VALID_NMHANDLE(handle));
+
+	return (handle->local);
 }
 
 isc__nm_uvreq_t *

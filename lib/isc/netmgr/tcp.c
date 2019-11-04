@@ -121,7 +121,7 @@ tcp_connect_cb(uv_connect_t *uvreq, int status) {
 						   (struct sockaddr *) &ss);
 		RUNTIME_CHECK(result == ISC_R_SUCCESS);
 
-		handle = isc__nmhandle_get(sock, NULL);
+		handle = isc__nmhandle_get(sock, NULL, NULL);
 		req->cb.connect(handle, ISC_R_SUCCESS, req->cbarg);
 	} else {
 		/* TODO handle it properly, free sock, translate code */
@@ -416,8 +416,14 @@ accept_connection(isc_nmsocket_t *ssock) {
 	result = isc_sockaddr_fromsockaddr(&csock->peer,
 					   (struct sockaddr *) &ss);
 	RUNTIME_CHECK(result == ISC_R_SUCCESS);
+	uv_tcp_getsockname(&csock->uv_handle.tcp, (struct sockaddr *) &ss,
+			   &(int){sizeof(ss)});
 
-	handle = isc__nmhandle_get(csock, NULL);
+	isc_sockaddr_t local;
+	result = isc_sockaddr_fromsockaddr(&local,
+					   (struct sockaddr *) &ss);
+
+	handle = isc__nmhandle_get(csock, NULL, &local);
 
 	INSIST(ssock->rcb.accept != NULL);
 	ssock->rcb.accept(handle, ISC_R_SUCCESS, ssock->rcbarg);

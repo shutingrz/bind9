@@ -109,6 +109,8 @@ isc_nmhandle_setdata(isc_nmhandle_t *handle, void *arg,
 
 isc_sockaddr_t
 isc_nmhandle_peeraddr(isc_nmhandle_t *handle);
+isc_sockaddr_t
+isc_nmhandle_localaddr(isc_nmhandle_t *handle);
 
 typedef void (*isc_nm_recv_cb_t)(isc_nmhandle_t *handle, isc_region_t *region,
 				 void *cbarg);

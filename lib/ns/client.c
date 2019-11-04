@@ -1927,41 +1927,8 @@ ns__client_request(isc_nmhandle_t *handle, isc_region_t *region, void *arg) {
 		isc_netaddr_fromsockaddr(&client->destaddr,
 					 &client->manager->interface->addr);
 	else {
-		isc_sockaddr_t sockaddr;
-		result = ISC_R_FAILURE;
-
-		if (TCP_CLIENT(client))
-			result = isc_socket_getsockname(client->tcpsocket,
-							&sockaddr);
-		if (result == ISC_R_SUCCESS)
-			isc_netaddr_fromsockaddr(&client->destaddr, &sockaddr);
-		if (result != ISC_R_SUCCESS &&
-		    client->manager->interface->addr.type.sa.sa_family == AF_INET6 &&
-		    (client->attributes & NS_CLIENTATTR_PKTINFO) != 0) {
-			/*
-			 * XXXJT technically, we should convert the receiving
-			 * interface ID to a proper scope zone ID.  However,
-			 * due to the fact there is no standard API for this,
-			 * we only handle link-local addresses and use the
-			 * interface index as link ID.  Despite the assumption,
-			 * it should cover most typical cases.
-			 */
-			isc_netaddr_fromin6(&client->destaddr,
-					    &client->pktinfo.ipi6_addr);
-			if (IN6_IS_ADDR_LINKLOCAL(&client->pktinfo.ipi6_addr))
-				isc_netaddr_setzone(&client->destaddr,
-						client->pktinfo.ipi6_ifindex);
-			result = ISC_R_SUCCESS;
-		}
-		if (result != ISC_R_SUCCESS) {
-			UNEXPECTED_ERROR(__FILE__, __LINE__,
-					 "failed to get request's "
-					 "destination: %s",
-					 isc_result_totext(result));
-			ns_client_drop(client, ISC_R_SUCCESS);
-			isc_task_unpause(client->task);
-			return;
-		}
+		isc_sockaddr_t sockaddr = isc_nmhandle_localaddr(client->handle);
+		isc_netaddr_fromsockaddr(&client->destaddr, &sockaddr);
 	}
 
 	isc_sockaddr_fromnetaddr(&client->destsockaddr, &client->destaddr, 0);
@@ -2308,7 +2275,6 @@ ns__client_setup(ns_client_t *client, ns_clientmgr_t *mgr, bool new) {
 	isc_sockaddr_any(&client->formerrcache.addr);
 	client->formerrcache.time = 0;
 	client->formerrcache.id = 0;
-	ISC_LINK_INIT(client, link);
 	ISC_LINK_INIT(client, rlink);
 	client->rcode_override = -1; 	/* not set */
 
