@@ -89,6 +89,11 @@ isc_nm_start(isc_mem_t *mctx, uint32_t workers) {
 	isc_mutex_init(&mgr->lock);
 	isc_condition_init(&mgr->wkstatecond);
 	isc_refcount_init(&mgr->references, 1);
+	atomic_init(&mgr->workers_running, 0);
+	atomic_init(&mgr->workers_paused, 0);
+	atomic_init(&mgr->maxudp, 0);
+	atomic_init(&mgr->paused, false);
+	atomic_init(&mgr->interlocked, false);
 
 	mgr->workers = isc_mem_get(mctx, workers * sizeof(isc__networker_t));
 	for (size_t i = 0; i < workers; i++) {
