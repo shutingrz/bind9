@@ -27,14 +27,6 @@
 #include <isc/util.h>
 #include "netmgr-int.h"
 
-/*
- *  U   U  DDD   PPP
- *  U   U  D  D  P  P
- *  U   U  D  D  PPP
- *  U   U  D  D  P
- *   UUU   DDD   P
- */
-
 static isc_result_t
 udp_send_direct(isc_nmsocket_t *sock, isc__nm_uvreq_t *req,
 		isc_sockaddr_t *peer);
@@ -341,7 +333,7 @@ isc__nm_udp_send(isc_nmhandle_t *handle, isc_region_t *region,
 	isc_sockaddr_t *peer = &handle->peer;
 	isc__netievent_udpsend_t *ievent;
 	isc__nm_uvreq_t *uvreq = NULL;
-	int ntid = sock->tid;
+	int ntid;
 	uint32_t maxudp = atomic_load(&sock->mgr->maxudp);
 
 	/*

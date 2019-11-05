@@ -29,14 +29,6 @@
 
 #include "netmgr-int.h"
 
-/*
- * TTTTT   CCC   PPP
- *   T    C   C  P  P
- *   T    C      PPP
- *   T    C   C  P
- *   T     CCC   P
- */
-
 static int
 tcp_connect_direct(isc_nmsocket_t *sock, isc__nm_uvreq_t *req);
 
@@ -192,6 +184,9 @@ isc__nm_async_tcplisten(isc__networker_t *worker, isc__netievent_t *ievent0) {
 	r = uv_listen((uv_stream_t *) &sock->uv_handle.tcp,
 		      10,
 		      tcp_connection_cb);
+	if (r != 0) {
+		return;
+	}
 	atomic_store(&sock->listening, true);
 	return;
 	/* issue callback? */
