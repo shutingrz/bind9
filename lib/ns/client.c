@@ -173,6 +173,12 @@ ns_client_endrequest(ns_client_t *client) {
 
 	CTRACE("endrequest");
 
+	LOCK(&client->manager->reclock);
+	if (ISC_LINK_LINKED(client, rlink)) {
+		ISC_LIST_UNLINK(client->manager->recursing, client, rlink);
+	}
+	UNLOCK(&client->manager->reclock);
+
 	if (client->cleanup != NULL) {
 		(client->cleanup)(client);
 		client->cleanup = NULL;
@@ -211,11 +217,6 @@ ns_client_endrequest(ns_client_t *client) {
 				   ns_statscounter_recursclients);
 	}
 
-	LOCK(&client->manager->reclock);
-	if (ISC_LINK_LINKED(client, rlink)) {
-		ISC_LIST_UNLINK(client->manager->recursing, client, rlink);
-	}
-	UNLOCK(&client->manager->reclock);
 
 	/*
 	 * Clear all client attributes that are specific to the request
