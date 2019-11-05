@@ -624,6 +624,7 @@ isc_nmsocket_detach(isc_nmsocket_t **sockp) {
 
 	isc_nmsocket_t *sock = *sockp, *rsock = NULL;
 	int references;
+	*sockp = NULL;
 
 	/*
 	 * If the socket is a part of a set (a child socket) we are
@@ -642,7 +643,6 @@ isc_nmsocket_detach(isc_nmsocket_t **sockp) {
 		isc__nmsocket_prep_destroy(rsock);
 	}
 
-	*sockp = NULL;
 }
 
 void
