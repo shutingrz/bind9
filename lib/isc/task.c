@@ -371,6 +371,7 @@ task_shutdown(isc__task_t *task) {
 			was_idle = true;
 		}
 		INSIST(task->state == task_state_ready ||
+		       task->state == task_state_paused ||
 		       task->state == task_state_running);
 
 		/*
