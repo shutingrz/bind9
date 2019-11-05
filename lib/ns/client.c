@@ -1667,7 +1667,7 @@ ns__client_request(isc_nmhandle_t *handle, isc_region_t *region, void *arg) {
 
 	client->state = NS_CLIENTSTATE_WORKING;
 
-	isc_time_now(&client->requesttime);
+	TIME_NOW(&client->requesttime);
 	client->tnow = client->requesttime;
 	client->now = isc_time_seconds(&client->tnow);
 
@@ -2228,7 +2228,10 @@ ns__client_setup(ns_client_t *client, ns_clientmgr_t *mgr, bool new) {
 		get_clientmctx(mgr, &client->mctx);
 		clientmgr_attach(mgr, &client->manager);
 		ns_server_attach(mgr->sctx, &client->sctx);
-		isc_task_create(mgr->taskmgr, 20,  &client->task);
+		result = isc_task_create(mgr->taskmgr, 20,  &client->task);
+		if (result != ISC_R_SUCCESS) {
+			goto cleanup;
+		}
 		result = dns_message_create(client->mctx,
 					    DNS_MESSAGE_INTENTPARSE,
 					    &client->message);
