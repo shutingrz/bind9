@@ -232,6 +232,7 @@ do
 	sleep 1
 done
 [ "$NONINCR" -ne 2 ] && ret=1
+test_done
 
 echo_i " this result should be IXFR"
 cp ns3/mytest2.db ns3/mytest.db # change to test zone, should be IXFR
