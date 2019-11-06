@@ -1599,6 +1599,7 @@ grep "flags:[^;]* ad[^;]*;" dig.out.ns4.test$n.10 > /dev/null && ret=1
 
 if [ "$ret" -ne 0 ]; then echo_i "failed - checking that default nta's were lifted due to recheck"; fi
 status=$((status+ret))
+ret=0
 
 #
 # bogus.example was set to expire in 20s, so at t=13
@@ -1624,6 +1625,7 @@ grep "flags:[^;]* ad[^;]*;" dig.out.ns4.test$n.13 > /dev/null || ret=1
 
 if [ "$ret" -ne 0 ]; then echo_i "failed - checking that default nta's were lifted due to lifetime"; fi
 status=$((status+ret))
+ret=0
 
 #
 # at t=21, all the NTAs should have expired.
@@ -1641,7 +1643,9 @@ rndccmd 10.53.0.4 nta -d > rndc.out.ns4.test$n.3
 lines=$(grep -c " expiry " rndc.out.ns4.test$n.3 || true)
 [ "$lines" -eq 0 ] || ret=1
 if [ "$ret" -ne 0 ]; then echo_i "failed - checking that all nta's have been lifted"; fi
+n=$((n+1))
 status=$((status+ret))
+ret=0
 
 echo_i "testing NTA removals ($n)"
 rndccmd 10.53.0.4 nta badds.example 2>&1 | sed 's/^/ns4 /' | cat_i
@@ -1698,6 +1702,7 @@ start=$($PERL -e 'print time()."\n";')
 
 if [ "$ret" -ne 0 ]; then echo_i "failed - NTA persistence: adding NTA's failed"; fi
 status=$((status+ret))
+ret=0
 
 echo_i "killing ns4 with SIGTERM"
 $KILL -TERM "$(cat ns4/named.pid)"
@@ -1745,6 +1750,7 @@ rndccmd 10.53.0.4 nta -remove bogus.example > rndc.out.ns4.test$n.6
 
 if [ "$ret" -ne 0 ]; then echo_i "failed - NTA persistence: restoring NTA failed"; fi
 status=$((status+ret))
+ret=0
 
 #
 # check "regular" attribute in NTA file works as expected at named
@@ -1802,6 +1808,7 @@ rndccmd 10.53.0.4 nta -remove secure.example > rndc.out.ns4.test$n.4 2>/dev/null
 
 if [ "$ret" -ne 0 ]; then echo_i "failed - NTA persistence: loading regular NTAs failed"; fi
 status=$((status+ret))
+ret=0
 
 #
 # check "forced" attribute in NTA file works as expected at named
@@ -1857,6 +1864,7 @@ rndccmd 10.53.0.4 nta -remove secure.example > rndc.out.ns4.test$n.4 2>/dev/null
 
 if [ "$ret" -ne 0 ]; then echo_i "failed - NTA persistence: loading forced NTAs failed"; fi
 status=$((status+ret))
+ret=0
 
 #
 # check that NTA lifetime read from file is clamped to 1 week.
@@ -1922,6 +1930,7 @@ rndccmd 10.53.0.4 nta -remove secure.example > rndc.out.ns4.test$n.3 2>/dev/null
 n=$((n+1))
 if [ "$ret" -ne 0 ]; then echo_i "failed - NTA lifetime clamping failed"; fi
 status=$((status+ret))
+ret=0
 
 echo_i "checking that NTAs work with 'forward only;' to a validating resolver ($n)"
 # Sanity check behavior without an NTA in place.
