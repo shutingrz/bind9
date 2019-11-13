@@ -172,7 +172,7 @@
 
 /* Number of hash buckets for zone counters */
 #ifndef RES_DOMAIN_BUCKETS
-#define RES_DOMAIN_BUCKETS	523
+#define RES_DOMAIN_BUCKETS	2047
 #endif
 #define RES_NOBUCKET		0xffffffff
 
