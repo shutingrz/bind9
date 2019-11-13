@@ -216,7 +216,9 @@ dns_badcache_find(dns_badcache_t *bc, const dns_name_t *name,
 	REQUIRE(name != NULL);
 	REQUIRE(now != NULL);
 
-	LOCK(&bc->lock);
+	if (isc_mutex_trylock(&bc->lock) != ISC_R_SUCCESS) {
+		return (false);
+	}
 
 	/*
 	 * XXXMUKS: dns_name_equal() is expensive as it does a
