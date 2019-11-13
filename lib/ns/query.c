@@ -5819,6 +5819,8 @@ ns_query_recurse(ns_client_t *client, dns_rdatatype_t qtype, dns_name_t *qname,
 			ns_client_killoldestquery(client);
 		}
 		if (result != ISC_R_SUCCESS) {
+			/* Don't add this to badcache */
+			client->attributes |= NS_CLIENTATTR_NOSETFC;
 			return (result);
 		}
 
