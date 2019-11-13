@@ -313,7 +313,7 @@ nm_thread(void *worker0) {
 	isc__networker_t *worker = (isc__networker_t *) worker0;
 
 	isc__nm_tid_v = worker->id;
-	isc_thread_setaffinity(isc__nm_tid_v);
+/*	isc_thread_setaffinity(isc__nm_tid_v); */
 
 	while (true) {
 		int r = uv_run(&worker->loop, UV_RUN_DEFAULT);
