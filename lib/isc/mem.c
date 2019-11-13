@@ -185,6 +185,7 @@ struct isc__mempool {
 	ISC_LINK(isc__mempool_t)	link;	/*%< next pool in this mem context */
 	/*%< optionally locked from here down */
 	element	       *items;		/*%< low water item list */
+	element	       *fitems;
 	size_t		size;		/*%< size of each item on this pool */
 	unsigned int	maxalloc;	/*%< max number of items allowed */
 	unsigned int	allocated;	/*%< # of items currently given out */
@@ -1572,7 +1573,8 @@ isc_mempool_create(isc_mem_t *mctx0, size_t size, isc_mempool_t **mpctxp) {
 	mpctx->name[0] = 0;
 #endif
 	mpctx->items = NULL;
-
+	mpctx->fitems = NULL;
+	
 	*mpctxp = (isc_mempool_t *)mpctx;
 
 	MCTXLOCK(mctx);
@@ -1634,17 +1636,15 @@ isc_mempool_destroy(isc_mempool_t **mpctxp) {
 	 * Return any items on the free list
 	 */
 	MCTXLOCK(mctx);
-	while (mpctx->items != NULL) {
-		INSIST(mpctx->freecount > 0);
-		mpctx->freecount--;
-		item = mpctx->items;
-		mpctx->items = item->next;
+	while (mpctx->fitems != NULL) {
+		item = mpctx->fitems;
+		mpctx->fitems = item->next;
 
 		if ((mctx->flags & ISC_MEMFLAG_INTERNAL) != 0) {
-			mem_putunlocked(mctx, item, mpctx->size);
+			mem_putunlocked(mctx, item, mpctx->size * (mpctx->fillcount + 1));
 		} else {
-			mem_putstats(mctx, item, mpctx->size);
-			mem_put(mctx, item, mpctx->size);
+			mem_putstats(mctx, item, mpctx->size * (mpctx->fillcount + 1));
+			mem_put(mctx, item, mpctx->size * (mpctx->fillcount + 1));
 		}
 	}
 	MCTXUNLOCK(mctx);
@@ -1707,16 +1707,19 @@ isc__mempool_get(isc_mempool_t *mpctx0 FLARG) {
 		 * here and fill up our free list.
 		 */
 		MCTXLOCK(mctx);
-		for (i = 0; i < mpctx->fillcount; i++) {
-			if ((mctx->flags & ISC_MEMFLAG_INTERNAL) != 0) {
-				item = mem_getunlocked(mctx, mpctx->size);
-			} else {
-				item = mem_get(mctx, mpctx->size);
-				if (item != NULL)
-					mem_getstats(mctx, mpctx->size);
+		element *fitem;
+		if ((mctx->flags & ISC_MEMFLAG_INTERNAL) != 0) {
+			fitem = mem_getunlocked(mctx, (mpctx->fillcount+1) * mpctx->size);
+		} else {
+			fitem = mem_get(mctx, (mpctx->fillcount+1) * mpctx->size);
+			if (fitem != NULL) {
+				mem_getstats(mctx, mpctx->size);
 			}
-			if (ISC_UNLIKELY(item == NULL))
-				break;
+		}
+		fitem->next = mpctx->fitems;
+		mpctx->fitems = fitem;
+		for (i = 1; i < mpctx->fillcount+1; i++) {
+			item = (element*) (((char*) fitem) + i*mpctx->size);
 			item->next = mpctx->items;
 			mpctx->items = item;
 			mpctx->freecount++;
@@ -1783,7 +1786,7 @@ isc__mempool_put(isc_mempool_t *mpctx0, void *mem FLARG) {
 	/*
 	 * If our free list is full, return this to the mctx directly.
 	 */
-	if (mpctx->freecount >= mpctx->freemax) {
+/*	if (mpctx->freecount >= mpctx->freemax) {
 		MCTXLOCK(mctx);
 		if ((mctx->flags & ISC_MEMFLAG_INTERNAL) != 0) {
 			mem_putunlocked(mctx, mem, mpctx->size);
@@ -1795,7 +1798,7 @@ isc__mempool_put(isc_mempool_t *mpctx0, void *mem FLARG) {
 		if (mpctx->lock != NULL)
 			UNLOCK(mpctx->lock);
 		return;
-	}
+	} */
 
 	/*
 	 * Otherwise, attach it to our free list and bump the counter.
