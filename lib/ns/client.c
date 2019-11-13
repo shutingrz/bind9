@@ -2233,7 +2233,10 @@ ns__client_setup(ns_client_t *client, ns_clientmgr_t *mgr, bool new) {
 		get_clientmctx(mgr, &client->mctx);
 		clientmgr_attach(mgr, &client->manager);
 		ns_server_attach(mgr->sctx, &client->sctx);
-		result = isc_task_create(mgr->taskmgr, 20,  &client->task);
+		result = isc_task_create_bound(mgr->taskmgr,
+					       20,
+					       &client->task,
+					       isc_nm_tid());
 		if (result != ISC_R_SUCCESS) {
 			goto cleanup;
 		}
