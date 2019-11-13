@@ -558,36 +558,6 @@ dns_name_fullcompare(const dns_name_t *name1, const dns_name_t *name2,
 		else
 			count = count2;
 
-		/* Loop unrolled for performance */
-		while (ISC_LIKELY(count > 3)) {
-			chdiff = (int)maptolower[label1[0]] -
-				 (int)maptolower[label2[0]];
-			if (chdiff != 0) {
-				*orderp = chdiff;
-				goto done;
-			}
-			chdiff = (int)maptolower[label1[1]] -
-				 (int)maptolower[label2[1]];
-			if (chdiff != 0) {
-				*orderp = chdiff;
-				goto done;
-			}
-			chdiff = (int)maptolower[label1[2]] -
-				 (int)maptolower[label2[2]];
-			if (chdiff != 0) {
-				*orderp = chdiff;
-				goto done;
-			}
-			chdiff = (int)maptolower[label1[3]] -
-				 (int)maptolower[label2[3]];
-			if (chdiff != 0) {
-				*orderp = chdiff;
-				goto done;
-			}
-			count -= 4;
-			label1 += 4;
-			label2 += 4;
-		}
 		while (ISC_LIKELY(count-- > 0)) {
 			chdiff = (int)maptolower[*label1++] -
 				 (int)maptolower[*label2++];
