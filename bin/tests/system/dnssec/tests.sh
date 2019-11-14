@@ -58,7 +58,7 @@ __EOF
 
 cleanup_dnssec_signzone_output() (
     if [ ! -r dnssec-signzone.expected ]; then
-	prepare_dnssec_signzone_expected
+        prepare_dnssec_signzone_expected
     fi
     grep -Ev -f dnssec-signzone.expected "$@"
 )
@@ -70,13 +70,13 @@ dnssec_signzone_errmsg() (
     "$SIGNER" "$@" 2> signer.err.$n || r=$?
     if test -n "$msg" && ! grep -E -q "$msg" signer.err.$n;
     then
-	echo_i "Expected $SIGNER error message '$msg' not found." >&2
-	exit 1
+        echo_i "Expected $SIGNER error message '$msg' not found." >&2
+        exit 1
     fi
     if test -n "$msg"; then
-	cleanup_dnssec_signzone_output signer.err.$n | grep -E -v "$msg" >&2 && r=1
+        cleanup_dnssec_signzone_output signer.err.$n | grep -E -v "$msg" >&2 && r=1
     else
-	cleanup_dnssec_signzone_output signer.err.$n >&2 && r=1
+        cleanup_dnssec_signzone_output signer.err.$n >&2 && r=1
     fi
     exit "$r"
 )
@@ -92,13 +92,13 @@ dnssec_keygen_errmsg() (
     "$KEYGEN" "$@" 2> keygen.err.$n || r=$?
     if test -n "$msg" && ! grep -E -q "$msg" keygen.err.$n;
     then
-	echo_i "Expected $KEYGEN error message '$msg' not found." >&2
-	exit 1
+        echo_i "Expected $KEYGEN error message '$msg' not found." >&2
+        exit 1
     fi
     if test -n "$msg"; then
-	grep -E -v "$msg" keygen.err.$n >&2 && r=1
+        grep -E -v "$msg" keygen.err.$n >&2 && r=1
     else
-	grep ".*" keygen.err.$n >&2 && r=1
+        grep ".*" keygen.err.$n >&2 && r=1
     fi
     exit "$r"
 )
@@ -114,13 +114,13 @@ dnssec_dsfromkey_errmsg() (
     "$DSFROMKEY" "$@" 2> dsfromkey.err.$n || r=$?
     if test -n "$msg" && ! grep -E -q "$msg" dsfromkey.err.$n;
     then
-	echo_i "Expected $DSFROMKEY error message '$msg' not found." >&2
-	exit 1
+        echo_i "Expected $DSFROMKEY error message '$msg' not found." >&2
+        exit 1
     fi
     if test -n "$msg"; then
-	grep -E -v "$msg" dsfromkey.err.$n >&2 && r=1
+        grep -E -v "$msg" dsfromkey.err.$n >&2 && r=1
     else
-	grep ".*" dsfromkey.err.$n >&2 && r=1
+        grep ".*" dsfromkey.err.$n >&2 && r=1
     fi
     exit "$r"
 )
@@ -135,8 +135,8 @@ wait_for_log() {
     file=$2
 
     for i in 1 2 3 4 5 6 7 8 9 10; do
-	nextpart "$file" | grep "$msg" > /dev/null && return
-	sleep 1
+        nextpart "$file" | grep "$msg" > /dev/null && return
+        sleep 1
     done
     echo_i "exceeded time limit waiting for '$msg' in $file"
     ret=1
@@ -155,7 +155,7 @@ showprivate () {
     echo "-- $* --"
     dig_with_opts +nodnssec +short "@$2" -t type65534 "$1" | cut -f3 -d' ' |
         while read -r record; do
-	    # shellcheck disable=SC2016
+            # shellcheck disable=SC2016
             $PERL -e 'my $rdata = pack("H*", @ARGV[0]);
                 die "invalid record" unless length($rdata) == 5;
                 my ($alg, $key, $remove, $complete) = unpack("CnCC", $rdata);
@@ -171,7 +171,7 @@ showprivate () {
 checkprivate () {
     for i in 1 2 3 4 5 6 7 8 9 10; do
         showprivate "$@" | grep -q incomplete || return 0
-	sleep 1
+        sleep 1
     done
     echo_d "$1 signing incomplete"
     return 1
@@ -181,9 +181,9 @@ checkprivate () {
 israw0 () {
     # shellcheck disable=SC2016
     < "$1" $PERL -e 'binmode STDIN;
-	             read(STDIN, $input, 8);
-	             ($style, $version) = unpack("NN", $input);
-	             exit 1 if ($style != 2 || $version != 0);'
+                     read(STDIN, $input, 8);
+                     ($style, $version) = unpack("NN", $input);
+                     exit 1 if ($style != 2 || $version != 0);'
     return $?
 }
 
@@ -191,7 +191,7 @@ israw0 () {
 israw1 () {
     # shellcheck disable=SC2016
     < "$1" $PERL -e 'binmode STDIN;
-		     read(STDIN, $input, 8);
+                     read(STDIN, $input, 8);
                      ($style, $version) = unpack("NN", $input);
                      exit 1 if ($style != 2 || $version != 1);'
     return $?
@@ -271,10 +271,8 @@ if [ -x "${DELV}" ]; then
 fi
 
 echo_i "checking positive validation NSEC3 ($n)"
-dig_with_opts +noauth a.nsec3.example. \
-	      @10.53.0.3 a > dig.out.ns3.test$n || ret=1
-dig_with_opts +noauth a.nsec3.example. \
-	      @10.53.0.4 a > dig.out.ns4.test$n || ret=1
+dig_with_opts +noauth a.nsec3.example. @10.53.0.3 a > dig.out.ns3.test$n || ret=1
+dig_with_opts +noauth a.nsec3.example. @10.53.0.4 a > dig.out.ns4.test$n || ret=1
 digcomp dig.out.ns3.test$n dig.out.ns4.test$n || ret=1
 grep "flags:.*ad.*QUERY" dig.out.ns4.test$n > /dev/null || ret=1
 test_done
@@ -288,10 +286,8 @@ if [ -x "${DELV}" ]; then
 fi
 
 echo_i "checking positive validation OPTOUT ($n)"
-dig_with_opts +noauth a.optout.example. \
-	      @10.53.0.3 a > dig.out.ns3.test$n || ret=1
-dig_with_opts +noauth a.optout.example. \
-	      @10.53.0.4 a > dig.out.ns4.test$n || ret=1
+dig_with_opts +noauth a.optout.example. @10.53.0.3 a > dig.out.ns3.test$n || ret=1
+dig_with_opts +noauth a.optout.example. @10.53.0.4 a > dig.out.ns4.test$n || ret=1
 digcomp dig.out.ns3.test$n dig.out.ns4.test$n || ret=1
 grep "flags:.*ad.*QUERY" dig.out.ns4.test$n > /dev/null || ret=1
 test_done
@@ -357,10 +353,8 @@ if [ -x "${DELV}" ]; then
 fi
 
 echo_i "checking positive wildcard validation OPTOUT ($n)"
-dig_with_opts a.wild.optout.example. \
-	      @10.53.0.3 a > dig.out.ns3.test$n || ret=1
-dig_with_opts a.wild.optout.example. \
-	      @10.53.0.4 a > dig.out.ns4.test$n || ret=1
+dig_with_opts a.wild.optout.example. @10.53.0.3 a > dig.out.ns3.test$n || ret=1
+dig_with_opts a.wild.optout.example. @10.53.0.4 a > dig.out.ns4.test$n || ret=1
 stripns dig.out.ns3.test$n > dig.out.ns3.stripped.test$n
 stripns dig.out.ns4.test$n > dig.out.ns4.stripped.test$n
 digcomp dig.out.ns3.stripped.test$n dig.out.ns4.stripped.test$n || ret=1
@@ -392,10 +386,8 @@ if [ -x "${DELV}" ]; then
 fi
 
 echo_i "checking negative validation NXDOMAIN NSEC3 ($n)"
-dig_with_opts +noauth q.nsec3.example. \
-	      @10.53.0.3 a > dig.out.ns3.test$n || ret=1
-dig_with_opts +noauth q.nsec3.example. \
-	      @10.53.0.4 a > dig.out.ns4.test$n || ret=1
+dig_with_opts +noauth q.nsec3.example. @10.53.0.3 a > dig.out.ns3.test$n || ret=1
+dig_with_opts +noauth q.nsec3.example. @10.53.0.4 a > dig.out.ns4.test$n || ret=1
 digcomp dig.out.ns3.test$n dig.out.ns4.test$n || ret=1
 grep "flags:.*ad.*QUERY" dig.out.ns4.test$n > /dev/null || ret=1
 grep "status: NXDOMAIN" dig.out.ns4.test$n > /dev/null || ret=1
@@ -409,10 +401,8 @@ if [ -x "${DELV}" ]; then
 fi
 
 echo_i "checking negative validation NXDOMAIN OPTOUT ($n)"
-dig_with_opts +noauth q.optout.example. \
-	      @10.53.0.3 a > dig.out.ns3.test$n || ret=1
-dig_with_opts +noauth q.optout.example. \
-	      @10.53.0.4 a > dig.out.ns4.test$n || ret=1
+dig_with_opts +noauth q.optout.example. @10.53.0.3 a > dig.out.ns3.test$n || ret=1
+dig_with_opts +noauth q.optout.example. @10.53.0.4 a > dig.out.ns4.test$n || ret=1
 digcomp dig.out.ns3.test$n dig.out.ns4.test$n || ret=1
 grep "status: NXDOMAIN" dig.out.ns4.test$n > /dev/null || ret=1
 # Note - this is looking for failure, hence the &&
@@ -443,10 +433,8 @@ if [ -x "${DELV}" ]; then
 fi
 
 echo_i "checking negative validation NODATA NSEC3 ($n)"
-dig_with_opts +noauth a.nsec3.example. \
-	      @10.53.0.3 txt > dig.out.ns3.test$n || ret=1
-dig_with_opts +noauth a.nsec3.example. \
-	      @10.53.0.4 txt > dig.out.ns4.test$n || ret=1
+dig_with_opts +noauth a.nsec3.example. @10.53.0.3 txt > dig.out.ns3.test$n || ret=1
+dig_with_opts +noauth a.nsec3.example. @10.53.0.4 txt > dig.out.ns4.test$n || ret=1
 digcomp dig.out.ns3.test$n dig.out.ns4.test$n || ret=1
 grep "flags:.*ad.*QUERY" dig.out.ns4.test$n > /dev/null || ret=1
 grep "status: NOERROR" dig.out.ns4.test$n > /dev/null || ret=1
@@ -461,10 +449,8 @@ if [ -x "${DELV}" ]; then
 fi
 
 echo_i "checking negative validation NODATA OPTOUT ($n)"
-dig_with_opts +noauth a.optout.example. \
-	      @10.53.0.3 txt > dig.out.ns3.test$n || ret=1
-dig_with_opts +noauth a.optout.example. \
-	      @10.53.0.4 txt > dig.out.ns4.test$n || ret=1
+dig_with_opts +noauth a.optout.example. @10.53.0.3 txt > dig.out.ns3.test$n || ret=1
+dig_with_opts +noauth a.optout.example. @10.53.0.4 txt > dig.out.ns4.test$n || ret=1
 digcomp dig.out.ns3.test$n dig.out.ns4.test$n || ret=1
 grep "flags:.*ad.*QUERY" dig.out.ns4.test$n > /dev/null || ret=1
 grep "status: NOERROR" dig.out.ns4.test$n > /dev/null || ret=1
@@ -508,10 +494,8 @@ if [ -x "${DELV}" ]; then
 fi
 
 echo_i "checking negative wildcard validation OPTOUT ($n)"
-dig_with_opts b.wild.optout.example. \
-	      @10.53.0.3 txt > dig.out.ns3.test$n || ret=1
-dig_with_opts b.wild.optout.example. \
-	      @10.53.0.4 txt > dig.out.ns4.test$n || ret=1
+dig_with_opts b.wild.optout.example. @10.53.0.3 txt > dig.out.ns3.test$n || ret=1
+dig_with_opts b.wild.optout.example. @10.53.0.4 txt > dig.out.ns4.test$n || ret=1
 digcomp dig.out.ns3.test$n dig.out.ns4.test$n || ret=1
 grep "status: NOERROR" dig.out.ns4.test$n > /dev/null || ret=1
 # Note - this is looking for failure, hence the &&
@@ -576,10 +560,8 @@ if [ -x "${DELV}" ]; then
 fi
 
 echo_i "checking 1-server negative insecurity proof NSEC ($n)"
-dig_with_opts q.insecure.example. a @10.53.0.3 \
-	      > dig.out.ns3.test$n || ret=1
-dig_with_opts q.insecure.example. a @10.53.0.4 \
-	      > dig.out.ns4.test$n || ret=1
+dig_with_opts q.insecure.example. a @10.53.0.3 > dig.out.ns3.test$n || ret=1
+dig_with_opts q.insecure.example. a @10.53.0.4 > dig.out.ns4.test$n || ret=1
 digcomp dig.out.ns3.test$n dig.out.ns4.test$n || ret=1
 grep "status: NXDOMAIN" dig.out.ns4.test$n > /dev/null || ret=1
 # Note - this is looking for failure, hence the &&
@@ -594,10 +576,8 @@ if [ -x "${DELV}" ]; then
 fi
 
 echo_i "checking 1-server negative insecurity proof NSEC3 ($n)"
-dig_with_opts q.insecure.nsec3.example. a @10.53.0.3 \
-	      > dig.out.ns3.test$n || ret=1
-dig_with_opts q.insecure.nsec3.example. a @10.53.0.4 \
-	      > dig.out.ns4.test$n || ret=1
+dig_with_opts q.insecure.nsec3.example. a @10.53.0.3 > dig.out.ns3.test$n || ret=1
+dig_with_opts q.insecure.nsec3.example. a @10.53.0.4 > dig.out.ns4.test$n || ret=1
 digcomp dig.out.ns3.test$n dig.out.ns4.test$n || ret=1
 grep "status: NXDOMAIN" dig.out.ns4.test$n > /dev/null || ret=1
 # Note - this is looking for failure, hence the &&
@@ -612,10 +592,8 @@ if [ -x "${DELV}" ]; then
 fi
 
 echo_i "checking 1-server negative insecurity proof OPTOUT ($n)"
-dig_with_opts q.insecure.optout.example. a @10.53.0.3 \
-	      > dig.out.ns3.test$n || ret=1
-dig_with_opts q.insecure.optout.example. a @10.53.0.4 \
-	      > dig.out.ns4.test$n || ret=1
+dig_with_opts q.insecure.optout.example. a @10.53.0.3 > dig.out.ns3.test$n || ret=1
+dig_with_opts q.insecure.optout.example. a @10.53.0.4 > dig.out.ns4.test$n || ret=1
 digcomp dig.out.ns3.test$n dig.out.ns4.test$n || ret=1
 grep "status: NXDOMAIN" dig.out.ns4.test$n > /dev/null || ret=1
 # Note - this is looking for failure, hence the &&
@@ -630,10 +608,8 @@ if [ -x "${DELV}" ]; then
 fi
 
 echo_i "checking 1-server negative insecurity proof with SOA hack NSEC ($n)"
-dig_with_opts r.insecure.example. soa @10.53.0.3 \
-	      > dig.out.ns3.test$n || ret=1
-dig_with_opts r.insecure.example. soa @10.53.0.4 \
-	      > dig.out.ns4.test$n || ret=1
+dig_with_opts r.insecure.example. soa @10.53.0.3 > dig.out.ns3.test$n || ret=1
+dig_with_opts r.insecure.example. soa @10.53.0.4 > dig.out.ns4.test$n || ret=1
 digcomp dig.out.ns3.test$n dig.out.ns4.test$n || ret=1
 grep "status: NXDOMAIN" dig.out.ns4.test$n > /dev/null || ret=1
 grep "0	IN	SOA" dig.out.ns4.test$n > /dev/null || ret=1
@@ -642,10 +618,8 @@ grep "flags:.*ad.*QUERY" dig.out.ns4.test$n > /dev/null && ret=1
 test_done
 
 echo_i "checking 1-server negative insecurity proof with SOA hack NSEC3 ($n)"
-dig_with_opts r.insecure.nsec3.example. soa @10.53.0.3 \
-	      > dig.out.ns3.test$n || ret=1
-dig_with_opts r.insecure.nsec3.example. soa @10.53.0.4 \
-	      > dig.out.ns4.test$n || ret=1
+dig_with_opts r.insecure.nsec3.example. soa @10.53.0.3 > dig.out.ns3.test$n || ret=1
+dig_with_opts r.insecure.nsec3.example. soa @10.53.0.4 > dig.out.ns4.test$n || ret=1
 digcomp dig.out.ns3.test$n dig.out.ns4.test$n || ret=1
 grep "status: NXDOMAIN" dig.out.ns4.test$n > /dev/null || ret=1
 grep "0	IN	SOA" dig.out.ns4.test$n > /dev/null || ret=1
@@ -654,10 +628,8 @@ grep "flags:.*ad.*QUERY" dig.out.ns4.test$n > /dev/null && ret=1
 test_done
 
 echo_i "checking 1-server negative insecurity proof with SOA hack OPTOUT ($n)"
-dig_with_opts r.insecure.optout.example. soa @10.53.0.3 \
-	      > dig.out.ns3.test$n || ret=1
-dig_with_opts r.insecure.optout.example. soa @10.53.0.4 \
-	      > dig.out.ns4.test$n || ret=1
+dig_with_opts r.insecure.optout.example. soa @10.53.0.3 > dig.out.ns3.test$n || ret=1
+dig_with_opts r.insecure.optout.example. soa @10.53.0.4 > dig.out.ns4.test$n || ret=1
 digcomp dig.out.ns3.test$n dig.out.ns4.test$n || ret=1
 grep "status: NXDOMAIN" dig.out.ns4.test$n > /dev/null || ret=1
 grep "0	IN	SOA" dig.out.ns4.test$n > /dev/null || ret=1
@@ -668,100 +640,80 @@ test_done
 # Check the secure.example domain
 
 echo_i "checking multi-stage positive validation NSEC/NSEC ($n)"
-dig_with_opts +noauth a.secure.example. \
-	      @10.53.0.3 a > dig.out.ns3.test$n || ret=1
-dig_with_opts +noauth a.secure.example. \
-	      @10.53.0.4 a > dig.out.ns4.test$n || ret=1
+dig_with_opts +noauth a.secure.example. @10.53.0.3 a > dig.out.ns3.test$n || ret=1
+dig_with_opts +noauth a.secure.example. @10.53.0.4 a > dig.out.ns4.test$n || ret=1
 digcomp dig.out.ns3.test$n dig.out.ns4.test$n || ret=1
 grep "status: NOERROR" dig.out.ns4.test$n > /dev/null || ret=1
 grep "flags:.*ad.*QUERY" dig.out.ns4.test$n > /dev/null || ret=1
 test_done
 
 echo_i "checking multi-stage positive validation NSEC/NSEC3 ($n)"
-dig_with_opts +noauth a.nsec3.example. \
-	      @10.53.0.3 a > dig.out.ns3.test$n || ret=1
-dig_with_opts +noauth a.nsec3.example. \
-	      @10.53.0.4 a > dig.out.ns4.test$n || ret=1
+dig_with_opts +noauth a.nsec3.example. @10.53.0.3 a > dig.out.ns3.test$n || ret=1
+dig_with_opts +noauth a.nsec3.example. @10.53.0.4 a > dig.out.ns4.test$n || ret=1
 digcomp dig.out.ns3.test$n dig.out.ns4.test$n || ret=1
 grep "status: NOERROR" dig.out.ns4.test$n > /dev/null || ret=1
 grep "flags:.*ad.*QUERY" dig.out.ns4.test$n > /dev/null || ret=1
 test_done
 
 echo_i "checking multi-stage positive validation NSEC/OPTOUT ($n)"
-dig_with_opts +noauth a.optout.example. \
-	      @10.53.0.3 a > dig.out.ns3.test$n || ret=1
-dig_with_opts +noauth a.optout.example. \
-	      @10.53.0.4 a > dig.out.ns4.test$n || ret=1
+dig_with_opts +noauth a.optout.example. @10.53.0.3 a > dig.out.ns3.test$n || ret=1
+dig_with_opts +noauth a.optout.example. @10.53.0.4 a > dig.out.ns4.test$n || ret=1
 digcomp dig.out.ns3.test$n dig.out.ns4.test$n || ret=1
 grep "status: NOERROR" dig.out.ns4.test$n > /dev/null || ret=1
 grep "flags:.*ad.*QUERY" dig.out.ns4.test$n > /dev/null || ret=1
 test_done
 
 echo_i "checking multi-stage positive validation NSEC3/NSEC ($n)"
-dig_with_opts +noauth a.secure.nsec3.example. \
-	      @10.53.0.3 a > dig.out.ns3.test$n || ret=1
-dig_with_opts +noauth a.secure.nsec3.example. \
-	      @10.53.0.4 a > dig.out.ns4.test$n || ret=1
+dig_with_opts +noauth a.secure.nsec3.example. @10.53.0.3 a > dig.out.ns3.test$n || ret=1
+dig_with_opts +noauth a.secure.nsec3.example. @10.53.0.4 a > dig.out.ns4.test$n || ret=1
 digcomp dig.out.ns3.test$n dig.out.ns4.test$n || ret=1
 grep "status: NOERROR" dig.out.ns4.test$n > /dev/null || ret=1
 grep "flags:.*ad.*QUERY" dig.out.ns4.test$n > /dev/null || ret=1
 test_done
 
 echo_i "checking multi-stage positive validation NSEC3/NSEC3 ($n)"
-dig_with_opts +noauth a.nsec3.nsec3.example. \
-	      @10.53.0.3 a > dig.out.ns3.test$n || ret=1
-dig_with_opts +noauth a.nsec3.nsec3.example. \
-	      @10.53.0.4 a > dig.out.ns4.test$n || ret=1
+dig_with_opts +noauth a.nsec3.nsec3.example. @10.53.0.3 a > dig.out.ns3.test$n || ret=1
+dig_with_opts +noauth a.nsec3.nsec3.example. @10.53.0.4 a > dig.out.ns4.test$n || ret=1
 digcomp dig.out.ns3.test$n dig.out.ns4.test$n || ret=1
 grep "status: NOERROR" dig.out.ns4.test$n > /dev/null || ret=1
 grep "flags:.*ad.*QUERY" dig.out.ns4.test$n > /dev/null || ret=1
 test_done
 
 echo_i "checking multi-stage positive validation NSEC3/OPTOUT ($n)"
-dig_with_opts +noauth a.optout.nsec3.example. \
-	      @10.53.0.3 a > dig.out.ns3.test$n || ret=1
-dig_with_opts +noauth a.optout.nsec3.example. \
-	      @10.53.0.4 a > dig.out.ns4.test$n || ret=1
+dig_with_opts +noauth a.optout.nsec3.example. @10.53.0.3 a > dig.out.ns3.test$n || ret=1
+dig_with_opts +noauth a.optout.nsec3.example. @10.53.0.4 a > dig.out.ns4.test$n || ret=1
 digcomp dig.out.ns3.test$n dig.out.ns4.test$n || ret=1
 grep "status: NOERROR" dig.out.ns4.test$n > /dev/null || ret=1
 grep "flags:.*ad.*QUERY" dig.out.ns4.test$n > /dev/null || ret=1
 test_done
 
 echo_i "checking multi-stage positive validation OPTOUT/NSEC ($n)"
-dig_with_opts +noauth a.secure.optout.example. \
-	      @10.53.0.3 a > dig.out.ns3.test$n || ret=1
-dig_with_opts +noauth a.secure.optout.example. \
-	      @10.53.0.4 a > dig.out.ns4.test$n || ret=1
+dig_with_opts +noauth a.secure.optout.example. @10.53.0.3 a > dig.out.ns3.test$n || ret=1
+dig_with_opts +noauth a.secure.optout.example. @10.53.0.4 a > dig.out.ns4.test$n || ret=1
 digcomp dig.out.ns3.test$n dig.out.ns4.test$n || ret=1
 grep "status: NOERROR" dig.out.ns4.test$n > /dev/null || ret=1
 grep "flags:.*ad.*QUERY" dig.out.ns4.test$n > /dev/null || ret=1
 test_done
 
 echo_i "checking multi-stage positive validation OPTOUT/NSEC3 ($n)"
-dig_with_opts +noauth a.nsec3.optout.example. \
-	      @10.53.0.3 a > dig.out.ns3.test$n || ret=1
-dig_with_opts +noauth a.nsec3.optout.example. \
-	      @10.53.0.4 a > dig.out.ns4.test$n || ret=1
+dig_with_opts +noauth a.nsec3.optout.example. @10.53.0.3 a > dig.out.ns3.test$n || ret=1
+dig_with_opts +noauth a.nsec3.optout.example. @10.53.0.4 a > dig.out.ns4.test$n || ret=1
 digcomp dig.out.ns3.test$n dig.out.ns4.test$n || ret=1
 grep "status: NOERROR" dig.out.ns4.test$n > /dev/null || ret=1
 grep "flags:.*ad.*QUERY" dig.out.ns4.test$n > /dev/null || ret=1
 test_done
 
 echo_i "checking multi-stage positive validation OPTOUT/OPTOUT ($n)"
-dig_with_opts +noauth a.optout.optout.example. \
-	      @10.53.0.3 a > dig.out.ns3.test$n || ret=1
-dig_with_opts +noauth a.optout.optout.example. \
-	      @10.53.0.4 a > dig.out.ns4.test$n || ret=1
+dig_with_opts +noauth a.optout.optout.example. @10.53.0.3 a > dig.out.ns3.test$n || ret=1
+dig_with_opts +noauth a.optout.optout.example. @10.53.0.4 a > dig.out.ns4.test$n || ret=1
 digcomp dig.out.ns3.test$n dig.out.ns4.test$n || ret=1
 grep "status: NOERROR" dig.out.ns4.test$n > /dev/null || ret=1
 grep "flags:.*ad.*QUERY" dig.out.ns4.test$n > /dev/null || ret=1
 test_done
 
 echo_i "checking empty NODATA OPTOUT ($n)"
-dig_with_opts +noauth empty.optout.example. \
-	      @10.53.0.3 a > dig.out.ns3.test$n || ret=1
-dig_with_opts +noauth empty.optout.example. \
-	      @10.53.0.4 a > dig.out.ns4.test$n || ret=1
+dig_with_opts +noauth empty.optout.example. @10.53.0.3 a > dig.out.ns3.test$n || ret=1
+dig_with_opts +noauth empty.optout.example. @10.53.0.4 a > dig.out.ns4.test$n || ret=1
 digcomp dig.out.ns3.test$n dig.out.ns4.test$n || ret=1
 grep "status: NOERROR" dig.out.ns4.test$n > /dev/null || ret=1
 #grep "flags:.*ad.*QUERY" dig.out.ns4.test$n > /dev/null || ret=1
@@ -856,10 +808,8 @@ test_done
 # Check the insecure.secure.example domain (insecurity proof)
 
 echo_i "checking 2-server insecurity proof ($n)"
-dig_with_opts +noauth a.insecure.secure.example. @10.53.0.2 a \
-	      > dig.out.ns2.test$n || ret=1
-dig_with_opts +noauth a.insecure.secure.example. @10.53.0.4 a \
-	      > dig.out.ns4.test$n || ret=1
+dig_with_opts +noauth a.insecure.secure.example. @10.53.0.2 a > dig.out.ns2.test$n || ret=1
+dig_with_opts +noauth a.insecure.secure.example. @10.53.0.4 a > dig.out.ns4.test$n || ret=1
 digcomp dig.out.ns2.test$n dig.out.ns4.test$n || ret=1
 grep "status: NOERROR" dig.out.ns4.test$n > /dev/null || ret=1
 # Note - this is looking for failure, hence the &&
@@ -901,10 +851,8 @@ test_done
 # Check that the setting the cd bit works
 
 echo_i "checking cd bit on a positive answer ($n)"
-dig_with_opts +noauth example. soa @10.53.0.4 \
-	      > dig.out.ns4.test$n || ret=1
-dig_with_opts +noauth +cdflag example. soa @10.53.0.5 \
-	      > dig.out.ns5.test$n || ret=1
+dig_with_opts +noauth example. soa @10.53.0.4 > dig.out.ns4.test$n || ret=1
+dig_with_opts +noauth +cdflag example. soa @10.53.0.5 > dig.out.ns5.test$n || ret=1
 digcomp dig.out.ns4.test$n dig.out.ns5.test$n || ret=1
 grep "flags:.*ad.*QUERY" dig.out.ns4.test$n > /dev/null || ret=1
 # Note - this is looking for failure, hence the &&
@@ -942,10 +890,8 @@ grep "flags:.*ad.*QUERY" dig.out.ns4.test$n > /dev/null || ret=1
 test_done
 
 echo_i "checking cd bit on a query that should fail ($n)"
-dig_with_opts a.bogus.example. soa @10.53.0.4 \
-	      > dig.out.ns4.test$n || ret=1
-dig_with_opts +cdflag a.bogus.example. soa @10.53.0.5 \
-	      > dig.out.ns5.test$n || ret=1
+dig_with_opts a.bogus.example. soa @10.53.0.4 > dig.out.ns4.test$n || ret=1
+dig_with_opts +cdflag a.bogus.example. soa @10.53.0.5 > dig.out.ns5.test$n || ret=1
 digcomp dig.out.ns4.test$n dig.out.ns5.test$n || ret=1
 grep "flags:.*ad.*QUERY" dig.out.ns4.test$n > /dev/null || ret=1
 # Note - this is looking for failure, hence the &&
@@ -953,10 +899,8 @@ grep "flags:.*ad.*QUERY" dig.out.ns5.test$n > /dev/null && ret=1
 test_done
 
 echo_i "checking cd bit on an insecurity proof ($n)"
-dig_with_opts +noauth a.insecure.example. soa @10.53.0.4 \
-	      > dig.out.ns4.test$n || ret=1
-dig_with_opts +noauth +cdflag a.insecure.example. soa @10.53.0.5 \
-	      > dig.out.ns5.test$n || ret=1
+dig_with_opts +noauth a.insecure.example. soa @10.53.0.4 > dig.out.ns4.test$n || ret=1
+dig_with_opts +noauth +cdflag a.insecure.example. soa @10.53.0.5 > dig.out.ns5.test$n || ret=1
 digcomp dig.out.ns4.test$n dig.out.ns5.test$n || ret=1
 grep "status: NOERROR" dig.out.ns4.test$n > /dev/null || ret=1
 # Note - these are looking for failure, hence the &&
@@ -965,10 +909,8 @@ grep "flags:.*ad.*QUERY" dig.out.ns5.test$n > /dev/null && ret=1
 test_done
 
 echo_i "checking cd bit on a negative insecurity proof ($n)"
-dig_with_opts q.insecure.example. a @10.53.0.4 \
-	      > dig.out.ns4.test$n || ret=1
-dig_with_opts +cdflag q.insecure.example. a @10.53.0.5 \
-	      > dig.out.ns5.test$n || ret=1
+dig_with_opts q.insecure.example. a @10.53.0.4 > dig.out.ns4.test$n || ret=1
+dig_with_opts +cdflag q.insecure.example. a @10.53.0.5 > dig.out.ns5.test$n || ret=1
 digcomp dig.out.ns4.test$n dig.out.ns5.test$n || ret=1
 grep "status: NXDOMAIN" dig.out.ns4.test$n > /dev/null || ret=1
 # Note - these are looking for failure, hence the &&
@@ -986,10 +928,8 @@ grep "ANSWER: 6" dig.out.ns4.test$n > /dev/null || ret=1
 test_done
 
 echo_i "checking that validation of a query returning a CNAME works ($n)"
-dig_with_opts +noauth cname1.example. txt @10.53.0.2 \
-	      > dig.out.ns2.test$n || ret=1
-dig_with_opts +noauth cname1.example. txt @10.53.0.4 \
-	      > dig.out.ns4.test$n || ret=1
+dig_with_opts +noauth cname1.example. txt @10.53.0.2 > dig.out.ns2.test$n || ret=1
+dig_with_opts +noauth cname1.example. txt @10.53.0.4 > dig.out.ns4.test$n || ret=1
 digcomp dig.out.ns2.test$n dig.out.ns4.test$n || ret=1
 grep "NOERROR" dig.out.ns4.test$n > /dev/null || ret=1
 # the CNAME & its sig, the TXT and its SIG
@@ -997,10 +937,8 @@ grep "ANSWER: 4" dig.out.ns4.test$n > /dev/null || ret=1
 test_done
 
 echo_i "checking that validation of a query returning a DNAME works ($n)"
-dig_with_opts +noauth foo.dname1.example. txt @10.53.0.2 \
-	      > dig.out.ns2.test$n || ret=1
-dig_with_opts +noauth foo.dname1.example. txt @10.53.0.4 \
-	      > dig.out.ns4.test$n || ret=1
+dig_with_opts +noauth foo.dname1.example. txt @10.53.0.2 > dig.out.ns2.test$n || ret=1
+dig_with_opts +noauth foo.dname1.example. txt @10.53.0.4 > dig.out.ns4.test$n || ret=1
 digcomp dig.out.ns2.test$n dig.out.ns4.test$n || ret=1
 grep "NOERROR" dig.out.ns4.test$n > /dev/null || ret=1
 # The DNAME & its sig, the TXT and its SIG, and the synthesized CNAME.
@@ -1010,10 +948,8 @@ grep "ANSWER: 5" dig.out.ns4.test$n > /dev/null || ret=1
 test_done
 
 echo_i "checking that validation of an ANY query returning a CNAME works ($n)"
-dig_with_opts +noauth cname2.example. any @10.53.0.2 \
-	      > dig.out.ns2.test$n || ret=1
-dig_with_opts +noauth cname2.example. any @10.53.0.4 \
-	      > dig.out.ns4.test$n || ret=1
+dig_with_opts +noauth cname2.example. any @10.53.0.2 > dig.out.ns2.test$n || ret=1
+dig_with_opts +noauth cname2.example. any @10.53.0.4 > dig.out.ns4.test$n || ret=1
 digcomp dig.out.ns2.test$n dig.out.ns4.test$n || ret=1
 grep "NOERROR" dig.out.ns4.test$n > /dev/null || ret=1
 # The CNAME, NXT, and their SIGs
@@ -1021,51 +957,41 @@ grep "ANSWER: 4" dig.out.ns4.test$n > /dev/null || ret=1
 test_done
 
 echo_i "checking that validation of an ANY query returning a DNAME works ($n)"
-dig_with_opts +noauth foo.dname2.example. any @10.53.0.2 \
-	      > dig.out.ns2.test$n || ret=1
-dig_with_opts +noauth foo.dname2.example. any @10.53.0.4 \
-	      > dig.out.ns4.test$n || ret=1
+dig_with_opts +noauth foo.dname2.example. any @10.53.0.2 > dig.out.ns2.test$n || ret=1
+dig_with_opts +noauth foo.dname2.example. any @10.53.0.4 > dig.out.ns4.test$n || ret=1
 digcomp dig.out.ns2.test$n dig.out.ns4.test$n || ret=1
 grep "NOERROR" dig.out.ns4.test$n > /dev/null || ret=1
 test_done
 
 echo_i "checking that lookups succeed after disabling an algorithm ($n)"
-dig_with_opts +noauth example. SOA @10.53.0.2 \
-	      > dig.out.ns2.test$n || ret=1
-dig_with_opts +noauth example. SOA @10.53.0.6 \
-	      > dig.out.ns6.test$n || ret=1
+dig_with_opts +noauth example. SOA @10.53.0.2 > dig.out.ns2.test$n || ret=1
+dig_with_opts +noauth example. SOA @10.53.0.6 > dig.out.ns6.test$n || ret=1
 digcomp dig.out.ns2.test$n dig.out.ns6.test$n || ret=1
 # Note - this is looking for failure, hence the &&
 grep "flags:.*ad.*QUERY" dig.out.ns6.test$n > /dev/null && ret=1
 test_done
 
 echo_i "checking a non-cachable NODATA works ($n)"
-dig_with_opts +noauth a.nosoa.secure.example. txt @10.53.0.7 \
-	      > dig.out.ns7.test$n || ret=1
+dig_with_opts +noauth a.nosoa.secure.example. txt @10.53.0.7 > dig.out.ns7.test$n || ret=1
 grep "AUTHORITY: 0" dig.out.ns7.test$n > /dev/null || ret=1
-dig_with_opts +noauth a.nosoa.secure.example. txt @10.53.0.4 \
-	      > dig.out.ns4.test$n || ret=1
+dig_with_opts +noauth a.nosoa.secure.example. txt @10.53.0.4 > dig.out.ns4.test$n || ret=1
 grep "status: NOERROR" dig.out.ns4.test$n > /dev/null || ret=1
 test_done
 
 echo_i "checking a non-cachable NXDOMAIN works ($n)"
-dig_with_opts +noauth b.nosoa.secure.example. txt @10.53.0.7 \
-	      > dig.out.ns7.test$n || ret=1
+dig_with_opts +noauth b.nosoa.secure.example. txt @10.53.0.7 > dig.out.ns7.test$n || ret=1
 grep "AUTHORITY: 0" dig.out.ns7.test$n > /dev/null || ret=1
-dig_with_opts +noauth b.nosoa.secure.example. txt @10.53.0.4 \
-	      > dig.out.ns4.test$n || ret=1
+dig_with_opts +noauth b.nosoa.secure.example. txt @10.53.0.4 > dig.out.ns4.test$n || ret=1
 grep "status: NXDOMAIN" dig.out.ns4.test$n > /dev/null || ret=1
 test_done
 
 echo_i "checking that we can load a rfc2535 signed zone ($n)"
-dig_with_opts rfc2535.example. SOA @10.53.0.2 \
-	      > dig.out.ns2.test$n || ret=1
+dig_with_opts rfc2535.example. SOA @10.53.0.2 > dig.out.ns2.test$n || ret=1
 grep "status: NOERROR" dig.out.ns2.test$n > /dev/null || ret=1
 test_done
 
 echo_i "checking that we can transfer a rfc2535 signed zone ($n)"
-dig_with_opts rfc2535.example. SOA @10.53.0.3 \
-	      > dig.out.ns3.test$n || ret=1
+dig_with_opts rfc2535.example. SOA @10.53.0.3 > dig.out.ns3.test$n || ret=1
 grep "status: NOERROR" dig.out.ns3.test$n > /dev/null || ret=1
 test_done
 
@@ -1173,17 +1099,17 @@ test_done
 
 get_rsasha1_key_ids_from_sigs() {
     tr -d '\r' < signer/example.db.signed | \
-	awk '
-		NF < 8 { next }
-		$(NF-5) != "RRSIG" { next }
-		$(NF-3) != "5" { next }
-		$NF != "(" { next }
-		{
-			getline;
-			print $3;
-		}
-	' | \
-	    sort -u
+    awk '
+        NF < 8 { next }
+        $(NF-5) != "RRSIG" { next }
+        $(NF-3) != "5" { next }
+        $NF != "(" { next }
+        {
+            getline;
+            print $3;
+        }
+    ' | \
+        sort -u
 }
 
 echo_i "checking that we can sign a zone with out-of-zone records ($n)"
@@ -1206,14 +1132,14 @@ key2=$(dnssec_keygen -K signer -q -f KSK -a NSEC3RSASHA1 -b 1024 -n zone $zone)
     cat example.db.in "$key1.key" "$key2.key" > example.db
     dnssec_signzone -3 - -H 10 -o example -f example.db example.db > /dev/null
     awk '/^IQF9LQTLK/ {
-		printf("%s", $0);
-		while (!index($0, ")")) {
-			if (getline <= 0)
-				break;
-			printf (" %s", $0);
-		}
-		printf("\n");
-	}' example.db | sed 's/[ 	][ 	]*/ /g' > nsec3param.out
+        printf("%s", $0);
+        while (!index($0, ")")) {
+            if (getline <= 0)
+                break;
+            printf (" %s", $0);
+        }
+        printf("\n");
+        }' example.db | sed 's/[ 	][ 	]*/ /g' > nsec3param.out
 
     grep -F "IQF9LQTLKKNFK0KVIFELRAK4IC4QLTMG.example. 0 IN NSEC3 1 0 10 - ( IQF9LQTLKKNFK0KVIFELRAK4IC4QLTMG A NS SOA RRSIG DNSKEY NSEC3PARAM )" nsec3param.out > /dev/null
 ) || ret=1
@@ -1229,14 +1155,14 @@ key2=$(dnssec_keygen -K signer -q -f KSK -a NSEC3RSASHA1 -b 1024 -n zone $zone)
     echo "some.empty.nonterminal.nodes.example 60 IN NS ns.example.tld" >> example3.db
     dnssec_signzone -3 - -A -H 10 -o example -f example3.db example3.db > /dev/null
     awk '/^IQF9LQTLK/ {
-		printf("%s", $0);
-		while (!index($0, ")")) {
-			if (getline <= 0)
-				break;
-			printf (" %s", $0);
-		}
-		printf("\n");
-	}' example.db | sed 's/[ 	][ 	]*/ /g' > nsec3param.out
+        printf("%s", $0);
+        while (!index($0, ")")) {
+            if (getline <= 0)
+                break;
+            printf (" %s", $0);
+        }
+        printf("\n");
+        }' example.db | sed 's/[ 	][ 	]*/ /g' > nsec3param.out
 
     grep -F "IQF9LQTLKKNFK0KVIFELRAK4IC4QLTMG.example. 0 IN NSEC3 1 0 10 - ( IQF9LQTLKKNFK0KVIFELRAK4IC4QLTMG A NS SOA RRSIG DNSKEY NSEC3PARAM )" nsec3param.out > /dev/null
 ) || ret=1
@@ -1991,19 +1917,15 @@ grep "flags:.*ad.*QUERY" dig.out.ns4.test$n > /dev/null || ret=1
 test_done
 
 echo_i "checking positive validation NSEC3 ($n)"
-dig_with_opts +noauth a.nsec3.example. \
-	      @10.53.0.3 a > dig.out.ns3.test$n || ret=1
-dig_with_opts +noauth a.nsec3.example. \
-	      @10.53.0.4 a > dig.out.ns4.test$n || ret=1
+dig_with_opts +noauth a.nsec3.example. @10.53.0.3 a > dig.out.ns3.test$n || ret=1
+dig_with_opts +noauth a.nsec3.example. @10.53.0.4 a > dig.out.ns4.test$n || ret=1
 digcomp dig.out.ns3.test$n dig.out.ns4.test$n || ret=1
 grep "flags:.*ad.*QUERY" dig.out.ns4.test$n > /dev/null || ret=1
 test_done
 
 echo_i "checking positive validation OPTOUT ($n)"
-dig_with_opts +noauth a.optout.example. \
-	      @10.53.0.3 a > dig.out.ns3.test$n || ret=1
-dig_with_opts +noauth a.optout.example. \
-	      @10.53.0.4 a > dig.out.ns4.test$n || ret=1
+dig_with_opts +noauth a.optout.example. @10.53.0.3 a > dig.out.ns3.test$n || ret=1
+dig_with_opts +noauth a.optout.example. @10.53.0.4 a > dig.out.ns4.test$n || ret=1
 digcomp dig.out.ns3.test$n dig.out.ns4.test$n || ret=1
 grep "flags:.*ad.*QUERY" dig.out.ns4.test$n > /dev/null || ret=1
 test_done
@@ -2048,10 +1970,10 @@ echo_i "checking that the NSEC3 record for the apex is properly signed when a DN
     cd ns3 || exit 1
     kskname=$(dnssec_keygen -q -3 -a RSASHA1 -fk update-nsec3.example)
     (
-	echo zone update-nsec3.example
-	echo server 10.53.0.3 "$PORT"
-	grep DNSKEY "${kskname}.key" | sed -e 's/^/update add /' -e 's/IN/300 IN/'
-	echo send
+        echo zone update-nsec3.example
+        echo server 10.53.0.3 "$PORT"
+        grep DNSKEY "${kskname}.key" | sed -e 's/^/update add /' -e 's/IN/300 IN/'
+        echo send
     ) | $NSUPDATE
 )
 dig_with_opts +dnssec a update-nsec3.example. @10.53.0.4 > dig.out.ns4.test$n || ret=1
@@ -2138,7 +2060,7 @@ rndccmd 10.53.0.3 status > /dev/null || ret=1
 for i in 1 2 3 4 5 6 7 8 9 10 ; do
     salt=$(dig_with_opts +nodnssec +short nsec3param inline.example. @10.53.0.3 | awk '{print $4}')
     if [ "$salt" = "FFFF" ]; then
-	break;
+        break;
     fi
     echo_i "sleeping ...."
     sleep 1
@@ -2152,7 +2074,7 @@ rndccmd 10.53.0.3 status > /dev/null || ret=1
 for i in 1 2 3 4 5 6 7 8 9 10 ; do
     salt=$(dig_with_opts +nodnssec +short nsec3param inline.example. @10.53.0.3 | awk '{print $4}')
     if [ "$salt" = "-" ]; then
-	break;
+        break;
     fi
     echo_i "sleeping ...."
     sleep 1
@@ -2237,8 +2159,8 @@ then
     thirdVal=$(my_dig insecure.example. dnskey|awk '$1 != ";;" { print $2 }')
     if [ "${firstVal:-0}" -eq "${thirdVal:-0}" ]
     then
-	echo_i "cannot confirm query answer still in cache"
-	ret=1
+        echo_i "cannot confirm query answer still in cache"
+        ret=1
     fi
 fi
 test_done
@@ -2269,7 +2191,7 @@ do
     dig_with_opts nsec3param nsec3chain-test @10.53.0.2 > dig.out.ns2.test$n || ret=1
     if grep "ANSWER: 3," dig.out.ns2.test$n >/dev/null
     then
-	break;
+        break;
     fi
     echo_i "sleeping ...."
     sleep 3
@@ -2295,14 +2217,14 @@ NF=$(awk '{print NF}' dig.out.ns2.test$n | sort -u)
 [ "${NF}" = 7 ] || ret=1
 # make canonical
 awk '{
-	for (i=1;i<7;i++) printf("%s ", $i);
-	for (i=7;i<=NF;i++) printf("%s", $i);
-	printf("\n");
+    for (i=1;i<7;i++) printf("%s ", $i);
+    for (i=7;i<=NF;i++) printf("%s", $i);
+    printf("\n");
 }' < dig.out.ns2.test$n > canonical1.$n || ret=1
 awk '{
-	for (i=1;i<7;i++) printf("%s ", $i);
-	for (i=7;i<=NF;i++) printf("%s", $i);
-	printf("\n");
+    for (i=1;i<7;i++) printf("%s ", $i);
+    for (i=7;i<=NF;i++) printf("%s", $i);
+    printf("\n");
 }' < "ns1/dsset-algroll$TP" > canonical2.$n || ret=1
 $DIFF -b canonical1.$n canonical2.$n > /dev/null 2>&1 || ret=1
 test_done
@@ -2310,7 +2232,7 @@ test_done
 # Intentionally strip ".key" from keyfile name to ensure the error message
 # includes it anyway to avoid confusion (RT #21731)
 echo_i "check dnssec-dsfromkey error message when keyfile is not found ($n)"
-msg="dnssec-keygen: warning: dns_dnssec_findmatchingkeys: error reading key file" 
+msg="dnssec-keygen: warning: dns_dnssec_findmatchingkeys: error reading key file"
 key=$(dnssec_keygen_errmsg "$msg" -a RSASHA1 -q example.) || ret=1
 mv "$key.key" "$key"
 msg="fatal: can't load .*: file not found"
@@ -2332,8 +2254,7 @@ echo_i "testing new records are signed with 'no-resign' ($n)"
     echo send
 ) | $NSUPDATE
 sleep 1
-dig_with_answeropts +nottlid txt new.nosign.example @10.53.0.3 \
-		    > dig.out.ns3.test$n 2>&1
+dig_with_answeropts +nottlid txt new.nosign.example @10.53.0.3 > dig.out.ns3.test$n 2>&1
 grep RRSIG dig.out.ns3.test$n > /dev/null 2>&1 || ret=1
 test_done
 
@@ -2352,8 +2273,7 @@ rm -f ns3/Knosign.example.*.private
     echo update add fail.nosign.example 300 in txt "reject me"
     echo send
 ) | $NSUPDATE > /dev/null 2>&1 && ret=1
-dig_with_answeropts +nottlid fail.nosign.example txt @10.53.0.3 \
-		    > dig.out.ns3.test$n 2>&1
+dig_with_answeropts +nottlid fail.nosign.example txt @10.53.0.3 > dig.out.ns3.test$n 2>&1
 [ -s dig.out.ns3.test$n ] && ret=1
 test_done
 
@@ -2376,7 +2296,7 @@ rndccmd 10.53.0.3 freeze expiring.example 2>&1 | sed 's/^/ns3 /' | cat_i
 (
     cd ns3 || exit 1
     for file in K*.moved; do
-	mv "$file" "$(basename "$file" .moved)"
+        mv "$file" "$(basename "$file" .moved)"
     done
     dnssec_signzone -S -N increment -e now+1mi -o expiring.example expiring.example.db > /dev/null
 ) || ret=1
@@ -2471,40 +2391,32 @@ done
 test_done
 
 echo_i "testing DNSKEY lookup via CNAME ($n)"
-dig_with_opts +noauth cnameandkey.secure.example. \
-	      @10.53.0.3 dnskey > dig.out.ns3.test$n || ret=1
-dig_with_opts +noauth cnameandkey.secure.example. \
-	      @10.53.0.4 dnskey > dig.out.ns4.test$n || ret=1
+dig_with_opts +noauth cnameandkey.secure.example. @10.53.0.3 dnskey > dig.out.ns3.test$n || ret=1
+dig_with_opts +noauth cnameandkey.secure.example. @10.53.0.4 dnskey > dig.out.ns4.test$n || ret=1
 digcomp dig.out.ns3.test$n dig.out.ns4.test$n || ret=1
 grep "flags:.*ad.*QUERY" dig.out.ns4.test$n > /dev/null || ret=1
 grep "CNAME" dig.out.ns4.test$n > /dev/null || ret=1
 test_done
 
 echo_i "testing KEY lookup at CNAME (present) ($n)"
-dig_with_opts +noauth cnameandkey.secure.example. \
-	      @10.53.0.3 key > dig.out.ns3.test$n || ret=1
-dig_with_opts +noauth cnameandkey.secure.example. \
-	      @10.53.0.4 key > dig.out.ns4.test$n || ret=1
+dig_with_opts +noauth cnameandkey.secure.example. @10.53.0.3 key > dig.out.ns3.test$n || ret=1
+dig_with_opts +noauth cnameandkey.secure.example. @10.53.0.4 key > dig.out.ns4.test$n || ret=1
 digcomp dig.out.ns3.test$n dig.out.ns4.test$n || ret=1
 grep "flags:.*ad.*QUERY" dig.out.ns4.test$n > /dev/null || ret=1
 grep "CNAME" dig.out.ns4.test$n > /dev/null && ret=1
 test_done
 
 echo_i "testing KEY lookup at CNAME (not present) ($n)"
-dig_with_opts +noauth cnamenokey.secure.example. \
-	      @10.53.0.3 key > dig.out.ns3.test$n || ret=1
-dig_with_opts +noauth cnamenokey.secure.example. \
-	      @10.53.0.4 key > dig.out.ns4.test$n || ret=1
+dig_with_opts +noauth cnamenokey.secure.example. @10.53.0.3 key > dig.out.ns3.test$n || ret=1
+dig_with_opts +noauth cnamenokey.secure.example. @10.53.0.4 key > dig.out.ns4.test$n || ret=1
 digcomp dig.out.ns3.test$n dig.out.ns4.test$n || ret=1
 grep "flags:.*ad.*QUERY" dig.out.ns4.test$n > /dev/null || ret=1
 grep "CNAME" dig.out.ns4.test$n > /dev/null && ret=1
 test_done
 
 echo_i "testing DNSKEY lookup via DNAME ($n)"
-dig_with_opts a.dnameandkey.secure.example. \
-	      @10.53.0.3 dnskey > dig.out.ns3.test$n || ret=1
-dig_with_opts a.dnameandkey.secure.example. \
-	      @10.53.0.4 dnskey > dig.out.ns4.test$n || ret=1
+dig_with_opts a.dnameandkey.secure.example. @10.53.0.3 dnskey > dig.out.ns3.test$n || ret=1
+dig_with_opts a.dnameandkey.secure.example. @10.53.0.4 dnskey > dig.out.ns4.test$n || ret=1
 digcomp dig.out.ns3.test$n dig.out.ns4.test$n || ret=1
 grep "flags:.*ad.*QUERY" dig.out.ns4.test$n > /dev/null || ret=1
 grep "CNAME" dig.out.ns4.test$n > /dev/null || ret=1
@@ -2512,10 +2424,8 @@ grep "DNAME" dig.out.ns4.test$n > /dev/null || ret=1
 test_done
 
 echo_i "testing KEY lookup via DNAME ($n)"
-dig_with_opts b.dnameandkey.secure.example. \
-	      @10.53.0.3 key > dig.out.ns3.test$n || ret=1
-dig_with_opts b.dnameandkey.secure.example. \
-	      @10.53.0.4 key > dig.out.ns4.test$n || ret=1
+dig_with_opts b.dnameandkey.secure.example. @10.53.0.3 key > dig.out.ns3.test$n || ret=1
+dig_with_opts b.dnameandkey.secure.example. @10.53.0.4 key > dig.out.ns4.test$n || ret=1
 digcomp dig.out.ns3.test$n dig.out.ns4.test$n || ret=1
 grep "flags:.*ad.*QUERY" dig.out.ns4.test$n > /dev/null || ret=1
 grep "DNAME" dig.out.ns4.test$n > /dev/null || ret=1
@@ -2527,19 +2437,15 @@ test "${lines:-1000}" -lt 15 || ret=1
 test_done
 
 echo_i "check against against missing nearest provable proof ($n)"
-dig_with_opts +norec b.c.d.optout-tld. \
-	      @10.53.0.6 ds > dig.out.ds.ns6.test$n || ret=1
+dig_with_opts +norec b.c.d.optout-tld. @10.53.0.6 ds > dig.out.ds.ns6.test$n || ret=1
 nsec3=$(grep -c "IN.NSEC3" dig.out.ds.ns6.test$n || true)
 [ "$nsec3" -eq 2 ] || ret=1
-dig_with_opts +norec b.c.d.optout-tld. \
-	      @10.53.0.6 A > dig.out.ns6.test$n || ret=1
+dig_with_opts +norec b.c.d.optout-tld. @10.53.0.6 A > dig.out.ns6.test$n || ret=1
 nsec3=$(grep -c "IN.NSEC3" dig.out.ns6.test$n || true)
 [ "$nsec3" -eq 1 ] || ret=1
-dig_with_opts optout-tld. \
-	      @10.53.0.4 SOA > dig.out.soa.ns4.test$n || ret=1
+dig_with_opts optout-tld. @10.53.0.4 SOA > dig.out.soa.ns4.test$n || ret=1
 grep "flags:.*ad.*QUERY" dig.out.soa.ns4.test$n > /dev/null || ret=1
-dig_with_opts b.c.d.optout-tld. \
-	      @10.53.0.4 A > dig.out.ns4.test$n || ret=1
+dig_with_opts b.c.d.optout-tld. @10.53.0.4 A > dig.out.ns4.test$n || ret=1
 grep "status: NOERROR" dig.out.ns4.test$n > /dev/null || ret=1
 grep "flags:.*ad.*QUERY" dig.out.ns4.test$n > /dev/null && ret=1
 test_done
@@ -2557,9 +2463,9 @@ do
     ret=0
     if test -f ns4/managed-keys.bind
     then
-	grep KEYDATA ns4/managed-keys.bind > /dev/null &&
-	    grep "next refresh:" ns4/managed-keys.bind > /dev/null &&
-	    break
+        grep KEYDATA ns4/managed-keys.bind > /dev/null &&
+            grep "next refresh:" ns4/managed-keys.bind > /dev/null &&
+            break
     fi
     ret=1
     sleep 1
@@ -2567,12 +2473,10 @@ done
 test_done
 
 echo_i "check dig's +nocrypto flag ($n)"
-dig_with_opts +norec +nocrypto DNSKEY . \
-	      @10.53.0.1 > dig.out.dnskey.ns1.test$n || ret=1
+dig_with_opts +norec +nocrypto DNSKEY . @10.53.0.1 > dig.out.dnskey.ns1.test$n || ret=1
 grep -E "256 [0-9]+ $DEFAULT_ALGORITHM_NUMBER \\[key id = [1-9][0-9]*]" dig.out.dnskey.ns1.test$n > /dev/null || ret=1
 grep -E "RRSIG.* \\[omitted]" dig.out.dnskey.ns1.test$n > /dev/null || ret=1
-dig_with_opts +norec +nocrypto DS example \
-	      @10.53.0.1 > dig.out.ds.ns1.test$n || ret=1
+dig_with_opts +norec +nocrypto DS example @10.53.0.1 > dig.out.ds.ns1.test$n || ret=1
 grep -E "DS.* [0-9]+ [12] \[omitted]" dig.out.ds.ns1.test$n > /dev/null || ret=1
 test_done
 
@@ -2613,12 +2517,12 @@ if [ -x "$PYTHON" ]; then
     # python3 will recognize them as integers.
     $DIG +dnssec +short -p "$PORT" @10.53.0.3 soa siginterval.example > dig.out.soa.test$n
     soaexpire=$(awk '$1 ~ /SOA/ { print $5 }' dig.out.soa.test$n |
-		    sed 's/\(....\)\(..\)\(..\).*/\1, \2, \3/' |
-		    sed 's/ 0/ /g')
+                    sed 's/\(....\)\(..\)\(..\).*/\1, \2, \3/' |
+                    sed 's/ 0/ /g')
     $DIG +dnssec +short -p "$PORT" @10.53.0.3 dnskey siginterval.example > dig.out.dnskey.test$n
     dnskeyexpire=$(awk '$1 ~ /DNSKEY/ { print $5; exit 0 }' dig.out.dnskey.test$n |
-		       sed 's/\(....\)\(..\)\(..\).*/\1, \2, \3/' |
-		       sed 's/ 0/ /g')
+                    sed 's/\(....\)\(..\)\(..\).*/\1, \2, \3/' |
+                    sed 's/ 0/ /g')
     $PYTHON > python.out.$n <<EOF
 from datetime import date;
 ke=date($dnskeyexpire)
@@ -2634,11 +2538,9 @@ rndccmd 10.53.0.4 reconfig 2>&1 | sed 's/^/ns4 /' | cat_i
 sleep 3
 
 echo_i "check insecure delegation between static-stub zones ($n)"
-dig_with_opts ns insecure.secure.example \
-	      @10.53.0.4 > dig.out.ns4.1.test$n || ret=1
+dig_with_opts ns insecure.secure.example @10.53.0.4 > dig.out.ns4.1.test$n || ret=1
 grep "SERVFAIL" dig.out.ns4.1.test$n > /dev/null && ret=1
-dig_with_opts ns secure.example \
-	      @10.53.0.4 > dig.out.ns4.2.test$n || ret=1
+dig_with_opts ns secure.example @10.53.0.4 > dig.out.ns4.2.test$n || ret=1
 grep "SERVFAIL" dig.out.ns4.2.test$n > /dev/null && ret=1
 test_done
 
@@ -2652,17 +2554,16 @@ out=$(echo "IN RRSIG $in" | $RRCHECKER -p | sed 's/^IN.RRSIG.//')
 test_done
 
 echo_i "check the correct resigning time is reported in zonestatus ($n)"
-rndccmd 10.53.0.3 \
-	zonestatus secure.example > rndc.out.ns3.test$n
+rndccmd 10.53.0.3 zonestatus secure.example > rndc.out.ns3.test$n
 # next resign node: secure.example/DNSKEY
 qname=$(awk '/next resign node:/ { print $4 }' rndc.out.ns3.test$n | sed 's,/.*,,')
 qtype=$(awk '/next resign node:/ { print $4 }' rndc.out.ns3.test$n | sed 's,.*/,,')
 # next resign time: Thu, 24 Apr 2014 10:38:16 GMT
 time=$(awk 'BEGIN { m["Jan"] = "01"; m["Feb"] = "02"; m["Mar"] = "03";
-		   m["Apr"] = "04"; m["May"] = "05"; m["Jun"] = "06";
-		   m["Jul"] = "07"; m["Aug"] = "08"; m["Sep"] = "09";
-		   m["Oct"] = "10"; m["Nov"] = "11"; m["Dec"] = "12";}
-	 /next resign time:/ { printf "%d%s%02d%s\n", $7, m[$6], $5, $8 }' rndc.out.ns3.test$n | sed 's/://g')
+                    m["Apr"] = "04"; m["May"] = "05"; m["Jun"] = "06";
+                    m["Jul"] = "07"; m["Aug"] = "08"; m["Sep"] = "09";
+                    m["Oct"] = "10"; m["Nov"] = "11"; m["Dec"] = "12";}
+            /next resign time:/ { printf "%d%s%02d%s\n", $7, m[$6], $5, $8 }' rndc.out.ns3.test$n | sed 's/://g')
 dig_with_opts +noall +answer "$qname" "$qtype" @10.53.0.3 > dig.out.test$n
 expire=$(awk '$4 == "RRSIG" { print $9 }' dig.out.test$n)
 inception=$(awk '$4 == "RRSIG" { print $10 }' dig.out.test$n)
@@ -2680,36 +2581,36 @@ msg="fatal: unsupported algorithm:"
 until test $alg -eq 256
 do
     case $alg in
-	2) # Diffie Helman
-	    alg=$((alg+1))
-	    continue;;
-	157|160|161|162|163|164|165) # private - non standard
-	    alg=$((alg+1))
-	    continue;;
-	1|5|7|8|10) # RSA algorithms
-	    key1=$(dnssec_keygen_errmsg "$msg" -a "$alg" -b "1024" -n zone example 2>/dev/null || true)
-	    ;;
-	*)
-	    key1=$(dnssec_keygen_errmsg "$msg" -a "$alg" -n zone example 2>/dev/null || true)
+        2) # Diffie Helman
+            alg=$((alg+1))
+            continue;;
+        157|160|161|162|163|164|165) # private - non standard
+            alg=$((alg+1))
+            continue;;
+        1|5|7|8|10) # RSA algorithms
+            key1=$(dnssec_keygen_errmsg "$msg" -a "$alg" -b "1024" -n zone example 2>/dev/null || true)
+            ;;
+        *)
+            key1=$(dnssec_keygen_errmsg "$msg" -a "$alg" -n zone example 2>/dev/null || true)
     esac
     if grep "unsupported algorithm" keygen.err.$n > /dev/null
     then
-	alg=$((alg+1))
-	continue
+        alg=$((alg+1))
+        continue
     fi
     if test -z "$key1"
     then
-	echo_i "'$KEYGEN -a $alg': failed"
-	cat keygen.err.$n
-	ret=1
-	alg=$((alg+1))
-	continue
+        echo_i "'$KEYGEN -a $alg': failed"
+        cat keygen.err.$n
+        ret=1
+        alg=$((alg+1))
+        continue
     fi
     $SETTIME -I now+4d "$key1.private" > /dev/null
     key2=$(dnssec_keygen -v 10 -i 3d -S "$key1.private" 2> /dev/null || true)
     test -f "$key2.key" -a -f "$key2.private" || {
-	ret=1
-	echo_i "'$KEYGEN -S' failed for algorithm: $alg"
+        ret=1
+        echo_i "'$KEYGEN -S' failed for algorithm: $alg"
     }
     alg=$((alg+1))
 done
@@ -2748,9 +2649,9 @@ echo_i "check that a lone non matching CDS record is rejected ($n)"
     echo server 10.53.0.2 "$PORT"
     echo update delete cds-update.secure CDS
     dig_with_opts +noall +answer @10.53.0.2 dnskey cds-update.secure |
-	grep "DNSKEY.257" | sed 's/DNSKEY.257/DNSKEY 258/' |
-	dnssec_dsfromkey -C -A -f - -T 1 cds-update.secure |
-	sed "s/^/update add /"
+        grep "DNSKEY.257" | sed 's/DNSKEY.257/DNSKEY 258/' |
+        dnssec_dsfromkey -C -A -f - -T 1 cds-update.secure |
+        sed "s/^/update add /"
     echo send
 ) | $NSUPDATE > nsupdate.out.test$n 2>&1 || true
 grep "update failed: REFUSED" nsupdate.out.test$n > /dev/null || ret=1
@@ -2766,9 +2667,9 @@ echo_i "check that CDS records are signed using KSK when added by nsupdate ($n)"
     echo update delete cds-update.secure CDS
     echo send
     dig_with_opts +noall +answer @10.53.0.2 dnskey cds-update.secure |
-	grep "DNSKEY.257" |
-	dnssec_dsfromkey -12 -C -f - -T 1 cds-update.secure |
-	sed "s/^/update add /"
+        grep "DNSKEY.257" |
+        dnssec_dsfromkey -12 -C -f - -T 1 cds-update.secure |
+        sed "s/^/update add /"
     echo send
 ) | $NSUPDATE
 dig_with_opts +noall +answer @10.53.0.2 cds cds-update.secure > dig.out.test$n
@@ -2786,9 +2687,9 @@ echo_i "   nsupdate when dnssec-dnskey-kskonly is yes ($n)"
     echo update delete cds-kskonly.secure CDS
     echo send
     dig_with_opts +noall +answer @10.53.0.2 dnskey cds-kskonly.secure |
-	grep "DNSKEY.257" |
-	dnssec_dsfromkey -12 -C -f - -T 1 cds-kskonly.secure |
-	sed "s/^/update add /"
+        grep "DNSKEY.257" |
+        dnssec_dsfromkey -12 -C -f - -T 1 cds-kskonly.secure |
+        sed "s/^/update add /"
     echo send
 ) | $NSUPDATE
 dig_with_opts +noall +answer @10.53.0.2 cds cds-kskonly.secure > dig.out.test$n
@@ -2814,13 +2715,13 @@ echo_i "check that a non matching CDS record is accepted with a matching CDS rec
     echo update delete cds-update.secure CDS
     echo send
     dig_with_opts +noall +answer @10.53.0.2 dnskey cds-update.secure |
-	grep "DNSKEY.257" |
-	dnssec_dsfromkey -12 -C -f - -T 1 cds-update.secure |
-	sed "s/^/update add /"
+        grep "DNSKEY.257" |
+        dnssec_dsfromkey -12 -C -f - -T 1 cds-update.secure |
+        sed "s/^/update add /"
     dig_with_opts +noall +answer @10.53.0.2 dnskey cds-update.secure |
-	grep "DNSKEY.257" | sed 's/DNSKEY.257/DNSKEY 258/' |
-	dnssec_dsfromkey -12 -C -A -f - -T 1 cds-update.secure |
-	sed "s/^/update add /"
+        grep "DNSKEY.257" | sed 's/DNSKEY.257/DNSKEY 258/' |
+        dnssec_dsfromkey -12 -C -A -f - -T 1 cds-update.secure |
+        sed "s/^/update add /"
     echo send
 ) | $NSUPDATE
 dig_with_opts +noall +answer @10.53.0.2 cds cds-update.secure > dig.out.test$n
@@ -2891,7 +2792,7 @@ echo_i "check that a lone non matching CDNSKEY record is rejected ($n)"
     echo update delete cdnskey-update.secure CDNSKEY
     echo send
     dig_with_opts +noall +answer @10.53.0.2 dnskey cdnskey-update.secure |
-	sed -n -e "s/^/update add /" -e 's/DNSKEY.257/CDNSKEY 258/p'
+        sed -n -e "s/^/update add /" -e 's/DNSKEY.257/CDNSKEY 258/p'
     echo send
 ) | $NSUPDATE > nsupdate.out.test$n 2>&1 || true
 grep "update failed: REFUSED" nsupdate.out.test$n > /dev/null || ret=1
@@ -2914,7 +2815,7 @@ echo_i "check that CDNSKEY records are signed using KSK when added by nsupdate (
     echo server 10.53.0.2 "$PORT"
     echo update delete cdnskey-update.secure CDNSKEY
     dig_with_opts +noall +answer @10.53.0.2 dnskey cdnskey-update.secure |
-	sed -n -e "s/^/update add /" -e 's/DNSKEY.257/CDNSKEY 257/p'
+        sed -n -e "s/^/update add /" -e 's/DNSKEY.257/CDNSKEY 257/p'
     echo send
 ) | $NSUPDATE
 dig_with_opts +noall +answer @10.53.0.2 cdnskey cdnskey-update.secure > dig.out.test$n
@@ -2931,7 +2832,7 @@ echo_i "   nsupdate when dnssec-dnskey-kskonly is yes ($n)"
     echo server 10.53.0.2 "$PORT"
     echo update delete cdnskey-kskonly.secure CDNSKEY
     dig_with_opts +noall +answer @10.53.0.2 dnskey cdnskey-kskonly.secure |
-	sed -n -e "s/^/update add /" -e 's/DNSKEY.257/CDNSKEY 257/p'
+        sed -n -e "s/^/update add /" -e 's/DNSKEY.257/CDNSKEY 257/p'
     echo send
 ) | $NSUPDATE
 dig_with_opts +noall +answer @10.53.0.2 cdnskey cdnskey-kskonly.secure > dig.out.test$n
@@ -2955,9 +2856,9 @@ echo_i "check that a non matching CDNSKEY record is accepted with a matching CDN
     echo server 10.53.0.2 "$PORT"
     echo update delete cdnskey-update.secure CDNSKEY
     dig_with_opts +noall +answer @10.53.0.2 dnskey cdnskey-update.secure |
-	sed -n -e "s/^/update add /" -e 's/DNSKEY.257/CDNSKEY 257/p'
+        sed -n -e "s/^/update add /" -e 's/DNSKEY.257/CDNSKEY 257/p'
     dig_with_opts +noall +answer @10.53.0.2 dnskey cdnskey-update.secure |
-	sed -n -e "s/^/update add /" -e 's/DNSKEY.257/CDNSKEY 258/p'
+        sed -n -e "s/^/update add /" -e 's/DNSKEY.257/CDNSKEY 258/p'
     echo send
 ) | $NSUPDATE
 dig_with_opts +noall +answer @10.53.0.2 cdnskey cdnskey-update.secure > dig.out.test$n
