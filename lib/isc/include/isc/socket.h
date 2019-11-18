@@ -55,6 +55,7 @@
 #include <isc/event.h>
 #include <isc/eventclass.h>
 #include <isc/lang.h>
+#include <isc/magic.h>
 #include <isc/region.h>
 #include <isc/sockaddr.h>
 #include <isc/time.h>
@@ -287,8 +288,8 @@ typedef enum {
  */
 #ifndef WIN32
 struct isc_socketmgr {
-	unsigned int		impmagic;
-	unsigned int		magic;
+	isc_magic_t impmagic;
+	isc_magic_t magic;
 };
 #endif
 
@@ -302,8 +303,8 @@ struct isc_socketmgr {
  */
 #ifndef WIN32
 struct isc_socket {
-	unsigned int		impmagic;
-	unsigned int		magic;
+	isc_magic_t impmagic;
+	isc_magic_t magic;
 };
 #endif
 

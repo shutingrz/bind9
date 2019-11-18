@@ -1549,7 +1549,7 @@ ns__client_put_cb(void *client0) {
 	 */
 	ns_query_free(client);
 
-	client->magic = 0;
+	ISC_MAGIC_CLEAR(client);
 	client->shuttingdown = true;
 
 	if (client->manager != NULL) {
@@ -2256,7 +2256,7 @@ ns__client_setup(ns_client_t *client, ns_clientmgr_t *mgr, bool new) {
 		 * Set magic earlier than usual because ns_query_init()
 		 * and the functions it calls will require it.
 		 */
-		client->magic = NS_CLIENT_MAGIC;
+		ISC_MAGIC_INIT(client, NS_CLIENT_MAGIC);
 		result = ns_query_init(client);
 		if (result != ISC_R_SUCCESS) {
 			goto cleanup;
@@ -2294,7 +2294,7 @@ ns__client_setup(ns_client_t *client, ns_clientmgr_t *mgr, bool new) {
 	ISC_LINK_INIT(client, rlink);
 	client->rcode_override = -1; 	/* not set */
 
-	client->magic = NS_CLIENT_MAGIC;
+	ISC_MAGIC_INIT(client, NS_CLIENT_MAGIC);
 
 	CTRACE("client_setup");
 
@@ -2366,7 +2366,7 @@ clientmgr_destroy(ns_clientmgr_t *manager) {
 
 	MTRACE("clientmgr_destroy");
 
-	manager->magic = 0;
+	ISC_MAGIC_CLEAR(manager);
 
 #if CLIENT_NMCTXS > 0
 	for (i = 0; i < CLIENT_NMCTXS; i++) {
@@ -2443,7 +2443,7 @@ ns_clientmgr_create(isc_mem_t *mctx, ns_server_t *sctx, isc_taskmgr_t *taskmgr,
 	for (i = 0; i < CLIENT_NMCTXS; i++)
 		manager->mctxpool[i] = NULL; /* will be created on-demand */
 #endif
-	manager->magic = MANAGER_MAGIC;
+	ISC_MAGIC_INIT(manager, MANAGER_MAGIC);
 
 	MTRACE("create");
 

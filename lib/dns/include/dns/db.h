@@ -221,8 +221,8 @@ typedef isc_result_t
  * invariants.
  */
 struct dns_db {
-	unsigned int				magic;
-	unsigned int				impmagic;
+	isc_magic_t				magic;
+	isc_magic_t				impmagic;
 	dns_dbmethods_t *			methods;
 	uint16_t				attributes;
 	dns_rdataclass_t			rdclass;

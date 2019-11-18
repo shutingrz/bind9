@@ -220,7 +220,7 @@ static char spaces[N_SPACES+1] = "          ";
 static char tabs[N_TABS+1] = "\t\t\t\t\t\t\t\t\t\t";
 
 struct dns_dumpctx {
-	unsigned int		magic;
+	isc_magic_t magic;
 	isc_mem_t		*mctx;
 	isc_mutex_t		lock;
 	isc_refcount_t		references;
@@ -1276,7 +1276,7 @@ dumptostreaminc(dns_dumpctx_t *dctx);
 static void
 dumpctx_destroy(dns_dumpctx_t *dctx) {
 
-	dctx->magic = 0;
+	ISC_MAGIC_CLEAR(dctx);
 	isc_mutex_destroy(&dctx->lock);
 	dns_dbiterator_destroy(&dctx->dbiter);
 	if (dctx->version != NULL)
@@ -1533,7 +1533,7 @@ dumpctx_create(isc_mem_t *mctx, dns_db_t *db, dns_dbversion_t *version,
 	isc_mem_attach(mctx, &dctx->mctx);
 
 	isc_refcount_init(&dctx->references, 1);
-	dctx->magic = DNS_DCTX_MAGIC;
+	ISC_MAGIC_INIT(dctx, DNS_DCTX_MAGIC);
 	*dctxp = dctx;
 	return (ISC_R_SUCCESS);
 

@@ -171,7 +171,7 @@ ISC_LANG_BEGINDECLS
  */
 
 struct isc_buffer {
-	unsigned int		magic;
+	isc_magic_t		magic;
 	void		       *base;
 	/*@{*/
 	/*! The following integers are byte offsets from 'base'. */

@@ -129,7 +129,7 @@ dns_tcpmsg_init(isc_mem_t *mctx, isc_socket_t *sock, dns_tcpmsg_t *tcpmsg) {
 	REQUIRE(sock != NULL);
 	REQUIRE(tcpmsg != NULL);
 
-	tcpmsg->magic = TCPMSG_MAGIC;
+	ISC_MAGIC_INIT(tcpmsg, TCPMSG_MAGIC);
 	tcpmsg->size = 0;
 	tcpmsg->buffer.base = NULL;
 	tcpmsg->buffer.length = 0;
@@ -226,7 +226,7 @@ void
 dns_tcpmsg_invalidate(dns_tcpmsg_t *tcpmsg) {
 	REQUIRE(VALID_TCPMSG(tcpmsg));
 
-	tcpmsg->magic = 0;
+	ISC_MAGIC_CLEAR(tcpmsg);
 
 	if (tcpmsg->buffer.base != NULL) {
 		isc_mem_put(tcpmsg->mctx, tcpmsg->buffer.base,

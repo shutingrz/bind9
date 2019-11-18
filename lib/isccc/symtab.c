@@ -51,7 +51,7 @@ typedef ISC_LIST(elt_t)			eltlist_t;
 #define VALID_SYMTAB(st)		ISC_MAGIC_VALID(st, SYMTAB_MAGIC)
 
 struct isccc_symtab {
-	unsigned int			magic;
+	isc_magic_t magic;
 	unsigned int			size;
 	eltlist_t *			table;
 	isccc_symtabundefaction_t		undefine_action;
@@ -121,7 +121,7 @@ isccc_symtab_destroy(isccc_symtab_t **symtabp) {
 		}
 	}
 	free(symtab->table);
-	symtab->magic = 0;
+	ISC_MAGIC_CLEAR(symtab);
 	free(symtab);
 
 	*symtabp = NULL;

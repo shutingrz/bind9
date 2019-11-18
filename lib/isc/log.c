@@ -100,7 +100,7 @@ struct isc_logmessage {
  * into a program, or the debug_level which is dynamic state information.
  */
 struct isc_logconfig {
-	unsigned int			magic;
+	isc_magic_t			magic;
 	isc_log_t *			lctx;
 	ISC_LIST(isc_logchannel_t)	channels;
 	ISC_LIST(isc_logchannellist_t) *channellists;
@@ -130,7 +130,7 @@ struct isc_logconfig {
  */
 struct isc_log {
 	/* Not locked. */
-	unsigned int			magic;
+	isc_magic_t			magic;
 	isc_mem_t *			mctx;
 	isc_logcategory_t *		categories;
 	unsigned int			category_count;
@@ -279,7 +279,7 @@ isc_log_create(isc_mem_t *mctx, isc_log_t **lctxp, isc_logconfig_t **lcfgp) {
 		 * If either fails, the lctx is destroyed and not returned
 		 * to the caller.
 		 */
-		lctx->magic = LCTX_MAGIC;
+		ISC_MAGIC_INIT(lctx, LCTX_MAGIC);
 
 		isc_log_registercategories(lctx, isc_categories);
 		isc_log_registermodules(lctx, isc_modules);
@@ -329,7 +329,7 @@ isc_logconfig_create(isc_log_t *lctx, isc_logconfig_t **lcfgp) {
 		lcfg->tag = NULL;
 		lcfg->dynamic = false;
 		ISC_LIST_INIT(lcfg->channels);
-		lcfg->magic = LCFG_MAGIC;
+		ISC_MAGIC_INIT(lcfg, LCFG_MAGIC);
 	}
 
 	/*
@@ -465,7 +465,7 @@ isc_log_destroy(isc_log_t **lctxp) {
 	lctx->modules = NULL;
 	lctx->module_count = 0;
 	lctx->mctx = NULL;
-	lctx->magic = 0;
+	ISC_MAGIC_CLEAR(lctx);
 
 	isc_mem_putanddetach(&mctx, lctx, sizeof(*lctx));
 
@@ -531,7 +531,7 @@ isc_logconfig_destroy(isc_logconfig_t **lcfgp) {
 	lcfg->tag = NULL;
 	lcfg->highest_level = 0;
 	lcfg->duplicate_interval = 0;
-	lcfg->magic = 0;
+	ISC_MAGIC_CLEAR(lcfg);
 
 	isc_mem_put(mctx, lcfg, sizeof(*lcfg));
 

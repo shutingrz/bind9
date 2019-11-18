@@ -228,8 +228,8 @@ destroy(isc__timer_t *timer) {
 
 	isc_task_detach(&timer->task);
 	isc_mutex_destroy(&timer->lock);
-	timer->common.impmagic = 0;
-	timer->common.magic = 0;
+	ISC_IMPMAGIC_CLEAR(&timer->common);
+	ISC_MAGIC_CLEAR(&timer->common);
 	isc_mem_put(manager->mctx, timer, sizeof(*timer));
 }
 
@@ -314,8 +314,8 @@ isc_timer_create(isc_timermgr_t *manager0, isc_timertype_t type,
 	timer->index = 0;
 	isc_mutex_init(&timer->lock);
 	ISC_LINK_INIT(timer, link);
-	timer->common.impmagic = TIMER_MAGIC;
-	timer->common.magic = ISCAPI_TIMER_MAGIC;
+	ISC_IMPMAGIC_INIT(&timer->common, TIMER_MAGIC);
+	ISC_MAGIC_INIT(&timer->common, ISCAPI_TIMER_MAGIC);
 
 	LOCK(&manager->lock);
 
@@ -336,8 +336,8 @@ isc_timer_create(isc_timermgr_t *manager0, isc_timertype_t type,
 	UNLOCK(&manager->lock);
 
 	if (result != ISC_R_SUCCESS) {
-		timer->common.impmagic = 0;
-		timer->common.magic = 0;
+		ISC_IMPMAGIC_CLEAR(&timer->common);
+		ISC_MAGIC_CLEAR(&timer->common);
 		isc_mutex_destroy(&timer->lock);
 		isc_task_detach(&timer->task);
 		isc_mem_put(manager->mctx, timer, sizeof(*timer));
@@ -680,8 +680,8 @@ isc_timermgr_create(isc_mem_t *mctx, isc_timermgr_t **managerp) {
 
 	manager = isc_mem_get(mctx, sizeof(*manager));
 
-	manager->common.impmagic = TIMER_MANAGER_MAGIC;
-	manager->common.magic = ISCAPI_TIMERMGR_MAGIC;
+	ISC_IMPMAGIC_INIT(&manager->common, TIMER_MANAGER_MAGIC);
+	ISC_MAGIC_INIT(&manager->common, ISCAPI_TIMERMGR_MAGIC);
 	manager->mctx = NULL;
 	manager->done = false;
 	INIT_LIST(manager->timers);
@@ -747,8 +747,8 @@ isc_timermgr_destroy(isc_timermgr_t **managerp) {
 	(void)isc_condition_destroy(&manager->wakeup);
 	isc_mutex_destroy(&manager->lock);
 	isc_heap_destroy(&manager->heap);
-	manager->common.impmagic = 0;
-	manager->common.magic = 0;
+	ISC_IMPMAGIC_CLEAR(&manager->common);
+	ISC_MAGIC_CLEAR(&manager->common);
 	isc_mem_putanddetach(&manager->mctx, manager, sizeof(*manager));
 
 	*managerp = NULL;

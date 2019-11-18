@@ -55,7 +55,7 @@
 
 /*% ISC heap structure. */
 struct isc_heap {
-	unsigned int			magic;
+	isc_magic_t magic;
 	isc_mem_t *			mctx;
 	unsigned int			size;
 	unsigned int			size_increment;
@@ -88,7 +88,7 @@ isc_heap_create(isc_mem_t *mctx, isc_heapcompare_t compare,
 	REQUIRE(compare != NULL);
 
 	heap = isc_mem_get(mctx, sizeof(*heap));
-	heap->magic = HEAP_MAGIC;
+	ISC_MAGIC_INIT(heap, HEAP_MAGIC);
 	heap->size = 0;
 	heap->mctx = NULL;
 	isc_mem_attach(mctx, &heap->mctx);
@@ -117,7 +117,7 @@ isc_heap_destroy(isc_heap_t **heapp) {
 	if (heap->array != NULL)
 		isc_mem_put(heap->mctx, heap->array,
 			    heap->size * sizeof(void *));
-	heap->magic = 0;
+	ISC_MAGIC_CLEAR(heap);
 	isc_mem_putanddetach(&heap->mctx, heap, sizeof(*heap));
 
 	*heapp = NULL;

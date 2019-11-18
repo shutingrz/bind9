@@ -99,7 +99,7 @@ struct dns_dthandle {
 };
 
 struct dns_dtenv {
-	unsigned int magic;
+	isc_magic_t magic;
 	isc_refcount_t refcount;
 
 	isc_mem_t *mctx;
@@ -262,7 +262,7 @@ dns_dt_create(isc_mem_t *mctx, dns_dtmode_t mode, const char *path,
 	env->fopt = *foptp;
 	*foptp = NULL;
 
-	env->magic = DTENV_MAGIC;
+	ISC_MAGIC_INIT(env, DTENV_MAGIC);
 	*envp = env;
 
  cleanup:
@@ -545,7 +545,7 @@ destroy(dns_dtenv_t *env) {
 	isc_log_write(dns_lctx, DNS_LOGCATEGORY_DNSTAP,
 		      DNS_LOGMODULE_DNSTAP, ISC_LOG_INFO,
 		      "closing dnstap");
-	env->magic = 0;
+	ISC_MAGIC_CLEAR(env);
 
 	generation++;
 

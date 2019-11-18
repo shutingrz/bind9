@@ -52,7 +52,7 @@ ISC_LANG_BEGINDECLS
  */
 
 typedef struct dns_rriterator {
-	unsigned int		magic;
+	isc_magic_t		magic;
 	isc_result_t		result;
 	dns_db_t		*db;
 	dns_dbiterator_t 	*dbit;

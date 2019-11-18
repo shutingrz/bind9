@@ -104,7 +104,7 @@ ns_server_create(isc_mem_t *mctx, ns_matchview_t matchingview,
 
 	ISC_LIST_INIT(sctx->altsecrets);
 
-	sctx->magic = SCTX_MAGIC;
+	ISC_MAGIC_INIT(sctx, SCTX_MAGIC);
 	*sctxp = sctx;
 
 	return (ISC_R_SUCCESS);
@@ -194,7 +194,7 @@ ns_server_detach(ns_server_t **sctxp) {
 			isc_stats_detach(&sctx->tcpoutstats6);
 		}
 
-		sctx->magic = 0;
+		ISC_MAGIC_CLEAR(sctx);
 
 		isc_mem_putanddetach(&sctx->mctx, sctx, sizeof(*sctx));
 	}

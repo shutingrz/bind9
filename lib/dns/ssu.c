@@ -37,7 +37,7 @@
 #define VALID_SSURULE(table)	ISC_MAGIC_VALID(table, SSURULEMAGIC)
 
 struct dns_ssurule {
-	unsigned int magic;
+	isc_magic_t magic;
 	bool grant;		/*%< is this a grant or a deny? */
 	dns_ssumatchtype_t matchtype;	/*%< which type of pattern match? */
 	dns_name_t *identity;		/*%< the identity to match */
@@ -50,7 +50,7 @@ struct dns_ssurule {
 };
 
 struct dns_ssutable {
-	unsigned int magic;
+	isc_magic_t magic;
 	isc_mem_t *mctx;
 	isc_refcount_t references;
 	dns_dlzdb_t *dlzdatabase;
@@ -69,7 +69,7 @@ dns_ssutable_create(isc_mem_t *mctx, dns_ssutable_t **tablep) {
 	table->mctx = NULL;
 	isc_mem_attach(mctx, &table->mctx);
 	ISC_LIST_INIT(table->rules);
-	table->magic = SSUTABLEMAGIC;
+	ISC_MAGIC_INIT(table, SSUTABLEMAGIC);
 	*tablep = table;
 	return (ISC_R_SUCCESS);
 }
@@ -95,11 +95,11 @@ destroy(dns_ssutable_t *table) {
 			isc_mem_put(mctx, rule->types,
 				    rule->ntypes * sizeof(dns_rdatatype_t));
 		ISC_LIST_UNLINK(table->rules, rule, link);
-		rule->magic = 0;
+		ISC_MAGIC_CLEAR(rule);
 		isc_mem_put(mctx, rule, sizeof(dns_ssurule_t));
 	}
 	isc_refcount_destroy(&table->references);
-	table->magic = 0;
+	ISC_MAGIC_CLEAR(table);
 	isc_mem_putanddetach(&table->mctx, table, sizeof(dns_ssutable_t));
 }
 
@@ -177,7 +177,7 @@ dns_ssutable_addrule(dns_ssutable_t *table, bool grant,
 	} else
 		rule->types = NULL;
 
-	rule->magic = SSURULEMAGIC;
+	ISC_MAGIC_INIT(rule, SSURULEMAGIC);
 	ISC_LIST_INITANDAPPEND(table->rules, rule, link);
 
 	return (ISC_R_SUCCESS);
@@ -613,7 +613,7 @@ dns_ssutable_createdlz(isc_mem_t *mctx, dns_ssutable_t **tablep,
 	rule->matchtype = dns_ssumatchtype_dlz;
 	rule->ntypes = 0;
 	rule->types = NULL;
-	rule->magic = SSURULEMAGIC;
+	ISC_MAGIC_INIT(rule, SSURULEMAGIC);
 
 	ISC_LIST_INITANDAPPEND(table->rules, rule, link);
 	*tablep = table;

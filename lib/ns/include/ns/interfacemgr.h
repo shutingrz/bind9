@@ -66,7 +66,7 @@
 						     to start per interface */
 /*% The nameserver interface structure */
 struct ns_interface {
-	unsigned int		magic;		/*%< Magic number. */
+	isc_magic_t		magic;		/*%< Magic number. */
 	ns_interfacemgr_t	*mgr;		/*%< Interface manager. */
 	isc_mutex_t		lock;
 	isc_refcount_t		references;

@@ -63,7 +63,7 @@ dns_peerlist_new(isc_mem_t *mem, dns_peerlist_t **list) {
 	ISC_LIST_INIT(l->elements);
 	l->mem = mem;
 	l->refs = 1;
-	l->magic = DNS_PEERLIST_MAGIC;
+	ISC_MAGIC_INIT(l, DNS_PEERLIST_MAGIC);
 
 	*list = l;
 
@@ -122,7 +122,7 @@ peerlist_delete(dns_peerlist_t **list) {
 		server = stmp;
 	}
 
-	l->magic = 0;
+	ISC_MAGIC_CLEAR(l);
 	isc_mem_put(l->mem, l, sizeof(*l));
 
 	*list = NULL;
@@ -222,7 +222,7 @@ dns_peer_newprefix(isc_mem_t *mem, const isc_netaddr_t *addr,
 
 	peer = isc_mem_get(mem, sizeof(*peer));
 
-	peer->magic = DNS_PEER_MAGIC;
+	ISC_MAGIC_INIT(peer, DNS_PEER_MAGIC);
 	peer->address = *addr;
 	peer->prefixlen = prefixlen;
 	peer->mem = mem;
@@ -292,7 +292,7 @@ peer_delete(dns_peer_t **peer) {
 
 	mem = p->mem;
 	p->mem = NULL;
-	p->magic = 0;
+	ISC_MAGIC_CLEAR(p);
 
 	if (p->key != NULL) {
 		dns_name_free(p->key, mem);

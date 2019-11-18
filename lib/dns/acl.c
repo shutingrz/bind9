@@ -63,7 +63,7 @@ dns_acl_create(isc_mem_t *mctx, int n, dns_acl_t **target) {
 	/*
 	 * Must set magic early because we use dns_acl_detach() to clean up.
 	 */
-	acl->magic = DNS_ACL_MAGIC;
+	ISC_MAGIC_INIT(acl, DNS_ACL_MAGIC);
 
 	acl->elements = isc_mem_get(mctx, n * sizeof(dns_aclelement_t));
 	acl->alloc = n;
@@ -462,7 +462,7 @@ destroy(dns_acl_t *dacl) {
 	if (dacl->iptable != NULL)
 		dns_iptable_detach(&dacl->iptable);
 	isc_refcount_destroy(&dacl->refcount);
-	dacl->magic = 0;
+	ISC_MAGIC_CLEAR(dacl);
 	isc_mem_putanddetach(&dacl->mctx, dacl, sizeof(*dacl));
 }
 

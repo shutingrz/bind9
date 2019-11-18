@@ -23,7 +23,7 @@
 
 struct dns_fwdtable {
 	/* Unlocked. */
-	unsigned int		magic;
+	isc_magic_t magic;
 	isc_mem_t		*mctx;
 	isc_rwlock_t		rwlock;
 	/* Locked by lock. */
@@ -56,7 +56,7 @@ dns_fwdtable_create(isc_mem_t *mctx, dns_fwdtable_t **fwdtablep) {
 
 	fwdtable->mctx = NULL;
 	isc_mem_attach(mctx, &fwdtable->mctx);
-	fwdtable->magic = FWDTABLEMAGIC;
+	ISC_MAGIC_INIT(fwdtable, FWDTABLEMAGIC);
 	*fwdtablep = fwdtable;
 
 	return (ISC_R_SUCCESS);
@@ -204,7 +204,7 @@ dns_fwdtable_destroy(dns_fwdtable_t **fwdtablep) {
 
 	dns_rbt_destroy(&fwdtable->table);
 	isc_rwlock_destroy(&fwdtable->rwlock);
-	fwdtable->magic = 0;
+	ISC_MAGIC_CLEAR(fwdtable);
 
 	isc_mem_putanddetach(&fwdtable->mctx, fwdtable, sizeof(dns_fwdtable_t));
 

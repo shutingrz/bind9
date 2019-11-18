@@ -302,9 +302,10 @@ typedef struct catz_chgzone_event {
 	bool mod;
 } catz_chgzone_event_t;
 
-typedef struct {
-	unsigned int magic;
 #define DZARG_MAGIC		ISC_MAGIC('D', 'z', 'a', 'r')
+
+typedef struct {
+	isc_magic_t magic;
 	isc_buffer_t **text;
 	isc_result_t result;
 } ns_dzarg_t;
@@ -9959,7 +9960,7 @@ named_server_create(isc_mem_t *mctx, named_server_t **serverp) {
 
 	server->dtenv = NULL;
 
-	server->magic = NAMED_SERVER_MAGIC;
+	ISC_MAGIC_INIT(server, NAMED_SERVER_MAGIC);
 	*serverp = server;
 }
 
@@ -10010,7 +10011,7 @@ named_server_destroy(named_server_t **serverp) {
 	INSIST(ISC_LIST_EMPTY(server->viewlist));
 	INSIST(ISC_LIST_EMPTY(server->cachelist));
 
-	server->magic = 0;
+	ISC_MAGIC_CLEAR(server);
 	isc_mem_put(server->mctx, server, sizeof(*server));
 	*serverp = NULL;
 }
@@ -12446,7 +12447,7 @@ nzd_save(MDB_txn **txnp, MDB_dbi dbi, dns_zone_t *zone,
 			goto cleanup;
 		}
 
-		dzarg.magic = DZARG_MAGIC;
+		ISC_MAGIC_INIT(&dzarg, DZARG_MAGIC);
 		dzarg.text = &text;
 		dzarg.result = ISC_R_SUCCESS;
 		cfg_printx(zoptions, CFG_PRINTER_ONELINE, dumpzone, &dzarg);
@@ -12829,7 +12830,7 @@ migrate_nzf(dns_view_t *view) {
 		}
 
 		isc_buffer_clear(text);
-		dzarg.magic = DZARG_MAGIC;
+		ISC_MAGIC_INIT(&dzarg, DZARG_MAGIC);
 		dzarg.text = &text;
 		dzarg.result = ISC_R_SUCCESS;
 		cfg_printx(zoptions, CFG_PRINTER_ONELINE, dumpzone, &dzarg);
@@ -14035,7 +14036,7 @@ named_server_showzone(named_server_t *server, isc_lex_t *lex,
 		CHECK(ISC_R_NOTFOUND);
 
 	CHECK(putstr(text, "zone "));
-	dzarg.magic = DZARG_MAGIC;
+	ISC_MAGIC_INIT(&dzarg, DZARG_MAGIC);
 	dzarg.text = text;
 	dzarg.result = ISC_R_SUCCESS;
 	cfg_printx(zconfig, CFG_PRINTER_ONELINE, emitzone, &dzarg);

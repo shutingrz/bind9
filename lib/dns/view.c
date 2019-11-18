@@ -278,7 +278,7 @@ dns_view_create(isc_mem_t *mctx, dns_rdataclass_t rdclass,
 		       DNS_EVENT_VIEWREQSHUTDOWN, req_shutdown,
 		       view, NULL, NULL, NULL);
 	view->viewlist = NULL;
-	view->magic = DNS_VIEW_MAGIC;
+	ISC_MAGIC_INIT(view, DNS_VIEW_MAGIC);
 
 	*viewp = view;
 

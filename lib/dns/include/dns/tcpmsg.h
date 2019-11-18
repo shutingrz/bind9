@@ -23,7 +23,7 @@
 
 typedef struct dns_tcpmsg {
 	/* private (don't touch!) */
-	unsigned int		magic;
+	isc_magic_t magic;
 	uint16_t		size;
 	isc_buffer_t		buffer;
 	unsigned int		maxsize;

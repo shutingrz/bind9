@@ -18,6 +18,7 @@
 #include <isc/atomic.h>
 #include <isc/file.h>
 #include <isc/hex.h>
+#include <isc/magic.h>
 #include <isc/mutex.h>
 #include <isc/pool.h>
 #include <isc/print.h>
@@ -190,7 +191,7 @@ extern bool dns_fuzzing_resolver;
 
 struct dns_zone {
 	/* Unlocked */
-	unsigned int		magic;
+	isc_magic_t		magic;
 	isc_mutex_t		lock;
 #ifdef DNS_ZONE_CHECKLOCK
 	bool		locked;
@@ -527,7 +528,7 @@ struct dns_unreachable {
 };
 
 struct dns_zonemgr {
-	unsigned int		magic;
+	isc_magic_t magic;
 	isc_mem_t *		mctx;
 	int			refs;		/* Locked by rwlock */
 	isc_taskmgr_t *		taskmgr;
@@ -573,7 +574,7 @@ struct dns_zonemgr {
  * Hold notify state.
  */
 struct dns_notify {
-	unsigned int		magic;
+	isc_magic_t		magic;
 	unsigned int		flags;
 	isc_mem_t		*mctx;
 	dns_zone_t		*zone;
@@ -597,7 +598,7 @@ struct dns_notify {
  */
 
 struct dns_stub {
-	unsigned int		magic;
+	isc_magic_t magic;
 	isc_mem_t		*mctx;
 	dns_zone_t		*zone;
 	dns_db_t		*db;
@@ -608,7 +609,7 @@ struct dns_stub {
  *	Hold load state.
  */
 struct dns_load {
-	unsigned int		magic;
+	isc_magic_t magic;
 	isc_mem_t		*mctx;
 	dns_zone_t		*zone;
 	dns_db_t		*db;
@@ -620,7 +621,7 @@ struct dns_load {
  *	Hold forward state.
  */
 struct dns_forward {
-	unsigned int		magic;
+	isc_magic_t		magic;
 	isc_mem_t		*mctx;
 	dns_zone_t		*zone;
 	isc_buffer_t		*msgbuf;
@@ -637,7 +638,7 @@ struct dns_forward {
  *	Hold IO request state.
  */
 struct dns_io {
-	unsigned int	magic;
+	isc_magic_t	magic;
 	dns_zonemgr_t	*zmgr;
 	bool	high;
 	isc_task_t	*task;
@@ -650,7 +651,7 @@ struct dns_io {
  *	DNSKEY as result of an update.
  */
 struct dns_signing {
-	unsigned int		magic;
+	isc_magic_t		magic;
 	dns_db_t		*db;
 	dns_dbiterator_t	*dbiterator;
 	dns_secalg_t		algorithm;
@@ -661,7 +662,7 @@ struct dns_signing {
 };
 
 struct dns_nsec3chain {
-	unsigned int			magic;
+	isc_magic_t			magic;
 	dns_db_t			*db;
 	dns_dbiterator_t		*dbiterator;
 	dns_rdata_nsec3param_t		nsec3param;
@@ -1067,7 +1068,7 @@ dns_zone_create(dns_zone_t **zonep, isc_mem_t *mctx) {
 	zone->updatemethod = dns_updatemethod_increment;
 	zone->maxrecords = 0U;
 
-	zone->magic = ZONE_MAGIC;
+	ISC_MAGIC_INIT(zone, ZONE_MAGIC);
 
 	zone->gluecachestats = NULL;
 	result = isc_stats_create(mctx, &zone->gluecachestats,
@@ -1270,7 +1271,7 @@ zone_free(dns_zone_t *zone) {
 	/* last stuff */
 	ZONEDB_DESTROYLOCK(&zone->dblock);
 	isc_mutex_destroy(&zone->lock);
-	zone->magic = 0;
+	ISC_MAGIC_CLEAR(zone);
 	isc_mem_putanddetach(&zone->mctx, zone, sizeof(*zone));
 }
 
@@ -2506,7 +2507,7 @@ zone_startload(dns_db_t *db, dns_zone_t *zone, isc_time_t loadtime) {
 		load->zone = NULL;
 		load->db = NULL;
 		load->loadtime = loadtime;
-		load->magic = LOAD_MAGIC;
+		ISC_MAGIC_INIT(load, LOAD_MAGIC);
 
 		isc_mem_attach(zone->mctx, &load->mctx);
 		zone_iattach(zone, &load->zone);
@@ -2560,7 +2561,7 @@ zone_startload(dns_db_t *db, dns_zone_t *zone, isc_time_t loadtime) {
 	return (result);
 
  cleanup:
-	load->magic = 0;
+	ISC_MAGIC_CLEAR(load);
 	dns_db_detach(&load->db);
 	zone_idetach(&load->zone);
 	zone_idetach(&load->callbacks.zone);
@@ -3402,7 +3403,7 @@ zone_addnsec3chain(dns_zone_t *zone, dns_rdata_nsec3param_t *nsec3param) {
 	 */
 	nsec3chain = isc_mem_get(zone->mctx, sizeof *nsec3chain);
 
-	nsec3chain->magic = 0;
+	ISC_MAGIC_CLEAR(nsec3chain);
 	nsec3chain->done = false;
 	nsec3chain->db = NULL;
 	nsec3chain->dbiterator = NULL;
@@ -11635,7 +11636,7 @@ notify_create(isc_mem_t *mctx, unsigned int flags, dns_notify_t **notifyp) {
 	isc_sockaddr_any(&notify->dst);
 	dns_name_init(&notify->ns, NULL);
 	ISC_LINK_INIT(notify, link);
-	notify->magic = NOTIFY_MAGIC;
+	ISC_MAGIC_INIT(notify, NOTIFY_MAGIC);
 	*notifyp = notify;
 	return (ISC_R_SUCCESS);
 }
@@ -12494,7 +12495,7 @@ stub_callback(isc_task_t *task, isc_event_t *event) {
 
  free_stub:
 	UNLOCK_ZONE(zone);
-	stub->magic = 0;
+	ISC_MAGIC_CLEAR(stub);
 	dns_zone_idetach(&stub->zone);
 	INSIST(stub->db == NULL);
 	INSIST(stub->version == NULL);
@@ -13335,7 +13336,7 @@ ns_query(dns_zone_t *zone, dns_rdataset_t *soardataset, dns_stub_t *stub) {
 
 	if (stub == NULL) {
 		stub = isc_mem_get(zone->mctx, sizeof(*stub));
-		stub->magic = STUB_MAGIC;
+		ISC_MAGIC_INIT(stub, STUB_MAGIC);
 		stub->mctx = zone->mctx;
 		stub->zone = NULL;
 		stub->db = NULL;
@@ -13522,7 +13523,7 @@ ns_query(dns_zone_t *zone, dns_rdataset_t *soardataset, dns_stub_t *stub) {
  cleanup:
 	cancel_refresh(zone);
 	if (stub != NULL) {
-		stub->magic = 0;
+		ISC_MAGIC_CLEAR(stub);
 		if (stub->version != NULL)
 			dns_db_closeversion(stub->db, &stub->version,
 					    false);
@@ -16266,7 +16267,7 @@ zone_loaddone(void *arg, isc_result_t result) {
 		UNLOCK_ZONE(secure);
 	UNLOCK_ZONE(zone);
 
-	load->magic = 0;
+	ISC_MAGIC_CLEAR(load);
 	dns_db_detach(&load->db);
 	if (load->zone->lctx != NULL)
 		dns_loadctx_detach(&load->zone->lctx);
@@ -16558,7 +16559,7 @@ got_transfer_quota(isc_task_t *task, isc_event_t *event) {
 static void
 forward_destroy(dns_forward_t *forward) {
 
-	forward->magic = 0;
+	ISC_MAGIC_CLEAR(forward);
 	if (forward->request != NULL)
 		dns_request_destroy(&forward->request);
 	if (forward->msgbuf != NULL)
@@ -16758,7 +16759,7 @@ dns_zone_forwardupdate(dns_zone_t *zone, dns_message_t *msg,
 	forward->callback = callback;
 	forward->callback_arg = callback_arg;
 	ISC_LINK_INIT(forward, link);
-	forward->magic = FORWARD_MAGIC;
+	ISC_MAGIC_INIT(forward, FORWARD_MAGIC);
 	forward->options = DNS_REQUESTOPT_TCP;
 	/*
 	 * If we have a SIG(0) signed message we need to preserve the
@@ -16899,7 +16900,7 @@ dns_zonemgr_create(isc_mem_t *mctx, isc_taskmgr_t *taskmgr,
 
 	isc_mutex_init(&zmgr->iolock);
 
-	zmgr->magic = ZONEMGR_MAGIC;
+	ISC_MAGIC_INIT(zmgr, ZONEMGR_MAGIC);
 
 	*zmgrp = zmgr;
 	return (ISC_R_SUCCESS);
@@ -17238,7 +17239,7 @@ zonemgr_free(dns_zonemgr_t *zmgr) {
 	INSIST(zmgr->refs == 0);
 	INSIST(ISC_LIST_EMPTY(zmgr->zones));
 
-	zmgr->magic = 0;
+	ISC_MAGIC_CLEAR(zmgr);
 
 	isc_mutex_destroy(&zmgr->iolock);
 	isc_ratelimiter_detach(&zmgr->notifyrl);
@@ -17472,7 +17473,7 @@ zonemgr_getio(dns_zonemgr_t *zmgr, bool high,
 	io->task = NULL;
 	isc_task_attach(task, &io->task);
 	ISC_LINK_INIT(io, link);
-	io->magic = IO_MAGIC;
+	ISC_MAGIC_INIT(io, IO_MAGIC);
 
 	LOCK(&zmgr->iolock);
 	zmgr->ioactive++;
@@ -17508,7 +17509,7 @@ zonemgr_putio(dns_io_t **iop) {
 
 	zmgr = io->zmgr;
 	isc_task_detach(&io->task);
-	io->magic = 0;
+	ISC_MAGIC_CLEAR(io);
 	isc_mem_put(zmgr->mctx, io, sizeof(*io));
 
 	LOCK(&zmgr->iolock);
@@ -18234,7 +18235,7 @@ zone_signwithkey(dns_zone_t *zone, dns_secalg_t algorithm, uint16_t keyid,
 
 	signing = isc_mem_get(zone->mctx, sizeof *signing);
 
-	signing->magic = 0;
+	ISC_MAGIC_CLEAR(signing);
 	signing->db  = NULL;
 	signing->dbiterator = NULL;
 	signing->algorithm = algorithm;

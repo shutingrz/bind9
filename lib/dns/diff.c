@@ -93,7 +93,7 @@ dns_difftuple_create(isc_mem_t *mctx,
 
 	ISC_LINK_INIT(&t->rdata, link);
 	ISC_LINK_INIT(t, link);
-	t->magic = DNS_DIFFTUPLE_MAGIC;
+	ISC_MAGIC_INIT(t, DNS_DIFFTUPLE_MAGIC);
 
 	INSIST(datap == (unsigned char *)t + size);
 
@@ -109,7 +109,7 @@ dns_difftuple_free(dns_difftuple_t **tp) {
 	REQUIRE(DNS_DIFFTUPLE_VALID(t));
 
 	dns_name_invalidate(&t->name);
-	t->magic = 0;
+	ISC_MAGIC_CLEAR(t);
 	mctx = t->mctx;
 	isc_mem_free(mctx, t);
 	isc_mem_detach(&mctx);
@@ -126,7 +126,7 @@ void
 dns_diff_init(isc_mem_t *mctx, dns_diff_t *diff) {
 	diff->mctx = mctx;
 	ISC_LIST_INIT(diff->tuples);
-	diff->magic = DNS_DIFF_MAGIC;
+	ISC_MAGIC_INIT(diff, DNS_DIFF_MAGIC);
 }
 
 void

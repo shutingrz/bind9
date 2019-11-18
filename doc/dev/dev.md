@@ -321,7 +321,7 @@ code execution vulnerability.)
 #### <a name="magic"></a>Magic numbers
 
 A number of data structures in the ISC and DNS libraries have an
-`unsigned int magic` value as the first field.  The purpose of the
+`isc_magic_t magic` value as the first field.  The purpose of the
 magic number is principally to validate that a pointer that's been
 passed to a subroutine really points to the type it claims to be.  This
 helps detect problems caused by resources being freed prematurely, that
@@ -332,14 +332,11 @@ Magic numbers should always be the first field in a structure.  They never
 require locking to access.  As to the actual value to be used, something
 mnemonic is good:
 
-        #define TASK_MAGIC                      0x5441534BU     /* TASK. */
-        #define VALID_TASK(t)                   ((t) != NULL && \
-                                                 (t)->magic == TASK_MAGIC)
+        #define TASK_MAGIC				ISC_MAGIC('T', 'A', 'S', 'K')
+        #define VALID_TASK(t)			ISC_MAGIC_VALID(t, TASK_MAGIC)
 
-        #define TASK_MANAGER_MAGIC              0x54534B4DU     /* TSKM. */
-        #define VALID_MANAGER(m)                ((m) != NULL && \
-                                                 (m)->magic ==
-                                                  TASK_MANAGER_MAGIC)
+        #define TASK_MANAGER_MAGIC		ISC_MAGIC('T', 'S', 'K', 'M')
+        #define VALID_MANAGER(m)		ISC_MAGIC_VALID(m, TASK_MANAGER_MAGIC)
 
 Unless the memory cost is critical, most objects should have a magic number.
 
@@ -595,7 +592,7 @@ an `ISC_LINK` as one of its members:
 
         typedef struct isc_foo isc_foo_t;
         struct isc_foo {
-                unsigned int magic;
+                isc_magic_t magic;
 
                 /* other contents */
 

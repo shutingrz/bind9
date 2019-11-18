@@ -28,7 +28,7 @@
  * multiple threads, and so the structure does not contain a lock.
  */
 struct dns_tsec {
-	unsigned int		magic;
+	isc_magic_t magic;
 	dns_tsectype_t		type;
 	isc_mem_t		*mctx;
 	union {
@@ -97,7 +97,7 @@ dns_tsec_create(isc_mem_t *mctx, dns_tsectype_t type, dst_key_t *key,
 		ISC_UNREACHABLE();
 	}
 
-	tsec->magic = DNS_TSEC_MAGIC;
+	ISC_MAGIC_INIT(tsec, DNS_TSEC_MAGIC);
 
 	*tsecp = tsec;
 	return (ISC_R_SUCCESS);
@@ -123,7 +123,7 @@ dns_tsec_destroy(dns_tsec_t **tsecp) {
 		ISC_UNREACHABLE();
 	}
 
-	tsec->magic = 0;
+	ISC_MAGIC_CLEAR(tsec);
 	isc_mem_put(tsec->mctx, tsec, sizeof(*tsec));
 
 	*tsecp = NULL;

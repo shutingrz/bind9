@@ -34,7 +34,7 @@ struct isc_ht_node {
 };
 
 struct isc_ht {
-	unsigned int magic;
+	isc_magic_t magic;
 	isc_mem_t *mctx;
 	size_t size;
 	size_t mask;
@@ -72,7 +72,7 @@ isc_ht_init(isc_ht_t **htp, isc_mem_t *mctx, uint8_t bits) {
 		ht->table[i] = NULL;
 	}
 
-	ht->magic = ISC_HT_MAGIC;
+	ISC_MAGIC_INIT(ht, ISC_HT_MAGIC);
 
 	*htp = ht;
 	return (ISC_R_SUCCESS);
@@ -90,7 +90,7 @@ isc_ht_destroy(isc_ht_t **htp) {
 
 	REQUIRE(ISC_HT_VALID(ht));
 
-	ht->magic = 0;
+	ISC_MAGIC_CLEAR(ht);
 
 	for (i = 0; i < ht->size; i++) {
 		isc_ht_node_t *node = ht->table[i];

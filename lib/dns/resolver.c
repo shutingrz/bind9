@@ -195,7 +195,7 @@ typedef struct fetchctx fetchctx_t;
 
 typedef struct query {
 	/* Locked by task event serialization. */
-	unsigned int			magic;
+	isc_magic_t			magic;
 	fetchctx_t *			fctx;
 	isc_mem_t *			mctx;
 	dns_dispatchmgr_t *		dispatchmgr;
@@ -252,7 +252,7 @@ typedef enum {
 
 struct fetchctx {
 	/*% Not locked. */
-	unsigned int			magic;
+	isc_magic_t			magic;
 	dns_resolver_t *		res;
 	dns_name_t			name;
 	dns_rdatatype_t			type;
@@ -420,7 +420,7 @@ typedef struct {
 } dns_valarg_t;
 
 struct dns_fetch {
-	unsigned int			magic;
+	isc_magic_t magic;
 	isc_mem_t *			mctx;
 	fetchctx_t *			private;
 };
@@ -467,7 +467,7 @@ typedef struct alternate {
 
 struct dns_resolver {
 	/* Unlocked. */
-	unsigned int			magic;
+	isc_magic_t			magic;
 	isc_mem_t *			mctx;
 	isc_mutex_t			lock;
 	isc_mutex_t			primelock;
@@ -1134,7 +1134,7 @@ resquery_destroy(resquery_t **queryp) {
 	empty = fctx_decreference(query->fctx);
 	UNLOCK(&res->buckets[bucket].lock);
 
-	query->magic = 0;
+	ISC_MAGIC_CLEAR(query);
 	isc_mem_put(query->mctx, query, sizeof(*query));
 	*queryp = NULL;
 
@@ -2115,7 +2115,7 @@ fctx_query(fetchctx_t *fctx, dns_adbaddrinfo_t *addrinfo,
 	query->tsig = NULL;
 	query->tsigkey = NULL;
 	ISC_LINK_INIT(query, link);
-	query->magic = QUERY_MAGIC;
+	ISC_MAGIC_INIT(query, QUERY_MAGIC);
 
 	if ((query->options & DNS_FETCHOPT_TCP) != 0) {
 		/*
@@ -2167,7 +2167,7 @@ fctx_query(fetchctx_t *fctx, dns_adbaddrinfo_t *addrinfo,
 
  cleanup_query:
 	if (query->connects == 0) {
-		query->magic = 0;
+		ISC_MAGIC_CLEAR(query);
 		isc_mem_put(fctx->mctx, query, sizeof(*query));
 	}
 
@@ -4701,7 +4701,7 @@ fctx_join(fetchctx_t *fctx, isc_task_t *task, const isc_sockaddr_t *client,
 
 	fctx->client = client;
 
-	fetch->magic = DNS_FETCH_MAGIC;
+	ISC_MAGIC_INIT(fetch, DNS_FETCH_MAGIC);
 	fetch->private = fctx;
 
 	return (ISC_R_SUCCESS);
@@ -5016,7 +5016,7 @@ fctx_create(dns_resolver_t *res, const dns_name_t *name, dns_rdatatype_t type,
 
 	ISC_LIST_INIT(fctx->events);
 	ISC_LINK_INIT(fctx, link);
-	fctx->magic = FCTX_MAGIC;
+	ISC_MAGIC_INIT(fctx, FCTX_MAGIC);
 
 	/*
 	 * If qname minimization is enabled we need to trim
@@ -5043,7 +5043,7 @@ fctx_create(dns_resolver_t *res, const dns_name_t *name, dns_rdatatype_t type,
 	return (ISC_R_SUCCESS);
 
  cleanup_mctx:
-	fctx->magic = 0;
+	ISC_MAGIC_CLEAR(fctx);
 	isc_mem_detach(&fctx->mctx);
 	dns_adb_detach(&fctx->adb);
 	dns_db_detach(&fctx->cache);
@@ -9882,7 +9882,7 @@ destroy(dns_resolver_t *res) {
 	isc_rwlock_destroy(&res->mbslock);
 #endif
 	isc_timer_detach(&res->spillattimer);
-	res->magic = 0;
+	ISC_MAGIC_CLEAR(res);
 	isc_mem_put(res->mctx, res, sizeof(*res));
 }
 
@@ -10120,7 +10120,7 @@ dns_resolver_create(dns_view_t *view,
 #endif
 #endif
 
-	res->magic = RES_MAGIC;
+	ISC_MAGIC_INIT(res, RES_MAGIC);
 
 	*resp = res;
 

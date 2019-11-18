@@ -825,8 +825,8 @@ destroy(isc__mem_t *ctx) {
 	totallost += ctx->inuse;
 	UNLOCK(&contextslock);
 
-	ctx->common.impmagic = 0;
-	ctx->common.magic = 0;
+	ISC_IMPMAGIC_CLEAR(&ctx->common);
+	ISC_MAGIC_CLEAR(&ctx->common);
 
 	INSIST(ISC_LIST_EMPTY(ctx->pools));
 
@@ -1657,8 +1657,8 @@ isc_mempool_destroy(isc_mempool_t **mpctxp) {
 	mctx->poolcnt--;
 	MCTXUNLOCK(mctx);
 
-	mpctx->common.impmagic = 0;
-	mpctx->common.magic = 0;
+	ISC_IMPMAGIC_CLEAR(&mpctx->common);
+	ISC_MAGIC_CLEAR(&mpctx->common);
 
 	isc_mem_put((isc_mem_t *)mpctx->mctx, mpctx, sizeof(isc__mempool_t));
 

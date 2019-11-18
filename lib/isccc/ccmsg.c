@@ -131,7 +131,7 @@ isccc_ccmsg_init(isc_mem_t *mctx, isc_socket_t *sock, isccc_ccmsg_t *ccmsg) {
 	REQUIRE(sock != NULL);
 	REQUIRE(ccmsg != NULL);
 
-	ccmsg->magic = CCMSG_MAGIC;
+	ISC_MAGIC_INIT(ccmsg, CCMSG_MAGIC);
 	ccmsg->size = 0;
 	ccmsg->buffer.base = NULL;
 	ccmsg->buffer.length = 0;
@@ -217,7 +217,7 @@ void
 isccc_ccmsg_invalidate(isccc_ccmsg_t *ccmsg) {
 	REQUIRE(VALID_CCMSG(ccmsg));
 
-	ccmsg->magic = 0;
+	ISC_MAGIC_CLEAR(ccmsg);
 
 	if (ccmsg->buffer.base != NULL) {
 		isc_mem_put(ccmsg->mctx, ccmsg->buffer.base,

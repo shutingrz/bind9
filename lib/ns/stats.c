@@ -24,7 +24,7 @@
 
 struct ns_stats {
 	/*% Unlocked */
-	unsigned int	magic;
+	isc_magic_t magic;
 	isc_mem_t	*mctx;
 	isc_stats_t	*counters;
 	isc_refcount_t	references;
@@ -73,7 +73,7 @@ ns_stats_create(isc_mem_t *mctx, int ncounters, ns_stats_t **statsp) {
 		goto clean_mem;
 	}
 
-	stats->magic = NS_STATS_MAGIC;
+	ISC_MAGIC_INIT(stats, NS_STATS_MAGIC);
 	stats->mctx = NULL;
 	isc_mem_attach(mctx, &stats->mctx);
 	*statsp = stats;

@@ -109,7 +109,7 @@ struct dns_sdlz_db {
 
 struct dns_sdlzlookup {
 	/* Unlocked */
-	unsigned int			magic;
+	isc_magic_t			magic;
 	dns_sdlz_db_t			*sdlz;
 	ISC_LIST(dns_rdatalist_t)	lists;
 	ISC_LIST(isc_buffer_t)		buffers;
@@ -327,8 +327,8 @@ attach(dns_db_t *source, dns_db_t **targetp) {
 
 static void
 destroy(dns_sdlz_db_t *sdlz) {
-	sdlz->common.magic = 0;
-	sdlz->common.impmagic = 0;
+	ISC_MAGIC_CLEAR(&sdlz->common);
+	ISC_IMPMAGIC_CLEAR(&sdlz->common);
 
 	dns_name_free(&sdlz->common.origin, sdlz->common.mctx);
 
@@ -465,7 +465,7 @@ createnode(dns_sdlz_db_t *sdlz, dns_sdlznode_t **nodep) {
 	dns_rdatacallbacks_init(&node->callbacks);
 
 	isc_refcount_init(&node->references, 1);
-	node->magic = SDLZLOOKUP_MAGIC;
+	ISC_MAGIC_INIT(node, SDLZLOOKUP_MAGIC);
 
 	*nodep = node;
 	return (ISC_R_SUCCESS);
@@ -506,7 +506,7 @@ destroynode(dns_sdlznode_t *node) {
 	}
 	isc_refcount_destroy(&node->references);
 
-	node->magic = 0;
+	ISC_MAGIC_CLEAR(node);
 	isc_mem_put(mctx, node, sizeof(dns_sdlznode_t));
 	db = &sdlz->common;
 	detach(&db);
@@ -785,7 +785,7 @@ createiterator(dns_db_t *db, unsigned int options, dns_dbiterator_t **iteratorp)
 	dns_db_attach(db, &sdlziter->common.db);
 	sdlziter->common.relative_names =
 		((options & DNS_DB_RELATIVENAMES) != 0);
-	sdlziter->common.magic = DNS_DBITERATOR_MAGIC;
+	ISC_MAGIC_INIT(&sdlziter->common, DNS_DBITERATOR_MAGIC);
 	ISC_LIST_INIT(sdlziter->nodelist);
 	sdlziter->current = NULL;
 	sdlziter->origin = NULL;
@@ -1036,7 +1036,7 @@ allrdatasets(dns_db_t *db, dns_dbnode_t *node, dns_dbversion_t *version,
 
 	iterator = isc_mem_get(db->mctx, sizeof(sdlz_rdatasetiter_t));
 
-	iterator->common.magic = DNS_RDATASETITER_MAGIC;
+	ISC_MAGIC_INIT(&iterator->common, DNS_RDATASETITER_MAGIC);
 	iterator->common.methods = &rdatasetiter_methods;
 	iterator->common.db = db;
 	iterator->common.node = NULL;
@@ -1513,8 +1513,8 @@ dns_sdlzcreateDBP(isc_mem_t *mctx, void *driverarg, void *dbdata,
 	isc_mem_attach(mctx, &sdlzdb->common.mctx);
 
 	/* mark structure as valid */
-	sdlzdb->common.magic = DNS_DB_MAGIC;
-	sdlzdb->common.impmagic = SDLZDB_MAGIC;
+	ISC_MAGIC_INIT(&sdlzdb->common, DNS_DB_MAGIC);
+	ISC_IMPMAGIC_INIT(&sdlzdb->common, SDLZDB_MAGIC);
 	*dbp = (dns_db_t *) sdlzdb;
 
 	return (result);

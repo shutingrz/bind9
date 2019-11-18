@@ -35,7 +35,7 @@
 #endif
 
 struct isc_stats {
-	unsigned int			magic;
+	isc_magic_t magic;
 	isc_mem_t			*mctx;
 	isc_refcount_t			references;
 	int				ncounters;
@@ -57,7 +57,7 @@ create_stats(isc_mem_t *mctx, int ncounters, isc_stats_t **statsp) {
 	stats->mctx = NULL;
 	isc_mem_attach(mctx, &stats->mctx);
 	stats->ncounters = ncounters;
-	stats->magic = ISC_STATS_MAGIC;
+	ISC_MAGIC_INIT(stats, ISC_STATS_MAGIC);
 	*statsp = stats;
 
 	return (ISC_R_SUCCESS);

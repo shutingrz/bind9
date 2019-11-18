@@ -96,7 +96,7 @@ typedef struct dns_dbiteratormethods {
  */
 struct dns_dbiterator {
 	/* Unlocked. */
-	unsigned int			magic;
+	isc_magic_t magic;
 	dns_dbiteratormethods_t *	methods;
 	dns_db_t *			db;
 	bool			relative_names;

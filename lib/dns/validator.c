@@ -3291,7 +3291,7 @@ dns_validator_create(dns_view_t *view, dns_name_t *name, dns_rdatatype_t type,
 	dns_fixedname_init(&val->closest);
 	isc_stdtime_get(&val->start);
 	ISC_LINK_INIT(val, link);
-	val->magic = VALIDATOR_MAGIC;
+	ISC_MAGIC_INIT(val, VALIDATOR_MAGIC);
 
 	if ((options & DNS_VALIDATOR_DEFER) == 0) {
 		isc_task_send(task, ISC_EVENT_PTR(&event));
@@ -3386,7 +3386,7 @@ destroy(dns_validator_t *val) {
 	}
 	isc_mutex_destroy(&val->lock);
 	dns_view_weakdetach(&val->view);
-	val->magic = 0;
+	ISC_MAGIC_CLEAR(val);
 	isc_mem_put(mctx, val, sizeof(*val));
 }
 

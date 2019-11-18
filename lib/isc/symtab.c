@@ -35,7 +35,7 @@ typedef LIST(elt_t)			eltlist_t;
 
 struct isc_symtab {
 	/* Unlocked. */
-	unsigned int			magic;
+	isc_magic_t magic;
 	isc_mem_t *			mctx;
 	unsigned int			size;
 	unsigned int			count;
@@ -103,7 +103,7 @@ isc_symtab_destroy(isc_symtab_t **symtabp) {
 	}
 	isc_mem_put(symtab->mctx, symtab->table,
 		    symtab->size * sizeof(eltlist_t));
-	symtab->magic = 0;
+	ISC_MAGIC_CLEAR(symtab);
 	isc_mem_putanddetach(&symtab->mctx, symtab, sizeof(*symtab));
 
 	*symtabp = NULL;

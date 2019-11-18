@@ -107,8 +107,9 @@ struct rbtdb_file_header {
  * Note that "impmagic" is not the first four bytes of the struct, so
  * ISC_MAGIC_VALID cannot be used.
  */
-#define VALID_RBTDB(rbtdb)      ((rbtdb) != NULL && \
-				 (rbtdb)->common.impmagic == RBTDB_MAGIC)
+#define VALID_RBTDB(rbtdb)						\
+	((rbtdb) != NULL &&						\
+	 atomic_load_acquire(&(rbtdb)->common.impmagic) == RBTDB_MAGIC)
 
 typedef uint32_t                    rbtdb_serial_t;
 typedef uint32_t                    rbtdb_rdatatype_t;
@@ -1121,8 +1122,8 @@ free_rbtdb(dns_rbtdb_t *rbtdb, bool log, isc_event_t *event) {
 		isc_task_detach(&rbtdb->task);
 
 	RBTDB_DESTROYLOCK(&rbtdb->lock);
-	rbtdb->common.magic = 0;
-	rbtdb->common.impmagic = 0;
+	ISC_MAGIC_CLEAR(&rbtdb->common);
+	ISC_IMPMAGIC_CLEAR(&rbtdb->common);
 	isc_mem_detach(&rbtdb->hmctx);
 
 	if (rbtdb->mmap_location != NULL)
@@ -5388,7 +5389,7 @@ createiterator(dns_db_t *db, unsigned int options, dns_dbiterator_t **iteratorp)
 	dns_db_attach(db, &rbtdbiter->common.db);
 	rbtdbiter->common.relative_names =
 		((options & DNS_DB_RELATIVENAMES) != 0);
-	rbtdbiter->common.magic = DNS_DBITERATOR_MAGIC;
+	ISC_MAGIC_INIT(&rbtdbiter->common, DNS_DBITERATOR_MAGIC);
 	rbtdbiter->common.cleaning = false;
 	rbtdbiter->paused = true;
 	rbtdbiter->tree_locked = isc_rwlocktype_none;
@@ -5623,7 +5624,7 @@ allrdatasets(dns_db_t *db, dns_dbnode_t *node, dns_dbversion_t *version,
 		rbtversion = NULL;
 	}
 
-	iterator->common.magic = DNS_RDATASETITER_MAGIC;
+	ISC_MAGIC_INIT(&iterator->common, DNS_RDATASETITER_MAGIC);
 	iterator->common.methods = &rdatasetiter_methods;
 	iterator->common.db = db;
 	iterator->common.node = node;
@@ -8323,8 +8324,8 @@ dns_rbtdb_create(isc_mem_t *mctx, const dns_name_t *origin, dns_dbtype_t type,
 	 */
 	PREPEND(rbtdb->open_versions, rbtdb->current_version, link);
 
-	rbtdb->common.magic = DNS_DB_MAGIC;
-	rbtdb->common.impmagic = RBTDB_MAGIC;
+	ISC_MAGIC_INIT(&rbtdb->common, DNS_DB_MAGIC);
+	ISC_IMPMAGIC_INIT(&rbtdb->common, RBTDB_MAGIC);
 
 	*dbp = (dns_db_t *)rbtdb;
 

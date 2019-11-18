@@ -18,6 +18,7 @@
 #include <dirent.h>
 
 #include <isc/lang.h>
+#include <isc/magic.h>
 #include <isc/platform.h>
 #include <isc/result.h>
 
@@ -29,7 +30,7 @@ typedef struct isc_direntry {
 
 /*% Directory */
 typedef struct isc_dir {
-	unsigned int	magic;
+	isc_magic_t magic;
 	char		dirname[PATH_MAX];
 	isc_direntry_t	entry;
 	DIR *		handle;

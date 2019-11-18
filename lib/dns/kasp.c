@@ -62,7 +62,7 @@ dns_kasp_create(isc_mem_t *mctx, const char *name, dns_kasp_t **kaspp)
 
 	// TODO: The rest of the KASP configuration
 
-	kasp->magic = DNS_KASP_MAGIC;
+	ISC_MAGIC_INIT(kasp, DNS_KASP_MAGIC);
 	*kaspp = kasp;
 
 	return (ISC_R_SUCCESS);

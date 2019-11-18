@@ -65,7 +65,7 @@ typedef struct isc__networker {
 typedef void (*isc__nm_closecb)(isc_nmhandle_t *);
 
 struct isc_nmhandle {
-	int			magic;
+	isc_magic_t magic;
 	isc_refcount_t		references;
 
 	/*
@@ -152,7 +152,7 @@ typedef union {
 #define VALID_UVREQ(t)                     ISC_MAGIC_VALID(t, UVREQ_MAGIC)
 
 typedef struct isc__nm_uvreq {
-	int			magic;
+	isc_magic_t magic;
 	isc_nmsocket_t *	sock;
 	isc_nmhandle_t *	handle;
 	uv_buf_t		uvbuf;	/* translated isc_region_t, to be
@@ -222,7 +222,7 @@ typedef union {
 #define VALID_NM(t)                     ISC_MAGIC_VALID(t, NM_MAGIC)
 
 struct isc_nm {
-	int			magic;
+	isc_magic_t magic;
 	isc_refcount_t		references;
 	isc_mem_t		*mctx;
 	uint32_t		nworkers;
@@ -261,7 +261,7 @@ typedef enum isc_nmsocket_type {
 
 struct isc_nmsocket {
 	/*% Unlocked, RO */
-	int			magic;
+	isc_magic_t magic;
 	int			tid;
 	isc_nmsocket_type	type;
 	isc_nm_t		*mgr;

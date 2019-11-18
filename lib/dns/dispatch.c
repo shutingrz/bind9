@@ -50,7 +50,7 @@ typedef struct dispportentry		dispportentry_t;
 typedef ISC_LIST(dispportentry_t)	dispportlist_t;
 
 typedef struct dns_qid {
-	unsigned int	magic;
+	isc_magic_t magic;
 	unsigned int	qid_nbuckets;	/*%< hash table size */
 	unsigned int	qid_increment;	/*%< id increment on collision */
 	isc_mutex_t	lock;
@@ -60,7 +60,7 @@ typedef struct dns_qid {
 
 struct dns_dispatchmgr {
 	/* Unlocked. */
-	unsigned int			magic;
+	isc_magic_t			magic;
 	isc_mem_t		       *mctx;
 	dns_acl_t		       *blackhole;
 	dns_portlist_t		       *portlist;
@@ -117,7 +117,7 @@ struct dns_dispatchmgr {
 #define IS_PRIVATE(d)	(((d)->attributes & DNS_DISPATCHATTR_PRIVATE) != 0)
 
 struct dns_dispentry {
-	unsigned int			magic;
+	isc_magic_t			magic;
 	dns_dispatch_t		       *disp;
 	dns_messageid_t			id;
 	in_port_t			port;
@@ -154,7 +154,7 @@ struct dns_dispentry {
 #endif
 
 struct dispsocket {
-	unsigned int			magic;
+	isc_magic_t			magic;
 	isc_socket_t			*socket;
 	dns_dispatch_t			*disp;
 	isc_sockaddr_t			host;
@@ -193,7 +193,7 @@ struct dispportentry {
 
 struct dns_dispatch {
 	/* Unlocked. */
-	unsigned int		magic;		/*%< magic */
+	isc_magic_t		magic;		/*%< magic */
 	dns_dispatchmgr_t      *mgr;		/*%< dispatch manager */
 	int			ntasks;
 	/*%
@@ -699,7 +699,7 @@ get_dispsocket(dns_dispatch_t *disp, const isc_sockaddr_t *dest,
 				&dispsock->task);
 		ISC_LINK_INIT(dispsock, link);
 		ISC_LINK_INIT(dispsock, blink);
-		dispsock->magic = DISPSOCK_MAGIC;
+		ISC_MAGIC_INIT(dispsock, DISPSOCK_MAGIC);
 	}
 
 	/*
@@ -790,7 +790,7 @@ destroy_dispsocket(dns_dispatch_t *disp, dispsocket_t **dispsockp) {
 	REQUIRE(!ISC_LINK_LINKED(dispsock, link));
 
 	disp->nsockets--;
-	dispsock->magic = 0;
+	ISC_MAGIC_CLEAR(dispsock);
 	if (dispsock->portentry != NULL)
 		deref_portentry(disp, &dispsock->portentry);
 	if (dispsock->socket != NULL)
@@ -1616,7 +1616,7 @@ destroy_mgr(dns_dispatchmgr_t **mgrp) {
 	mgr = *mgrp;
 	*mgrp = NULL;
 
-	mgr->magic = 0;
+	ISC_MAGIC_CLEAR(mgr);
 	isc_mutex_destroy(&mgr->lock);
 	mgr->state = 0;
 
@@ -1811,7 +1811,7 @@ dns_dispatchmgr_create(isc_mem_t *mctx, dns_dispatchmgr_t **mgrp)
 	mgr->v6ports = NULL;
 	mgr->nv4ports = 0;
 	mgr->nv6ports = 0;
-	mgr->magic = DNS_DISPATCHMGR_MAGIC;
+	ISC_MAGIC_INIT(mgr, DNS_DISPATCHMGR_MAGIC);
 
 	result = create_default_portset(mctx, &v4portset);
 	if (result == ISC_R_SUCCESS) {
@@ -2243,7 +2243,7 @@ qid_allocate(dns_dispatchmgr_t *mgr, unsigned int buckets,
 
 	qid->qid_nbuckets = buckets;
 	qid->qid_increment = increment;
-	qid->magic = QID_MAGIC;
+	ISC_MAGIC_INIT(qid, QID_MAGIC);
 	*qidp = qid;
 	return (ISC_R_SUCCESS);
 }
@@ -2258,7 +2258,7 @@ qid_destroy(isc_mem_t *mctx, dns_qid_t **qidp) {
 	REQUIRE(VALID_QID(qid));
 
 	*qidp = NULL;
-	qid->magic = 0;
+	ISC_MAGIC_CLEAR(qid);
 	isc_mem_put(mctx, qid->qid_table,
 		    qid->qid_nbuckets * sizeof(dns_displist_t));
 	if (qid->sock_table != NULL) {
@@ -2291,7 +2291,7 @@ dispatch_allocate(dns_dispatchmgr_t *mgr, unsigned int maxrequests,
 	if (disp == NULL)
 		return (ISC_R_NOMEMORY);
 
-	disp->magic = 0;
+	ISC_MAGIC_CLEAR(disp);
 	disp->mgr = mgr;
 	disp->maxrequests = maxrequests;
 	disp->attributes = 0;
@@ -2324,7 +2324,7 @@ dispatch_allocate(dns_dispatchmgr_t *mgr, unsigned int maxrequests,
 		goto kill_lock;
 	}
 
-	disp->magic = DISPATCH_MAGIC;
+	ISC_MAGIC_INIT(disp, DISPATCH_MAGIC);
 
 	*dispp = disp;
 	return (ISC_R_SUCCESS);
@@ -2386,7 +2386,7 @@ dispatch_free(dns_dispatch_t **dispp) {
 
 	disp->mgr = NULL;
 	isc_mutex_destroy(&disp->lock);
-	disp->magic = 0;
+	ISC_MAGIC_CLEAR(disp);
 	isc_mempool_put(mgr->dpool, disp);
 }
 
@@ -3146,7 +3146,7 @@ dns_dispatch_addresponse(dns_dispatch_t *disp, unsigned int options,
 	res->item_out = false;
 	ISC_LIST_INIT(res->items);
 	ISC_LINK_INIT(res, link);
-	res->magic = RESPONSE_MAGIC;
+	ISC_MAGIC_INIT(res, RESPONSE_MAGIC);
 
 	LOCK(&qid->lock);
 	ISC_LIST_APPEND(qid->qid_table[bucket], res, link);
@@ -3363,7 +3363,7 @@ dns_dispatch_removeresponse(dns_dispentry_t **resp,
 		free_devent(disp, ev);
 		ev = ISC_LIST_HEAD(res->items);
 	}
-	res->magic = 0;
+	ISC_MAGIC_CLEAR(res);
 	isc_mempool_put(disp->mgr->rpool, res);
 	if (disp->shutting_down == 1)
 		do_cancel(disp);

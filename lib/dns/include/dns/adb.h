@@ -105,7 +105,7 @@ typedef struct dns_adbname		dns_adbname_t;
  */
 struct dns_adbfind {
 	/* Public */
-	unsigned int			magic;		/*%< RO: magic */
+	isc_magic_t			magic;		/*%< RO: magic */
 	dns_adbaddrinfolist_t		list;		/*%< RO: list of addrs */
 	unsigned int			query_pending;	/*%< RO: partial list */
 	unsigned int			partial_result;	/*%< RO: addrs missing */
@@ -212,7 +212,7 @@ struct dns_adbfind {
  * The answers to queries come back as a list of these.
  */
 struct dns_adbaddrinfo {
-	unsigned int			magic;		/*%< private */
+	isc_magic_t			magic;		/*%< private */
 
 	isc_sockaddr_t			sockaddr;	/*%< [rw] */
 	unsigned int			srtt;		/*%< [rw] microsecs */

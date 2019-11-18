@@ -22,7 +22,7 @@
 #include <dns/types.h>
 
 struct dns_iptable {
-	unsigned int		magic;
+	isc_magic_t		magic;
 	isc_mem_t		*mctx;
 	isc_refcount_t		refcount;
 	isc_radix_tree_t	*radix;

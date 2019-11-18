@@ -43,7 +43,7 @@
  * Name server state.  Better here than in lots of separate global variables.
  */
 struct named_server {
-	unsigned int		magic;
+	isc_magic_t magic;
 	isc_mem_t *		mctx;
 
 	ns_server_t *		sctx;

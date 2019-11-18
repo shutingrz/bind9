@@ -33,7 +33,7 @@
 typedef struct dns_bcentry dns_bcentry_t;
 
 struct dns_badcache {
-	unsigned int		magic;
+	isc_magic_t magic;
 	isc_mutex_t		lock;
 	isc_mem_t		*mctx;
 
@@ -79,7 +79,7 @@ dns_badcache_init(isc_mem_t *mctx, unsigned int size, dns_badcache_t **bcp) {
 
 	bc->count = 0;
 	bc->sweep = 0;
-	bc->magic = BADCACHE_MAGIC;
+	ISC_MAGIC_INIT(bc, BADCACHE_MAGIC);
 
 	*bcp = bc;
 	return (ISC_R_SUCCESS);
@@ -94,7 +94,7 @@ dns_badcache_destroy(dns_badcache_t **bcp) {
 
 	dns_badcache_flush(bc);
 
-	bc->magic = 0;
+	ISC_MAGIC_CLEAR(bc);
 	isc_mutex_destroy(&bc->lock);
 	isc_mem_put(bc->mctx, bc->table, sizeof(dns_bcentry_t *) * bc->size);
 	isc_mem_putanddetach(&bc->mctx, bc, sizeof(dns_badcache_t));

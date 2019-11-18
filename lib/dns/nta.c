@@ -37,7 +37,7 @@
 #include <dns/time.h>
 
 struct dns_nta {
-	unsigned int		magic;
+	isc_magic_t magic;
 	isc_refcount_t		refcount;
 	dns_ntatable_t		*ntatable;
 	bool		forced;
@@ -70,7 +70,7 @@ nta_detach(isc_mem_t *mctx, dns_nta_t **ntap) {
 
 	if (isc_refcount_decrement(&nta->refcount) == 1) {
 		isc_refcount_destroy(&nta->refcount);
-		nta->magic = 0;
+		ISC_MAGIC_CLEAR(nta);
 		if (nta->timer != NULL) {
 			(void)isc_timer_reset(nta->timer,
 					      isc_timertype_inactive,
@@ -133,7 +133,7 @@ dns_ntatable_create(dns_view_t *view,
 	ntatable->view = view;
 	isc_refcount_init(&ntatable->references, 1);
 
-	ntatable->magic = NTATABLE_MAGIC;
+	ISC_MAGIC_INIT(ntatable, NTATABLE_MAGIC);
 	*ntatablep = ntatable;
 
 	return (ISC_R_SUCCESS);
@@ -177,7 +177,7 @@ dns_ntatable_detach(dns_ntatable_t **ntatablep) {
 			isc_task_detach(&ntatable->task);
 		ntatable->timermgr = NULL;
 		ntatable->taskmgr = NULL;
-		ntatable->magic = 0;
+		ISC_MAGIC_CLEAR(ntatable);
 		isc_mem_put(ntatable->view->mctx, ntatable, sizeof(*ntatable));
 	}
 }
@@ -312,7 +312,7 @@ nta_create(dns_ntatable_t *ntatable, const dns_name_t *name,
 	nta->name = dns_fixedname_initname(&nta->fn);
 	dns_name_copynf(name, nta->name);
 
-	nta->magic = NTA_MAGIC;
+	ISC_MAGIC_INIT(nta, NTA_MAGIC);
 
 	*target = nta;
 	return (ISC_R_SUCCESS);

@@ -38,7 +38,7 @@ dns_rriterator_init(dns_rriterator_t *it, dns_db_t *db, dns_dbversion_t *ver,
 		    isc_stdtime_t now)
 {
 	isc_result_t result;
-	it->magic = RRITERATOR_MAGIC;
+	ISC_MAGIC_INIT(it, RRITERATOR_MAGIC);
 	it->db = db;
 	it->dbit = NULL;
 	it->ver = ver;

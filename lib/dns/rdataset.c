@@ -59,7 +59,7 @@ dns_rdataset_init(dns_rdataset_t *rdataset) {
 
 	REQUIRE(rdataset != NULL);
 
-	rdataset->magic = DNS_RDATASET_MAGIC;
+	ISC_MAGIC_INIT(rdataset, DNS_RDATASET_MAGIC);
 	rdataset->methods = NULL;
 	ISC_LINK_INIT(rdataset, link);
 	rdataset->rdclass = 0;
@@ -89,7 +89,7 @@ dns_rdataset_invalidate(dns_rdataset_t *rdataset) {
 	REQUIRE(DNS_RDATASET_VALID(rdataset));
 	REQUIRE(rdataset->methods == NULL);
 
-	rdataset->magic = 0;
+	ISC_MAGIC_CLEAR(rdataset);
 	ISC_LINK_INIT(rdataset, link);
 	rdataset->rdclass = 0;
 	rdataset->type = 0;

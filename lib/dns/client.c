@@ -81,7 +81,7 @@
  */
 struct dns_client {
 	/* Unlocked */
-	unsigned int			magic;
+	isc_magic_t			magic;
 	unsigned int			attributes;
 	isc_mutex_t			lock;
 	isc_mem_t			*mctx;
@@ -127,7 +127,7 @@ struct dns_client {
  */
 typedef struct resctx {
 	/* Unlocked */
-	unsigned int		magic;
+	isc_magic_t		magic;
 	isc_mutex_t		lock;
 	dns_client_t		*client;
 	bool			want_dnssec;
@@ -173,7 +173,7 @@ typedef struct resarg {
  */
 typedef struct reqctx {
 	/* Unlocked */
-	unsigned int		magic;
+	isc_magic_t		magic;
 	isc_mutex_t		lock;
 	dns_client_t		*client;
 	unsigned int		parseoptions;
@@ -221,7 +221,7 @@ typedef struct updatearg {
  */
 typedef struct updatectx {
 	/* Unlocked */
-	unsigned int			magic;
+	isc_magic_t			magic;
 	isc_mutex_t			lock;
 	dns_client_t			*client;
 	bool				want_tcp;
@@ -574,7 +574,7 @@ dns_client_createx(isc_mem_t *mctx, isc_appctx_t *actx,
 	client->find_udpretries = DEF_FIND_UDPRETRIES;
 	client->attributes = 0;
 
-	client->magic = DNS_CLIENT_MAGIC;
+	ISC_MAGIC_INIT(client, DNS_CLIENT_MAGIC);
 
 	*clientp = client;
 
@@ -634,7 +634,7 @@ destroyclient(dns_client_t *client) {
 	}
 
 	isc_mutex_destroy(&client->lock);
-	client->magic = 0;
+	ISC_MAGIC_CLEAR(client);
 
 	isc_mem_putanddetach(&client->mctx, client, sizeof(*client));
 }
@@ -1377,7 +1377,7 @@ dns_client_startresolve(dns_client_t *client, const dns_name_t *name,
 	ISC_LIST_INIT(rctx->namelist);
 	rctx->event = event;
 
-	rctx->magic = RCTX_MAGIC;
+	ISC_MAGIC_INIT(rctx, RCTX_MAGIC);
 	isc_refcount_increment(&client->references);
 
 	LOCK(&client->lock);
@@ -1479,7 +1479,7 @@ dns_client_destroyrestrans(dns_clientrestrans_t **transp) {
 	INSIST(ISC_LIST_EMPTY(rctx->namelist));
 
 	isc_mutex_destroy(&rctx->lock);
-	rctx->magic = 0;
+	ISC_MAGIC_CLEAR(rctx);
 
 	isc_mem_put(mctx, rctx, sizeof(*rctx));
 
@@ -1769,7 +1769,7 @@ dns_client_startrequest(dns_client_t *client, dns_message_t *qmessage,
 	if (tsec != NULL)
 		dns_tsec_getkey(tsec, &ctx->tsigkey);
 
-	ctx->magic = REQCTX_MAGIC;
+	ISC_MAGIC_INIT(ctx, REQCTX_MAGIC);
 
 	LOCK(&client->lock);
 	ISC_LIST_APPEND(client->reqctxs, ctx, link);
@@ -1851,7 +1851,7 @@ dns_client_destroyreqtrans(dns_clientreqtrans_t **transp) {
 	UNLOCK(&client->lock);
 
 	isc_mutex_destroy(&ctx->lock);
-	ctx->magic = 0;
+	ISC_MAGIC_CLEAR(ctx);
 
 	isc_mem_put(mctx, ctx, sizeof(*ctx));
 
@@ -2914,7 +2914,7 @@ dns_client_startupdate(dns_client_t *client, dns_rdataclass_t rdclass,
 		goto fail;
 	dns_message_currentname(uctx->updatemsg, section, &uctx->firstname);
 
-	uctx->magic = UCTX_MAGIC;
+	ISC_MAGIC_INIT(uctx, UCTX_MAGIC);
 
 	LOCK(&client->lock);
 	ISC_LIST_APPEND(client->updatectxs, uctx, link);
@@ -2956,7 +2956,7 @@ dns_client_startupdate(dns_client_t *client, dns_rdataclass_t rdclass,
 		dns_tsigkey_detach(&uctx->tsigkey);
 	isc_task_detach(&tclone);
 	isc_mutex_destroy(&uctx->lock);
-	uctx->magic = 0;
+	ISC_MAGIC_CLEAR(uctx);
 	isc_mem_put(client->mctx, uctx, sizeof(*uctx));
 	dns_view_detach(&view);
 
@@ -3021,7 +3021,7 @@ dns_client_destroyupdatetrans(dns_clientupdatetrans_t **transp) {
 	UNLOCK(&client->lock);
 
 	isc_mutex_destroy(&uctx->lock);
-	uctx->magic = 0;
+	ISC_MAGIC_CLEAR(uctx);
 
 	isc_mem_put(mctx, uctx, sizeof(*uctx));
 

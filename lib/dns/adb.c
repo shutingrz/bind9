@@ -94,7 +94,7 @@ typedef struct dns_adbfetch6 dns_adbfetch6_t;
 
 /*% dns adb structure */
 struct dns_adb {
-	unsigned int                    magic;
+	isc_magic_t magic;
 
 	isc_mutex_t                     lock;
 	isc_mutex_t                     reflock; /*%< Covers irefcnt, erefcnt */
@@ -171,7 +171,7 @@ struct dns_adb {
 
 /*% dns_adbname structure */
 struct dns_adbname {
-	unsigned int                    magic;
+	isc_magic_t                    magic;
 	dns_name_t                      name;
 	dns_adb_t                      *adb;
 	unsigned int                    partial_result;
@@ -197,7 +197,7 @@ struct dns_adbname {
 
 /*% The adbfetch structure */
 struct dns_adbfetch {
-	unsigned int                    magic;
+	isc_magic_t magic;
 	dns_fetch_t                    *fetch;
 	dns_rdataset_t                  rdataset;
 	unsigned int			depth;
@@ -209,7 +209,7 @@ struct dns_adbfetch {
  * namehook that will contain the next address this host has.
  */
 struct dns_adbnamehook {
-	unsigned int                    magic;
+	isc_magic_t                    magic;
 	dns_adbentry_t                 *entry;
 	ISC_LINK(dns_adbnamehook_t)     plink;
 };
@@ -220,7 +220,7 @@ struct dns_adbnamehook {
  * extended to other types of information about zones.
  */
 struct dns_adblameinfo {
-	unsigned int                    magic;
+	isc_magic_t                    magic;
 
 	dns_name_t                      qname;
 	dns_rdatatype_t                 qtype;
@@ -235,7 +235,7 @@ struct dns_adblameinfo {
  * the host.
  */
 struct dns_adbentry {
-	unsigned int                    magic;
+	isc_magic_t                    magic;
 
 	int                             lock_bucket;
 	unsigned int                    refcnt;
@@ -1674,7 +1674,7 @@ new_adbname(dns_adb_t *adb, const dns_name_t *dnsname) {
 		return (NULL);
 	}
 	dns_name_init(&name->target, NULL);
-	name->magic = DNS_ADBNAME_MAGIC;
+	ISC_MAGIC_INIT(name, DNS_ADBNAME_MAGIC);
 	name->adb = adb;
 	name->partial_result = 0;
 	name->flags = 0;
@@ -1724,7 +1724,7 @@ free_adbname(dns_adb_t *adb, dns_adbname_t **name) {
 	INSIST(n->lock_bucket == DNS_ADB_INVALIDBUCKET);
 	INSIST(n->adb == adb);
 
-	n->magic = 0;
+	ISC_MAGIC_CLEAR(n);
 	dns_name_free(&n->name, adb->mctx);
 
 	isc_mempool_put(adb->nmp, n);
@@ -1742,7 +1742,7 @@ new_adbnamehook(dns_adb_t *adb, dns_adbentry_t *entry) {
 	if (nh == NULL)
 		return (NULL);
 
-	nh->magic = DNS_ADBNAMEHOOK_MAGIC;
+	ISC_MAGIC_INIT(nh, DNS_ADBNAMEHOOK_MAGIC);
 	nh->entry = entry;
 	ISC_LINK_INIT(nh, plink);
 
@@ -1760,7 +1760,7 @@ free_adbnamehook(dns_adb_t *adb, dns_adbnamehook_t **namehook) {
 	INSIST(nh->entry == NULL);
 	INSIST(!ISC_LINK_LINKED(nh, plink));
 
-	nh->magic = 0;
+	ISC_MAGIC_CLEAR(nh);
 	isc_mempool_put(adb->nhmp, nh);
 }
 
@@ -1779,7 +1779,7 @@ new_adblameinfo(dns_adb_t *adb, const dns_name_t *qname,
 		isc_mempool_put(adb->limp, li);
 		return (NULL);
 	}
-	li->magic = DNS_ADBLAMEINFO_MAGIC;
+	ISC_MAGIC_INIT(li, DNS_ADBLAMEINFO_MAGIC);
 	li->lame_timer = 0;
 	li->qtype = qtype;
 	ISC_LINK_INIT(li, plink);
@@ -1799,7 +1799,7 @@ free_adblameinfo(dns_adb_t *adb, dns_adblameinfo_t **lameinfo) {
 
 	dns_name_free(&li->qname, adb->mctx);
 
-	li->magic = 0;
+	ISC_MAGIC_CLEAR(li);
 
 	isc_mempool_put(adb->limp, li);
 }
@@ -1812,7 +1812,7 @@ new_adbentry(dns_adb_t *adb) {
 	if (e == NULL)
 		return (NULL);
 
-	e->magic = DNS_ADBENTRY_MAGIC;
+	ISC_MAGIC_INIT(e, DNS_ADBENTRY_MAGIC);
 	e->lock_bucket = DNS_ADB_INVALIDBUCKET;
 	e->refcnt = 0;
 	e->nh = 0;
@@ -1867,7 +1867,7 @@ free_adbentry(dns_adb_t *adb, dns_adbentry_t **entry) {
 	INSIST(e->refcnt == 0);
 	INSIST(!ISC_LINK_LINKED(e, plink));
 
-	e->magic = 0;
+	ISC_MAGIC_CLEAR(e);
 
 	if (e->cookie != NULL)
 		isc_mem_put(adb->mctx, e->cookie, e->cookielen);
@@ -1897,7 +1897,7 @@ new_adbfind(dns_adb_t *adb) {
 	/*
 	 * Public members.
 	 */
-	h->magic = 0;
+	ISC_MAGIC_CLEAR(h);
 	h->adb = adb;
 	h->partial_result = 0;
 	h->options = 0;
@@ -1919,7 +1919,7 @@ new_adbfind(dns_adb_t *adb) {
 		       NULL, NULL, h);
 
 	inc_adb_irefcnt(adb);
-	h->magic = DNS_ADBFIND_MAGIC;
+	ISC_MAGIC_INIT(h, DNS_ADBFIND_MAGIC);
 	return (h);
 }
 
@@ -1931,12 +1931,12 @@ new_adbfetch(dns_adb_t *adb) {
 	if (f == NULL)
 		return (NULL);
 
-	f->magic = 0;
+	ISC_MAGIC_CLEAR(f);
 	f->fetch = NULL;
 
 	dns_rdataset_init(&f->rdataset);
 
-	f->magic = DNS_ADBFETCH_MAGIC;
+	ISC_MAGIC_INIT(f, DNS_ADBFETCH_MAGIC);
 
 	return (f);
 }
@@ -1949,7 +1949,7 @@ free_adbfetch(dns_adb_t *adb, dns_adbfetch_t **fetch) {
 	f = *fetch;
 	*fetch = NULL;
 
-	f->magic = 0;
+	ISC_MAGIC_CLEAR(f);
 
 	if (dns_rdataset_isassociated(&f->rdataset))
 		dns_rdataset_disassociate(&f->rdataset);
@@ -1971,7 +1971,7 @@ free_adbfind(dns_adb_t *adb, dns_adbfind_t **findp) {
 	INSIST(find->name_bucket == DNS_ADB_INVALIDBUCKET);
 	INSIST(find->adbname == NULL);
 
-	find->magic = 0;
+	ISC_MAGIC_CLEAR(find);
 
 	isc_mutex_destroy(&find->lock);
 	isc_mempool_put(adb->ahmp, find);
@@ -1991,7 +1991,7 @@ new_adbaddrinfo(dns_adb_t *adb, dns_adbentry_t *entry, in_port_t port) {
 	if (ai == NULL)
 		return (NULL);
 
-	ai->magic = DNS_ADBADDRINFO_MAGIC;
+	ISC_MAGIC_INIT(ai, DNS_ADBADDRINFO_MAGIC);
 	ai->sockaddr = entry->sockaddr;
 	isc_sockaddr_setport(&ai->sockaddr, port);
 	ai->srtt = entry->srtt;
@@ -2014,7 +2014,7 @@ free_adbaddrinfo(dns_adb_t *adb, dns_adbaddrinfo_t **ainfo) {
 	INSIST(ai->entry == NULL);
 	INSIST(!ISC_LINK_LINKED(ai, publink));
 
-	ai->magic = 0;
+	ISC_MAGIC_CLEAR(ai);
 
 	isc_mempool_put(adb->aimp, ai);
 }
@@ -2455,7 +2455,7 @@ cleanup_entries(dns_adb_t *adb, int bucket, isc_stdtime_t now) {
 
 static void
 destroy(dns_adb_t *adb) {
-	adb->magic = 0;
+	ISC_MAGIC_CLEAR(adb);
 
 	isc_task_detach(&adb->task);
 	if (adb->excl != NULL)
@@ -2530,7 +2530,7 @@ dns_adb_create(isc_mem_t *mem, dns_view_t *view, isc_timermgr_t *timermgr,
 	 * Initialize things here that cannot fail, and especially things
 	 * that must be NULL for the error return to work properly.
 	 */
-	adb->magic = 0;
+	ISC_MAGIC_CLEAR(adb);
 	adb->erefcnt = 1;
 	adb->irefcnt = 0;
 	adb->nmp = NULL;
@@ -2696,7 +2696,7 @@ dns_adb_create(isc_mem_t *mem, dns_view_t *view, isc_timermgr_t *timermgr,
 	/*
 	 * Normal return.
 	 */
-	adb->magic = DNS_ADB_MAGIC;
+	ISC_MAGIC_INIT(adb, DNS_ADB_MAGIC);
 	*newadb = adb;
 	return (ISC_R_SUCCESS);
 

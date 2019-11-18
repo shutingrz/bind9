@@ -193,7 +193,7 @@ struct dig_lookup {
 
 /*% The dig_query structure */
 struct dig_query {
-	unsigned int magic;
+	isc_magic_t magic;
 	dig_lookup_t *lookup;
 	bool waiting_connect,
 		pending_free,

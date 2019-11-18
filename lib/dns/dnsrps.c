@@ -263,8 +263,8 @@ dns_dnsrps_rewrite_init(librpz_emsg_t *emsg, dns_rpz_st_t *st,
 		return (DNS_R_DISALLOWED);
 	}
 
-	rpsdb->common.magic = DNS_DB_MAGIC;
-	rpsdb->common.impmagic = RPSDB_MAGIC;
+	ISC_MAGIC_INIT(&rpsdb->common, DNS_DB_MAGIC);
+	ISC_IMPMAGIC_INIT(&rpsdb->common, RPSDB_MAGIC);
 	rpsdb->common.methods = &rpsdb_db_methods;
 	rpsdb->common.rdclass = dns_rdataclass_in;
 	dns_name_init(&rpsdb->common.origin, NULL);
@@ -381,7 +381,7 @@ rpsdb_detach(dns_db_t **dbp) {
 		return;
 
 	librpz->rsp_detach(&rpsdb->rsp);
-	rpsdb->common.impmagic = 0;
+	ISC_IMPMAGIC_CLEAR(&rpsdb->common);
 	isc_mem_putanddetach(&rpsdb->common.mctx, rpsdb, sizeof(*rpsdb));
 }
 
@@ -623,7 +623,7 @@ rpsdb_allrdatasets(dns_db_t *db, dns_dbnode_t *node, dns_dbversion_t *version,
 	rpsdb_iter = isc_mem_get(rpsdb->common.mctx, sizeof(*rpsdb_iter));
 
 	memset(rpsdb_iter, 0, sizeof(*rpsdb_iter));
-	rpsdb_iter->common.magic = DNS_RDATASETITER_MAGIC;
+	ISC_MAGIC_INIT(&rpsdb_iter->common, DNS_RDATASETITER_MAGIC);
 	rpsdb_iter->common.methods = &rpsdb_rdatasetiter_methods;
 	rpsdb_iter->common.db = db;
 	rpsdb_attachnode(db, node, &rpsdb_iter->common.node);

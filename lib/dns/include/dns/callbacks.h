@@ -34,7 +34,7 @@ ISC_LANG_BEGINDECLS
 #define DNS_CALLBACK_VALID(cb)	ISC_MAGIC_VALID(cb, DNS_CALLBACK_MAGIC)
 
 struct dns_rdatacallbacks {
-	unsigned int magic;
+	isc_magic_t magic;
 
 	/*%
 	 * dns_load_master calls this when it has rdatasets to commit.

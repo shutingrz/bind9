@@ -31,7 +31,7 @@ static bool seenv6 = false;
 
 /*% Iterator structure */
 struct isc_interfaceiter {
-	unsigned int		magic;		/*%< Magic number. */
+	isc_magic_t magic;		/*%< Magic number. */
 	isc_mem_t		*mctx;
 	void			*buf;		/*%< (unused) */
 	unsigned int		bufsize;	/*%< (always 0) */
@@ -90,7 +90,7 @@ isc_interfaceiter_create(isc_mem_t *mctx, isc_interfaceiter_t **iterp) {
 	iter->pos = NULL;
 	iter->result = ISC_R_FAILURE;
 
-	iter->magic = IFITER_MAGIC;
+	ISC_MAGIC_INIT(iter, IFITER_MAGIC);
 	*iterp = iter;
 	return (ISC_R_SUCCESS);
 

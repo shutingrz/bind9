@@ -95,11 +95,11 @@ typedef struct isc_radix_node {
 					   or -1 for glue nodes */
 } isc_radix_node_t;
 
-#define RADIX_TREE_MAGIC         ISC_MAGIC('R','d','x','T');
-#define RADIX_TREE_VALID(a)      ISC_MAGIC_VALID(a, RADIX_TREE_MAGIC);
+#define RADIX_TREE_MAGIC         ISC_MAGIC('R','d','x','T')
+#define RADIX_TREE_VALID(a)      ISC_MAGIC_VALID(a, RADIX_TREE_MAGIC)
 
 typedef struct isc_radix_tree {
-	unsigned int magic;
+	isc_magic_t magic;
 	isc_mem_t *mctx;
 	isc_radix_node_t *head;
 	uint32_t maxbits;		/* for IP, 32 bit addresses */

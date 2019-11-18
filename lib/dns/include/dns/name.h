@@ -102,7 +102,7 @@ ISC_LANG_BEGINDECLS
  * for whatever purpose the client desires.
  */
 struct dns_name {
-	unsigned int			magic;
+	isc_magic_t			magic;
 	unsigned char *			ndata;
 	unsigned int			length;
 	unsigned int			labels;

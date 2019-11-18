@@ -72,7 +72,7 @@ struct dns_aclelement {
 };
 
 struct dns_acl {
-	unsigned int		magic;
+	isc_magic_t		magic;
 	isc_mem_t		*mctx;
 	isc_refcount_t		refcount;
 	dns_iptable_t		*iptable;

@@ -68,7 +68,7 @@
 #endif
 
 struct dns_rbt {
-	unsigned int		magic;
+	isc_magic_t magic;
 	isc_mem_t *		mctx;
 	dns_rbtnode_t *		root;
 	void			(*data_deleter)(void *, void *);
@@ -973,7 +973,7 @@ dns_rbt_create(isc_mem_t *mctx, dns_rbtdeleter_t deleter,
 		return (result);
 	}
 
-	rbt->magic = RBT_MAGIC;
+	ISC_MAGIC_INIT(rbt, RBT_MAGIC);
 
 	*rbtp = rbt;
 
@@ -1008,7 +1008,7 @@ dns_rbt_destroy2(dns_rbt_t **rbtp, unsigned int quantum) {
 		isc_mem_put(rbt->mctx, rbt->hashtable,
 			    rbt->hashsize * sizeof(dns_rbtnode_t *));
 
-	rbt->magic = 0;
+	ISC_MAGIC_CLEAR(rbt);
 
 	isc_mem_putanddetach(&rbt->mctx, rbt, sizeof(*rbt));
 	*rbtp = NULL;
@@ -2099,7 +2099,7 @@ dns_rbt_deletenode(dns_rbt_t *rbt, dns_rbtnode_t *node, bool recurse)
 
 	unhash_node(rbt, node);
 #if DNS_RBT_USEMAGIC
-	node->magic = 0;
+	ISC_MAGIC_CLEAR(node);
 #endif
 	isc_refcount_destroy(&node->references);
 
@@ -2239,7 +2239,7 @@ create_node(isc_mem_t *mctx, const dns_name_t *name, dns_rbtnode_t **nodep) {
 	memmove(OFFSETS(node), name->offsets, labels);
 
 #if DNS_RBT_USEMAGIC
-	node->magic = DNS_RBTNODE_MAGIC;
+	ISC_MAGIC_INIT(node, DNS_RBTNODE_MAGIC);
 #endif
 	*nodep = node;
 
@@ -2818,7 +2818,7 @@ deletetreeflat(dns_rbt_t *rbt, unsigned int quantum, bool unhash,
 			 * are destroying the complete RBT tree.
 			 */
 #if DNS_RBT_USEMAGIC
-			node->magic = 0;
+			ISC_MAGIC_CLEAR(node);
 #endif
 			freenode(rbt, &node);
 			if (quantum != 0 && --quantum == 0)
@@ -3158,7 +3158,7 @@ dns_rbtnodechain_init(dns_rbtnodechain_t *chain) {
 	chain->level_matches = 0;
 	memset(chain->levels, 0, sizeof(chain->levels));
 
-	chain->magic = CHAIN_MAGIC;
+	ISC_MAGIC_INIT(chain, CHAIN_MAGIC);
 }
 
 isc_result_t
@@ -3634,7 +3634,7 @@ dns_rbtnodechain_invalidate(dns_rbtnodechain_t *chain) {
 
 	dns_rbtnodechain_reset(chain);
 
-	chain->magic = 0;
+	ISC_MAGIC_CLEAR(chain);
 }
 
 /* XXXMUKS:

@@ -52,7 +52,7 @@ struct dns_kasp_key {
 
 /* Stores a DNSSEC policy */
 struct dns_kasp {
-	unsigned int			magic;
+	isc_magic_t			magic;
 	isc_mem_t*			mctx;
 	char*				name;
 

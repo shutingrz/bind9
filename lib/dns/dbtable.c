@@ -22,7 +22,7 @@
 
 struct dns_dbtable {
 	/* Unlocked. */
-	unsigned int		magic;
+	isc_magic_t magic;
 	isc_mem_t *		mctx;
 	dns_rdataclass_t	rdclass;
 	isc_rwlock_t		tree_lock;
@@ -70,7 +70,7 @@ dns_dbtable_create(isc_mem_t *mctx, dns_rdataclass_t rdclass,
 	dbtable->mctx = NULL;
 	isc_mem_attach(mctx, &dbtable->mctx);
 	dbtable->rdclass = rdclass;
-	dbtable->magic = DBTABLE_MAGIC;
+	ISC_MAGIC_INIT(dbtable, DBTABLE_MAGIC);
 	isc_refcount_init(&dbtable->references, 1);
 
 	*dbtablep = dbtable;
@@ -103,7 +103,7 @@ dbtable_free(dns_dbtable_t *dbtable) {
 
 	isc_rwlock_destroy(&dbtable->tree_lock);
 
-	dbtable->magic = 0;
+	ISC_MAGIC_CLEAR(dbtable);
 
 	isc_mem_putanddetach(&dbtable->mctx, dbtable, sizeof(*dbtable));
 }

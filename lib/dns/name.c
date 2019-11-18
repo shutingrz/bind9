@@ -197,7 +197,7 @@ dns_name_invalidate(dns_name_t *name) {
 
 	REQUIRE(VALID_NAME(name));
 
-	name->magic = 0;
+	ISC_MAGIC_CLEAR(name);
 	name->ndata = NULL;
 	name->length = 0;
 	name->labels = 0;

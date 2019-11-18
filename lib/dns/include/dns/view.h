@@ -80,7 +80,7 @@ ISC_LANG_BEGINDECLS
 
 struct dns_view {
 	/* Unlocked. */
-	unsigned int			magic;
+	isc_magic_t			magic;
 	isc_mem_t *			mctx;
 	dns_rdataclass_t		rdclass;
 	char *				name;

@@ -97,7 +97,7 @@ typedef struct dns_incctx dns_incctx_t;
  */
 
 struct dns_loadctx {
-	unsigned int		magic;
+	isc_magic_t magic;
 	isc_mem_t		*mctx;
 	dns_masterformat_t	format;
 
@@ -435,7 +435,7 @@ loadctx_destroy(dns_loadctx_t *lctx) {
 
 	REQUIRE(DNS_LCTX_VALID(lctx));
 
-	lctx->magic = 0;
+	ISC_MAGIC_CLEAR(lctx);
 	if (lctx->inc != NULL)
 		incctx_destroy(lctx->mctx, lctx->inc);
 
@@ -604,7 +604,7 @@ loadctx_create(dns_masterformat_t format, isc_mem_t *mctx,
 
 	isc_refcount_init(&lctx->references, 1); /* Implicit attach. */
 
-	lctx->magic = DNS_LCTX_MAGIC;
+	ISC_MAGIC_INIT(lctx, DNS_LCTX_MAGIC);
 	*lctxp = lctx;
 	return (ISC_R_SUCCESS);
 

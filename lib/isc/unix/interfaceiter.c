@@ -288,7 +288,7 @@ isc_interfaceiter_destroy(isc_interfaceiter_t **iterp)
 	if (iter->buf != NULL)
 		isc_mem_put(iter->mctx, iter->buf, iter->bufsize);
 
-	iter->magic = 0;
+	ISC_MAGIC_CLEAR(iter);
 	isc_mem_put(iter->mctx, iter, sizeof(*iter));
 	*iterp = NULL;
 }

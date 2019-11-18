@@ -158,7 +158,7 @@ typedef ISC_LIST(ns_client_t) client_list_t;
 /*% nameserver client manager structure */
 struct ns_clientmgr {
 	/* Unlocked. */
-	unsigned int		magic;
+	isc_magic_t magic;
 
 	isc_mem_t *		mctx;
 	ns_server_t *		sctx;
@@ -189,7 +189,7 @@ struct ns_clientmgr {
 
 /*% nameserver client structure */
 struct ns_client {
-	unsigned int		magic;
+	isc_magic_t		magic;
 	isc_mem_t		*mctx;
 	bool			allocated;	/* Do we need to free it? */
 	ns_server_t		*sctx;

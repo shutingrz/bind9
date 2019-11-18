@@ -89,7 +89,7 @@ typedef enum {
  */
 
 struct dns_xfrin_ctx {
-	unsigned int		magic;
+	isc_magic_t magic;
 	isc_mem_t		*mctx;
 	dns_zone_t		*zone;
 
@@ -884,7 +884,7 @@ xfrin_create(isc_mem_t *mctx,
 	isc_buffer_init(&xfr->qbuffer, &xfr->qbuffer_data[2],
 			sizeof(xfr->qbuffer_data) - 2);
 
-	xfr->magic = XFRIN_MAGIC;
+	ISC_MAGIC_INIT(xfr, XFRIN_MAGIC);
 	*xfrp = xfr;
 	return (ISC_R_SUCCESS);
 

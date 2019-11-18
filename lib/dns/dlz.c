@@ -215,7 +215,7 @@ dns_dlzcreate(isc_mem_t *mctx, const char *dlzname, const char *drivername,
 	/* mark the DLZ driver as valid */
 	if (result == ISC_R_SUCCESS) {
 		RWUNLOCK(&dlz_implock, isc_rwlocktype_read);
-		db->magic = DNS_DLZ_MAGIC;
+		ISC_MAGIC_INIT(db, DNS_DLZ_MAGIC);
 		isc_mem_attach(mctx, &db->mctx);
 		isc_log_write(dns_lctx, DNS_LOGCATEGORY_DATABASE,
 			      DNS_LOGMODULE_DLZ, ISC_LOG_DEBUG(2),

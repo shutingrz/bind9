@@ -212,7 +212,7 @@ typedef isc_result_t (*dlzconfigure_callback_t)(dns_view_t *, dns_dlzdb_t *,
 
 /*% An instance of a DLZ driver */
 struct dns_dlzdb {
-	unsigned int		magic;
+	isc_magic_t		magic;
 	isc_mem_t		*mctx;
 	dns_dlzimplementation_t	*implementation;
 	void			*dbdata;

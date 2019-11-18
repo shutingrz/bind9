@@ -39,7 +39,7 @@ struct zt_load_params {
 
 struct dns_zt {
 	/* Unlocked. */
-	unsigned int		magic;
+	isc_magic_t magic;
 	isc_mem_t		*mctx;
 	dns_rdataclass_t	rdclass;
 	isc_rwlock_t		rwlock;
@@ -98,7 +98,7 @@ dns_zt_create(isc_mem_t *mctx, dns_rdataclass_t rdclass, dns_zt_t **ztp) {
 	isc_refcount_init(&zt->references, 1);
 	atomic_init(&zt->flush, false);
 	zt->rdclass = rdclass;
-	zt->magic = ZTMAGIC;
+	ISC_MAGIC_INIT(zt, ZTMAGIC);
 	zt->loaddone = NULL;
 	zt->loaddone_arg = NULL;
 	zt->loadparams = NULL;
@@ -229,7 +229,7 @@ zt_destroy(dns_zt_t *zt) {
 	}
 	dns_rbt_destroy(&zt->table);
 	isc_rwlock_destroy(&zt->rwlock);
-	zt->magic = 0;
+	ISC_MAGIC_CLEAR(zt);
 	isc_mem_putanddetach(&zt->mctx, zt, sizeof(*zt));
 }
 

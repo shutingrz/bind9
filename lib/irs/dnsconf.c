@@ -38,7 +38,7 @@
  */
 
 struct irs_dnsconf {
-	unsigned int magic;
+	isc_magic_t magic;
 	isc_mem_t *mctx;
 	irs_dnsconf_dnskeylist_t trusted_keylist;
 };
@@ -265,7 +265,7 @@ irs_dnsconf_load(isc_mem_t *mctx, const char *filename, irs_dnsconf_t **confp)
 		cfg_parser_destroy(&parser);
 	}
 
-	conf->magic = IRS_DNSCONF_MAGIC;
+	ISC_MAGIC_INIT(conf, IRS_DNSCONF_MAGIC);
 
 	if (result == ISC_R_SUCCESS)
 		*confp = conf;

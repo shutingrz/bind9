@@ -762,8 +762,8 @@ create_db(isc_mem_t *mctx, const dns_name_t *origin, dns_dbtype_t type,
 	isc_mem_attach(mctx, &sampledb->common.mctx);
 	dns_name_init(&sampledb->common.origin, NULL);
 
-	sampledb->common.magic = DNS_DB_MAGIC;
-	sampledb->common.impmagic = SAMPLEDB_MAGIC;
+	ISC_MAGIC_INIT(&sampledb->common, DNS_DB_MAGIC);
+	ISC_IMPMAGIC_INIT(&sampledb->common, SAMPLEDB_MAGIC);
 
 	sampledb->common.methods = &sampledb_methods;
 	sampledb->common.attributes = 0;

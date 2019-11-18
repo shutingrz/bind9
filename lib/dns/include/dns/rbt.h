@@ -69,7 +69,7 @@ enum {
 };
 struct dns_rbtnode {
 #if DNS_RBT_USEMAGIC
-	unsigned int magic;
+	isc_magic_t magic;
 #endif
 	/*@{*/
 	/*!
@@ -240,7 +240,7 @@ typedef void (*dns_rbtdeleter_t)(void *, void *);
 #define DNS_RBT_LEVELBLOCK 254
 
 typedef struct dns_rbtnodechain {
-	unsigned int            magic;
+	isc_magic_t magic;
 	/*%
 	 * The terminal node of the chain.  It is not in levels[].
 	 * This is ostensibly private ... but in a pinch it could be

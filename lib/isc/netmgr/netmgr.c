@@ -130,7 +130,7 @@ isc_nm_start(isc_mem_t *mctx, uint32_t workers) {
 		isc_thread_setname(worker->thread, name);
 	}
 
-	mgr->magic = NM_MAGIC;
+	ISC_MAGIC_INIT(mgr, NM_MAGIC);
 	return (mgr);
 }
 
@@ -148,7 +148,7 @@ nm_destroy(isc_nm_t **mgr0) {
 	isc_nm_t *mgr = *mgr0;
 
 	LOCK(&mgr->lock);
-	mgr->magic = 0;
+	ISC_MAGIC_CLEAR(mgr);
 
 	for (size_t i = 0; i < mgr->nworkers; i++) {
 		isc__netievent_t *event = NULL;
@@ -703,7 +703,7 @@ isc__nmsocket_init(isc_nmsocket_t *sock, isc_nm_t *mgr,
 	isc_refcount_init(&sock->references, 1);
 	atomic_init(&sock->active, true);
 
-	sock->magic = NMSOCK_MAGIC;
+	ISC_MAGIC_INIT(sock, NMSOCK_MAGIC);
 }
 
 void
@@ -965,7 +965,7 @@ isc__nm_uvreq_get(isc_nm_t *mgr, isc_nmsocket_t *sock) {
 	};
 	req->uv_req.req.data = req;
 	isc_nmsocket_attach(sock, &req->sock);
-	req->magic = UVREQ_MAGIC;
+	ISC_MAGIC_INIT(req, UVREQ_MAGIC);
 
 	return (req);
 }
@@ -983,7 +983,7 @@ isc__nm_uvreq_put(isc__nm_uvreq_t **req0, isc_nmsocket_t *sock) {
 
 	INSIST(sock == req->sock);
 
-	req->magic = 0;
+	ISC_MAGIC_CLEAR(req);
 
 	/*
 	 * We need to save this first to make sure that handle,

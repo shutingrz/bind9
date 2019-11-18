@@ -38,7 +38,7 @@
 /*% ISCCC Message Structure */
 typedef struct isccc_ccmsg {
 	/* private (don't touch!) */
-	unsigned int		magic;
+	isc_magic_t magic;
 	uint32_t		size;
 	isc_buffer_t		buffer;
 	unsigned int		maxsize;

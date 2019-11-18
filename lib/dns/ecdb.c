@@ -53,7 +53,7 @@ typedef struct dns_ecdb {
 
 typedef struct dns_ecdbnode {
 	/* Unlocked */
-	unsigned int			magic;
+	isc_magic_t			magic;
 	isc_mutex_t			lock;
 	dns_ecdb_t			*ecdb;
 	dns_name_t			name;
@@ -179,8 +179,8 @@ destroy_ecdb(dns_ecdb_t *ecdb) {
 
 		isc_mutex_destroy(&ecdb->lock);
 
-		ecdb->common.impmagic = 0;
-		ecdb->common.magic = 0;
+		ISC_IMPMAGIC_CLEAR(&ecdb->common);
+		ISC_MAGIC_CLEAR(&ecdb->common);
 
 		isc_mem_putanddetach(&ecdb->common.mctx, ecdb, sizeof(*ecdb));
 	}
@@ -240,7 +240,7 @@ destroynode(dns_ecdbnode_t *node) {
 	isc_mutex_destroy(&node->lock);
 	isc_refcount_destroy(&node->references);
 
-	node->magic = 0;
+	ISC_MAGIC_CLEAR(node);
 	isc_mem_put(mctx, node, sizeof(*node));
 
 	destroy_ecdb(ecdb);
@@ -352,7 +352,7 @@ findnode(dns_db_t *db, const dns_name_t *name, bool create,
 	ISC_LIST_APPEND(ecdb->nodes, node, link);
 	UNLOCK(&ecdb->lock);
 
-	node->magic = ECDBNODE_MAGIC;
+	ISC_MAGIC_INIT(node, ECDBNODE_MAGIC);
 
 	*nodep = node;
 
@@ -499,7 +499,7 @@ allrdatasets(dns_db_t *db, dns_dbnode_t *node, dns_dbversion_t *version,
 
 	iterator = isc_mem_get(mctx, sizeof(ecdb_rdatasetiter_t));
 
-	iterator->common.magic = DNS_RDATASETITER_MAGIC;
+	ISC_MAGIC_INIT(&iterator->common, DNS_RDATASETITER_MAGIC);
 	iterator->common.methods = &rdatasetiter_methods;
 	iterator->common.db = db;
 	iterator->common.node = NULL;
@@ -599,8 +599,8 @@ dns_ecdb_create(isc_mem_t *mctx, const dns_name_t *origin, dns_dbtype_t type,
 
 	ecdb->common.mctx = NULL;
 	isc_mem_attach(mctx, &ecdb->common.mctx);
-	ecdb->common.impmagic = ECDB_MAGIC;
-	ecdb->common.magic = DNS_DB_MAGIC;
+	ISC_IMPMAGIC_INIT(&ecdb->common, ECDB_MAGIC);
+	ISC_MAGIC_INIT(&ecdb->common, DNS_DB_MAGIC);
 
 	*dbp = (dns_db_t *)ecdb;
 

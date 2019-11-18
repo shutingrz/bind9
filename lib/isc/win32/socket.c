@@ -223,7 +223,7 @@ struct msghdr {
 
 struct isc_socket {
 	/* Not locked. */
-	unsigned int		magic;
+	isc_magic_t		magic;
 	isc_socketmgr_t	       *manager;
 	isc_mutex_t		lock;
 	isc_sockettype_t	type;
@@ -308,7 +308,7 @@ typedef struct IoCompletionInfo {
 
 struct isc_socketmgr {
 	/* Not locked. */
-	unsigned int		magic;
+	isc_magic_t		magic;
 	isc_mem_t	       *mctx;
 	isc_mutex_t		lock;
 	isc_stats_t	       *stats;
@@ -1340,7 +1340,7 @@ allocate_socket(isc_socketmgr_t *manager, isc_sockettype_t type,
 
 	sock = isc_mem_get(manager->mctx, sizeof(*sock));
 
-	sock->magic = 0;
+	ISC_MAGIC_CLEAR(sock);
 	isc_refcount_init(&sock->references, 0);
 
 	sock->manager = manager;
@@ -1381,7 +1381,7 @@ allocate_socket(isc_socketmgr_t *manager, isc_sockettype_t type,
 	socket_log(__LINE__, sock, NULL, EVENT,
 		   "allocated");
 
-	sock->magic = SOCKET_MAGIC;
+	ISC_MAGIC_INIT(sock, SOCKET_MAGIC);
 	*socketp = sock;
 
 	return (ISC_R_SUCCESS);
@@ -1488,7 +1488,7 @@ free_socket(isc_socket_t **sockp, int lineno) {
 		   "freeing socket line %d fd %d lock %p semaphore %p",
 		   lineno, sock->fd, &sock->lock, sock->lock.LockSemaphore);
 
-	sock->magic = 0;
+	ISC_MAGIC_CLEAR(sock);
 	isc_mutex_destroy(&sock->lock);
 
 	if (sock->recvbuf.base != NULL)
@@ -2512,7 +2512,7 @@ isc_socketmgr_create2(isc_mem_t *mctx, isc_socketmgr_t **managerp,
 
 	InitSockets();
 
-	manager->magic = SOCKET_MANAGER_MAGIC;
+	ISC_MAGIC_INIT(manager, SOCKET_MANAGER_MAGIC);
 	manager->mctx = NULL;
 	manager->stats = NULL;
 	ISC_LIST_INIT(manager->socklist);
@@ -2604,7 +2604,7 @@ isc_socketmgr_destroy(isc_socketmgr_t **managerp) {
 	if (manager->stats != NULL) {
 		isc_stats_detach(&manager->stats);
 	}
-	manager->magic = 0;
+	ISC_MAGIC_CLEAR(manager);
 	isc_mem_putanddetach(&manager->mctx, manager, sizeof(*manager));
 
 	*managerp = NULL;

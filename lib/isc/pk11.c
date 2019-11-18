@@ -56,14 +56,14 @@ typedef struct pk11_token pk11_token_t;
 typedef ISC_LIST(pk11_session_t) pk11_sessionlist_t;
 
 struct pk11_session {
-	unsigned int		magic;
+	isc_magic_t		magic;
 	CK_SESSION_HANDLE	session;
 	ISC_LINK(pk11_session_t) link;
 	pk11_token_t		*token;
 };
 
 struct pk11_token {
-	unsigned int		magic;
+	isc_magic_t		magic;
 	unsigned int		operations;
 	ISC_LINK(pk11_token_t)	link;
 	CK_SLOT_ID		slotid;
@@ -325,7 +325,7 @@ pk11_get_session(pk11_context_t *ctx, pk11_optype_t optype,
 	sp = pk11_mem_get(sizeof(*sp));
 	if (sp == NULL)
 		return (ISC_R_NOMEMORY);
-	sp->magic = SES_MAGIC;
+	ISC_MAGIC_INIT(sp, SES_MAGIC);
 	sp->token = token;
 	sp->session = CK_INVALID_HANDLE;
 	ISC_LINK_INIT(sp, link);
@@ -491,7 +491,7 @@ scan_slots(void) {
 			continue;
 		token = pk11_mem_get(sizeof(*token));
 		RUNTIME_CHECK(token != NULL);
-		token->magic = TOK_MAGIC;
+		ISC_MAGIC_INIT(token, TOK_MAGIC);
 		token->slotid = slot;
 		ISC_LINK_INIT(token, link);
 		ISC_LIST_INIT(token->sessions);

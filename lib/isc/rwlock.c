@@ -195,7 +195,7 @@ isc_rwlock_init(isc_rwlock_t *rwl, unsigned int read_quota,
 	 * In case there's trouble initializing, we zero magic now.  If all
 	 * goes well, we'll set it to RWLOCK_MAGIC.
 	 */
-	rwl->magic = 0;
+	ISC_MAGIC_CLEAR(rwl);
 
 	atomic_init(&rwl->spins, 0);
 	atomic_init(&rwl->write_requests, 0);
@@ -216,7 +216,7 @@ isc_rwlock_init(isc_rwlock_t *rwl, unsigned int read_quota,
 	isc_condition_init(&rwl->readable);
 	isc_condition_init(&rwl->writeable);
 
-	rwl->magic = RWLOCK_MAGIC;
+	ISC_MAGIC_INIT(rwl, RWLOCK_MAGIC);
 
 	return (ISC_R_SUCCESS);
 }
@@ -229,7 +229,7 @@ isc_rwlock_destroy(isc_rwlock_t *rwl) {
 		atomic_load_relaxed(&rwl->write_completions) &&
 		atomic_load_relaxed(&rwl->cnt_and_flag) == 0 && rwl->readers_waiting == 0);
 
-	rwl->magic = 0;
+	ISC_MAGIC_CLEAR(rwl);
 	(void)isc_condition_destroy(&rwl->readable);
 	(void)isc_condition_destroy(&rwl->writeable);
 	isc_mutex_destroy(&rwl->lock);

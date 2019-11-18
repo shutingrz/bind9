@@ -121,7 +121,7 @@ Types:
 	typedef struct dns_ixfr	dns_ixfr_t;
 
 	struct dns_ixfr {
-		unsigned int		magic;	/* IXFR */
+		isc_magic_t		magic;	/* IXFR */
 		uint32_t		serial;
 		time_t			expire;
 		unsigned int		offset;
@@ -129,7 +129,7 @@ Types:
 	};
 
 	struct dns_zone {
-		unsigned int		magic;	/* ZONE */
+		isc_magic_t		magic;	/* ZONE */
 		dns_name_t		name;
 		dns_rdataclass_t	class;
 		dns_zonetypes_t		type;

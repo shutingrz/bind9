@@ -330,7 +330,7 @@ dns_tsigkey_createfromkey(const dns_name_t *name, const dns_name_t *algorithm,
 	isc_mem_attach(mctx, &tkey->mctx);
 	ISC_LINK_INIT(tkey, link);
 
-	tkey->magic = TSIG_MAGIC;
+	ISC_MAGIC_INIT(tkey, TSIG_MAGIC);
 
 	if (ring != NULL) {
 		ret = keyring_add(ring, name, tkey);
@@ -357,7 +357,7 @@ dns_tsigkey_createfromkey(const dns_name_t *name, const dns_name_t *algorithm,
 	return (ISC_R_SUCCESS);
 
  cleanup_refs:
-	tkey->magic = 0;
+	ISC_MAGIC_CLEAR(tkey);
 	while (refs-- > 0) {
 		INSIST(isc_refcount_decrement(&tkey->refs) > 0);
 	}
@@ -712,7 +712,7 @@ static void
 tsigkey_free(dns_tsigkey_t *key) {
 	REQUIRE(VALID_TSIG_KEY(key));
 
-	key->magic = 0;
+	ISC_MAGIC_CLEAR(key);
 	dns_name_free(&key->name, key->mctx);
 	if (dns__tsig_algallocated(key->algorithm)) {
 		dns_name_t *name;

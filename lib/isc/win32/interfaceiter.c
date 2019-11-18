@@ -50,7 +50,7 @@ void InitSockets(void);
 #define VALID_IFITER(t)		((t) != NULL && (t)->magic == IFITER_MAGIC)
 
 struct isc_interfaceiter {
-	unsigned int		magic;		/* Magic number. */
+	isc_magic_t magic;		/* Magic number. */
 	isc_mem_t		*mctx;
 	SOCKET			socket;
 	INTERFACE_INFO		IFData;		/* Current Interface Info. */
@@ -268,7 +268,7 @@ isc_interfaceiter_create(isc_mem_t *mctx, isc_interfaceiter_t **iterp) {
 	closesocket(iter->socket);
 
  inet_only:
-	iter->magic = IFITER_MAGIC;
+	ISC_MAGIC_INIT(iter, IFITER_MAGIC);
 	*iterp = iter;
 	return (ISC_R_SUCCESS);
 
@@ -523,7 +523,7 @@ isc_interfaceiter_destroy(isc_interfaceiter_t **iterp) {
 	if (iter->buf6 != NULL)
 		isc_mem_put(iter->mctx, iter->buf6, iter->buf6size);
 
-	iter->magic = 0;
+	ISC_MAGIC_CLEAR(iter);
 	isc_mem_put(iter->mctx, iter, sizeof(*iter));
 	*iterp = NULL;
 }

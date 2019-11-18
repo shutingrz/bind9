@@ -64,7 +64,7 @@
 
 /*% nameserver interface manager structure */
 struct ns_interfacemgr {
-	unsigned int		magic;		/*%< Magic number. */
+	isc_magic_t		magic;		/*%< Magic number. */
 	isc_refcount_t		references;
 	isc_mutex_t		lock;
 	isc_mem_t *		mctx;		/*%< Memory context. */
@@ -260,7 +260,7 @@ ns_interfacemgr_create(isc_mem_t *mctx,
 #else
 	isc_refcount_init(&mgr->references, 1);
 #endif
-	mgr->magic = IFMGR_MAGIC;
+	ISC_MAGIC_INIT(mgr, IFMGR_MAGIC);
 	*mgrp = mgr;
 
 #ifdef USE_ROUTE_SOCKET
@@ -312,7 +312,7 @@ ns_interfacemgr_destroy(ns_interfacemgr_t *mgr) {
 		ns_server_detach(&mgr->sctx);
 	if (mgr->excl != NULL)
 		isc_task_detach(&mgr->excl);
-	mgr->magic = 0;
+	ISC_MAGIC_CLEAR(mgr);
 	isc_mem_putanddetach(&mgr->mctx, mgr, sizeof(*mgr));
 }
 
@@ -415,7 +415,7 @@ ns_interface_create(ns_interfacemgr_t *mgr, isc_sockaddr_t *addr,
 	UNLOCK(&mgr->lock);
 
 	isc_refcount_init(&ifp->references, 1);
-	ifp->magic = IFACE_MAGIC;
+	ISC_MAGIC_INIT(ifp, IFACE_MAGIC);
 
 	result = ns_clientmgr_create(mgr->mctx, mgr->sctx,
 				     mgr->taskmgr, mgr->timermgr, ifp,
@@ -434,7 +434,7 @@ ns_interface_create(ns_interfacemgr_t *mgr, isc_sockaddr_t *addr,
  failure:
 	isc_mutex_destroy(&ifp->lock);
 
-	ifp->magic = 0;
+	ISC_MAGIC_CLEAR(ifp);
 	isc_mem_put(mgr->mctx, ifp, sizeof(*ifp));
 
 	return (ISC_R_UNEXPECTED);
@@ -578,7 +578,7 @@ ns_interface_destroy(ns_interface_t *ifp) {
 	isc_refcount_destroy(&ifp->ntcpactive);
 	isc_refcount_destroy(&ifp->ntcpaccepting);
 
-	ifp->magic = 0;
+	ISC_MAGIC_CLEAR(ifp);
 
 	isc_mem_put(mctx, ifp, sizeof(*ifp));
 }

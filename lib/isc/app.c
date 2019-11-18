@@ -77,7 +77,7 @@ enum {
 #endif /* WIN32 */
 
 struct isc_appctx {
-	unsigned int		magic;
+	isc_magic_t magic;
 	isc_mem_t		*mctx;
 	isc_mutex_t		lock;
 	isc_eventlist_t	on_run;
@@ -543,7 +543,7 @@ isc_appctx_create(isc_mem_t *mctx, isc_appctx_t **ctxp) {
 
 	ctx = isc_mem_get(mctx, sizeof(*ctx));
 
-	ctx->magic = APPCTX_MAGIC;
+	ISC_MAGIC_INIT(ctx, APPCTX_MAGIC);
 
 	ctx->mctx = NULL;
 	isc_mem_attach(mctx, &ctx->mctx);
@@ -562,7 +562,7 @@ isc_appctx_destroy(isc_appctx_t **ctxp) {
 	*ctxp = NULL;
 	REQUIRE(VALID_APPCTX(ctx));
 
-	ctx->magic = 0;
+	ISC_MAGIC_CLEAR(ctx);
 
 	isc_mem_putanddetach(&ctx->mctx, ctx, sizeof(*ctx));
 }

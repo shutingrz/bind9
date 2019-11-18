@@ -42,7 +42,7 @@
  * Single member zone in a catalog
  */
 struct dns_catz_entry {
-	unsigned int		magic;
+	isc_magic_t magic;
 	dns_name_t		name;
 	dns_catz_options_t	opts;
 	isc_refcount_t		refs;
@@ -52,7 +52,7 @@ struct dns_catz_entry {
  * Catalog zone
  */
 struct dns_catz_zone {
-	unsigned int		magic;
+	isc_magic_t magic;
 	dns_name_t		name;
 	dns_catz_zones_t	*catzs;
 	dns_rdata_t		soa;
@@ -91,7 +91,7 @@ catz_process_zones_suboption(dns_catz_zone_t *zone, dns_rdataset_t *value,
  * Collection of catalog zones for a view
  */
 struct dns_catz_zones {
-	unsigned int			magic;
+	isc_magic_t magic;
 	isc_ht_t			*zones;
 	isc_mem_t			*mctx;
 	isc_refcount_t			refs;
@@ -216,7 +216,7 @@ dns_catz_entry_new(isc_mem_t *mctx, const dns_name_t *domain,
 
 	dns_catz_options_init(&nentry->opts);
 	isc_refcount_init(&nentry->refs, 1);
-	nentry->magic = DNS_CATZ_ENTRY_MAGIC;
+	ISC_MAGIC_INIT(nentry, DNS_CATZ_ENTRY_MAGIC);
 	*nentryp = nentry;
 	return (ISC_R_SUCCESS);
 
@@ -277,7 +277,7 @@ dns_catz_entry_detach(dns_catz_zone_t *zone, dns_catz_entry_t **entryp) {
 
 	if (isc_refcount_decrement(&entry->refs) == 1) {
 		isc_mem_t *mctx = zone->catzs->mctx;
-		entry->magic = 0;
+		ISC_MAGIC_CLEAR(entry);
 		isc_refcount_destroy(&entry->refs);
 		dns_catz_options_free(&entry->opts, mctx);
 		if (dns_name_dynamic(&entry->name))
@@ -609,7 +609,7 @@ dns_catz_new_zones(dns_catz_zones_t **catzsp, dns_catz_zonemodmethods_t *zmm,
 	result = isc_task_create(taskmgr, 0, &new_zones->updater);
 	if (result != ISC_R_SUCCESS)
 		goto cleanup_ht;
-	new_zones->magic = DNS_CATZ_ZONES_MAGIC;
+	ISC_MAGIC_INIT(new_zones, DNS_CATZ_ZONES_MAGIC);
 
 	*catzsp = new_zones;
 	return (ISC_R_SUCCESS);
@@ -678,7 +678,7 @@ dns_catz_new_zone(dns_catz_zones_t *catzs, dns_catz_zone_t **zonep,
 	new_zone->db_registered = false;
 	new_zone->version = (uint32_t)(-1);
 	isc_refcount_init(&new_zone->refs, 1);
-	new_zone->magic = DNS_CATZ_ZONE_MAGIC;
+	ISC_MAGIC_INIT(new_zone, DNS_CATZ_ZONE_MAGIC);
 
 	*zonep = new_zone;
 
@@ -803,7 +803,7 @@ dns_catz_zone_detach(dns_catz_zone_t **zonep) {
 			INSIST(isc_ht_count(zone->entries) == 0);
 			isc_ht_destroy(&zone->entries);
 		}
-		zone->magic = 0;
+		ISC_MAGIC_CLEAR(zone);
 		isc_timer_detach(&zone->updatetimer);
 		if (zone->db_registered == true) {
 			INSIST(dns_db_updatenotify_unregister(
@@ -837,7 +837,7 @@ dns_catz_catzs_detach(dns_catz_zones_t **catzsp) {
 	*catzsp = NULL;
 
 	if (isc_refcount_decrement(&catzs->refs) == 1) {
-		catzs->magic = 0;
+		ISC_MAGIC_CLEAR(catzs);
 		isc_task_destroy(&catzs->updater);
 		isc_mutex_destroy(&catzs->lock);
 		if (catzs->zones != NULL) {

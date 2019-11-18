@@ -35,8 +35,8 @@ struct dns_order_ent {
 };
 
 struct dns_order {
-	unsigned int			magic;
-	isc_refcount_t          	references;
+	isc_magic_t			magic;
+	isc_refcount_t			references;
 	ISC_LIST(dns_order_ent_t)	ents;
 	isc_mem_t			*mctx;
 };
@@ -59,7 +59,7 @@ dns_order_create(isc_mem_t *mctx, dns_order_t **orderp) {
 
 	order->mctx = NULL;
 	isc_mem_attach(mctx, &order->mctx);
-	order->magic = DNS_ORDER_MAGIC;
+	ISC_MAGIC_INIT(order, DNS_ORDER_MAGIC);
 	*orderp = order;
 	return (ISC_R_SUCCESS);
 }
@@ -134,7 +134,7 @@ dns_order_detach(dns_order_t **orderp) {
 
 	if (isc_refcount_decrement(&order->references) == 1) {
 		isc_refcount_destroy(&order->references);
-		order->magic = 0;
+		ISC_MAGIC_CLEAR(order);
 		dns_order_ent_t *ent;
 		while ((ent = ISC_LIST_HEAD(order->ents)) != NULL) {
 			ISC_LIST_UNLINK(order->ents, ent, link);

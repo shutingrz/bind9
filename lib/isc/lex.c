@@ -48,7 +48,7 @@ typedef struct inputsource {
 
 struct isc_lex {
 	/* Unlocked. */
-	unsigned int			magic;
+	isc_magic_t			magic;
 	isc_mem_t *			mctx;
 	size_t				max_token;
 	char *				data;
@@ -102,7 +102,7 @@ isc_lex_create(isc_mem_t *mctx, size_t max_token, isc_lex_t **lexp) {
 	lex->saved_paren_count = 0;
 	memset(lex->specials, 0, 256);
 	INIT_LIST(lex->sources);
-	lex->magic = LEX_MAGIC;
+	ISC_MAGIC_INIT(lex, LEX_MAGIC);
 
 	*lexp = lex;
 
@@ -125,7 +125,7 @@ isc_lex_destroy(isc_lex_t **lexp) {
 		RUNTIME_CHECK(isc_lex_close(lex) == ISC_R_SUCCESS);
 	if (lex->data != NULL)
 		isc_mem_put(lex->mctx, lex->data, lex->max_token + 1);
-	lex->magic = 0;
+	ISC_MAGIC_CLEAR(lex);
 	isc_mem_put(lex->mctx, lex, sizeof(*lex));
 
 	*lexp = NULL;

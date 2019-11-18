@@ -111,8 +111,8 @@ typedef enum {
  * all task invariants.
  */
 struct isc_taskmgr {
-	unsigned int		impmagic;
-	unsigned int		magic;
+	isc_magic_t impmagic;
+	isc_magic_t magic;
 };
 
 #define ISCAPI_TASKMGR_MAGIC	ISC_MAGIC('A','t','m','g')
@@ -124,8 +124,8 @@ struct isc_taskmgr {
  * that for the taskmgr structure applies.
  */
 struct isc_task {
-	unsigned int		impmagic;
-	unsigned int		magic;
+	isc_magic_t impmagic;
+	isc_magic_t magic;
 };
 
 #define ISCAPI_TASK_MAGIC	ISC_MAGIC('A','t','s','t')

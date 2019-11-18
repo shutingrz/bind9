@@ -38,7 +38,7 @@ typedef struct dns_element {
 } dns_element_t;
 
 struct dns_portlist {
-	unsigned int	magic;
+	isc_magic_t magic;
 	isc_mem_t	*mctx;
 	isc_refcount_t	refcount;
 	isc_mutex_t	lock;
@@ -77,7 +77,7 @@ dns_portlist_create(isc_mem_t *mctx, dns_portlist_t **portlistp) {
 	portlist->active = 0;
 	portlist->mctx = NULL;
 	isc_mem_attach(mctx, &portlist->mctx);
-	portlist->magic = DNS_PORTLIST_MAGIC;
+	ISC_MAGIC_INIT(portlist, DNS_PORTLIST_MAGIC);
 	*portlistp = portlist;
 	return (ISC_R_SUCCESS);
 }
@@ -226,7 +226,7 @@ dns_portlist_detach(dns_portlist_t **portlistp) {
 	*portlistp = NULL;
 
 	if (isc_refcount_decrement(&portlist->refcount) == 1) {
-		portlist->magic = 0;
+		ISC_MAGIC_CLEAR(portlist);
 		isc_refcount_destroy(&portlist->refcount);
 		if (portlist->list != NULL)
 			isc_mem_put(portlist->mctx, portlist->list,

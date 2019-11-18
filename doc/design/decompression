@@ -40,10 +40,10 @@ Implementation:
 
 Types:
 	struct dns_decompress {
-		unsigned int	magic;
+		isc_magic_t	magic;
 		unsigned int	allowed;
 		int		edns;
-		dns_name_t 	owner_name;
+		dns_name_t	owner_name;
 		unsigned int	rdata;
 		bool	strict;
 	}

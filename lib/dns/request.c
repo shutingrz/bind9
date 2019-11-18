@@ -43,7 +43,7 @@ typedef ISC_LIST(dns_request_t) dns_requestlist_t;
 #define DNS_REQUEST_NLOCKS 7
 
 struct dns_requestmgr {
-	unsigned int			magic;
+	isc_magic_t magic;
 	isc_mutex_t			lock;
 	isc_mem_t		       *mctx;
 
@@ -64,7 +64,7 @@ struct dns_requestmgr {
 };
 
 struct dns_request {
-	unsigned int			magic;
+	isc_magic_t			magic;
 	unsigned int			hash;
 	isc_mem_t		       *mctx;
 	int32_t			flags;
@@ -184,7 +184,7 @@ dns_requestmgr_create(isc_mem_t *mctx,
 	ISC_LIST_INIT(requestmgr->requests);
 	requestmgr->exiting = false;
 	requestmgr->hash = 0;
-	requestmgr->magic = REQUESTMGR_MAGIC;
+	ISC_MAGIC_INIT(requestmgr, REQUESTMGR_MAGIC);
 
 	req_log(ISC_LOG_DEBUG(3), "dns_requestmgr_create: %p", requestmgr);
 
@@ -387,7 +387,7 @@ mgr_destroy(dns_requestmgr_t *requestmgr) {
 		dns_dispatch_detach(&requestmgr->dispatchv4);
 	if (requestmgr->dispatchv6 != NULL)
 		dns_dispatch_detach(&requestmgr->dispatchv6);
-	requestmgr->magic = 0;
+	ISC_MAGIC_CLEAR(requestmgr);
 	isc_mem_putanddetach(&requestmgr->mctx, requestmgr, sizeof(*requestmgr));
 }
 
@@ -450,7 +450,7 @@ new_request(isc_mem_t *mctx, dns_request_t **requestp)
 	/*
 	 * Zero structure.
 	 */
-	request->magic = 0;
+	ISC_MAGIC_CLEAR(request);
 	request->mctx = NULL;
 	request->flags = 0;
 	ISC_LINK_INIT(request, link);
@@ -472,7 +472,7 @@ new_request(isc_mem_t *mctx, dns_request_t **requestp)
 
 	isc_mem_attach(mctx, &request->mctx);
 
-	request->magic = REQUEST_MAGIC;
+	ISC_MAGIC_INIT(request, REQUEST_MAGIC);
 	*requestp = request;
 	return (ISC_R_SUCCESS);
 }
@@ -1420,7 +1420,7 @@ req_destroy(dns_request_t *request) {
 
 	req_log(ISC_LOG_DEBUG(3), "req_destroy: request %p", request);
 
-	request->magic = 0;
+	ISC_MAGIC_CLEAR(request);
 	if (request->query != NULL)
 		isc_buffer_free(&request->query);
 	if (request->answer != NULL)

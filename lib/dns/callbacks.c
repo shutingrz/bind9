@@ -79,7 +79,7 @@ static void
 dns_rdatacallbacks_initcommon(dns_rdatacallbacks_t *callbacks) {
 	REQUIRE(callbacks != NULL);
 
-	callbacks->magic = DNS_CALLBACK_MAGIC;
+	ISC_MAGIC_INIT(callbacks, DNS_CALLBACK_MAGIC);
 	callbacks->add = NULL;
 	callbacks->rawdata = NULL;
 	callbacks->zone = NULL;

@@ -196,7 +196,7 @@ struct dns_sortlist_arg {
 
 struct dns_message {
 	/* public from here down */
-	unsigned int			magic;
+	isc_magic_t			magic;
 
 	dns_messageid_t			id;
 	unsigned int			flags;

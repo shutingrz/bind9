@@ -341,7 +341,7 @@ dst_context_create(dst_key_t *key, isc_mem_t *mctx,
 		isc_mem_putanddetach(&dctx->mctx, dctx, sizeof(dst_context_t));
 		return (result);
 	}
-	dctx->magic = CTX_MAGIC;
+	ISC_MAGIC_INIT(dctx, CTX_MAGIC);
 	*dctxp = dctx;
 	return (ISC_R_SUCCESS);
 }
@@ -357,7 +357,7 @@ dst_context_destroy(dst_context_t **dctxp) {
 	dctx->key->func->destroyctx(dctx);
 	if (dctx->key != NULL)
 		dst_key_free(&dctx->key);
-	dctx->magic = 0;
+	ISC_MAGIC_CLEAR(dctx);
 	isc_mem_putanddetach(&dctx->mctx, dctx, sizeof(dst_context_t));
 	*dctxp = NULL;
 }
@@ -1484,7 +1484,7 @@ get_key_struct(const dns_name_t *name, unsigned int alg,
 		key->timeset[i] = false;
 	}
 	key->inactive = false;
-	key->magic = KEY_MAGIC;
+	ISC_MAGIC_INIT(key, KEY_MAGIC);
 	return (key);
 }
 

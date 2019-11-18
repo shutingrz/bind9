@@ -40,7 +40,7 @@ isc_dir_init(isc_dir_t *dir) {
 
 	dir->handle = NULL;
 
-	dir->magic = ISC_DIR_MAGIC;
+	ISC_MAGIC_INIT(dir, ISC_DIR_MAGIC);
 }
 
 /*!

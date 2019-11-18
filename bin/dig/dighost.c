@@ -1588,7 +1588,7 @@ clear_query(dig_query_t *query) {
 	if (query->waiting_senddone) {
 		query->pending_free = true;
 	} else {
-		query->magic = 0;
+		ISC_MAGIC_CLEAR(query);
 		isc_mem_free(mctx, query);
 	}
 }
@@ -2553,7 +2553,7 @@ setup_lookup(dig_lookup_t *lookup) {
 		ISC_LINK_INIT(query, clink);
 		ISC_LINK_INIT(query, link);
 
-		query->magic = DIG_QUERY_MAGIC;
+		ISC_MAGIC_INIT(query, DIG_QUERY_MAGIC);
 
 		ISC_LIST_ENQUEUE(lookup->q, query, link);
 	}
@@ -2599,7 +2599,7 @@ send_done(isc_task_t *_task, isc_event_t *event) {
 	isc_event_free(&event);
 
 	if (query->pending_free) {
-		query->magic = 0;
+		ISC_MAGIC_CLEAR(query);
 		isc_mem_free(mctx, query);
 	}
 

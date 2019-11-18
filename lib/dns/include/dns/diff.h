@@ -72,7 +72,7 @@ typedef struct dns_difftuple dns_difftuple_t;
 #define DNS_DIFFTUPLE_VALID(t)	ISC_MAGIC_VALID(t, DNS_DIFFTUPLE_MAGIC)
 
 struct dns_difftuple {
-	unsigned int			magic;
+	isc_magic_t			magic;
 	isc_mem_t			*mctx;
 	dns_diffop_t			op;
 	dns_name_t			name;
@@ -93,7 +93,7 @@ typedef struct dns_diff dns_diff_t;
 #define DNS_DIFF_VALID(t)	ISC_MAGIC_VALID(t, DNS_DIFF_MAGIC)
 
 struct dns_diff {
-	unsigned int			magic;
+	isc_magic_t			magic;
 	isc_mem_t *			mctx;
 	ISC_LIST(dns_difftuple_t)	tuples;
 };

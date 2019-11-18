@@ -88,7 +88,7 @@ typedef struct dns_rdatasetitermethods {
  */
 struct dns_rdatasetiter {
 	/* Unlocked. */
-	unsigned int			magic;
+	isc_magic_t magic;
 	dns_rdatasetitermethods_t *	methods;
 	dns_db_t *			db;
 	dns_dbnode_t *			node;

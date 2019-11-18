@@ -425,7 +425,7 @@ dns_dyndb_createctx(isc_mem_t *mctx, const void *hashinit, isc_log_t *lctx,
 	dctx->refvar = &isc_bind9;
 
 	isc_mem_attach(mctx, &dctx->mctx);
-	dctx->magic = DNS_DYNDBCTX_MAGIC;
+	ISC_MAGIC_INIT(dctx, DNS_DYNDBCTX_MAGIC);
 
 	*dctxp = dctx;
 
@@ -441,7 +441,7 @@ dns_dyndb_destroyctx(dns_dyndbctx_t **dctxp) {
 	dctx = *dctxp;
 	*dctxp = NULL;
 
-	dctx->magic = 0;
+	ISC_MAGIC_CLEAR(dctx);
 
 	if (dctx->view != NULL)
 		dns_view_detach(&dctx->view);

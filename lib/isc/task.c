@@ -249,8 +249,8 @@ task_finished(isc__task_t *task) {
 		wake_all_queues(manager);
 	}
 	isc_mutex_destroy(&task->lock);
-	task->common.impmagic = 0;
-	task->common.magic = 0;
+	ISC_IMPMAGIC_CLEAR(&task->common);
+	ISC_MAGIC_CLEAR(&task->common);
 	isc_mem_put(manager->mctx, task, sizeof(*task));
 }
 
@@ -326,8 +326,8 @@ isc_task_create_bound(isc_taskmgr_t *manager0, unsigned int quantum,
 		return (ISC_R_SHUTTINGDOWN);
 	}
 
-	task->common.magic = ISCAPI_TASK_MAGIC;
-	task->common.impmagic = TASK_MAGIC;
+	ISC_MAGIC_INIT(&task->common, ISCAPI_TASK_MAGIC);
+	ISC_IMPMAGIC_INIT(&task->common, TASK_MAGIC);
 	*taskp = (isc_task_t *)task;
 
 	return (ISC_R_SUCCESS);
@@ -1336,8 +1336,8 @@ manager_free(isc__taskmgr_t *manager) {
 	isc_mutex_destroy(&manager->halt_lock);
 	isc_mem_put(manager->mctx, manager->queues,
 		    manager->workers * sizeof(isc__taskqueue_t));
-	manager->common.impmagic = 0;
-	manager->common.magic = 0;
+	ISC_IMPMAGIC_CLEAR(&manager->common);
+	ISC_MAGIC_CLEAR(&manager->common);
 	isc_mem_putanddetach(&manager->mctx, manager, sizeof(*manager));
 }
 

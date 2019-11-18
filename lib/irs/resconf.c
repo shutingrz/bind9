@@ -88,7 +88,7 @@ struct irs_resconf {
 	 * The configuration data is a thread-specific object, and does not
 	 * need to be locked.
 	 */
-	unsigned int		magic;
+	isc_magic_t magic;
 	isc_mem_t		*mctx;
 
 	isc_sockaddrlist_t	nameservers;
@@ -583,7 +583,7 @@ irs_resconf_load(isc_mem_t *mctx, const char *filename, irs_resconf_t **confp)
 	}
 
  error:
-	conf->magic = IRS_RESCONF_MAGIC;
+	ISC_MAGIC_INIT(conf, IRS_RESCONF_MAGIC);
 
 	if (ret != ISC_R_SUCCESS)
 		irs_resconf_destroy(&conf);

@@ -72,7 +72,7 @@ struct dns_tsig_keyring {
 
 struct dns_tsigkey {
 	/* Unlocked */
-	unsigned int		magic;		/*%< Magic number. */
+	isc_magic_t		magic;		/*%< Magic number. */
 	isc_mem_t		*mctx;
 	dst_key_t		*key;		/*%< Key */
 	dns_name_t		name;		/*%< Key name */

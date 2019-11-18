@@ -717,7 +717,7 @@ dns_message_create(isc_mem_t *mctx, unsigned int intent, dns_message_t **msgp)
 	 * and other members that are freed in the cleanup phase here.
 	 */
 
-	m->magic = DNS_MESSAGE_MAGIC;
+	ISC_MAGIC_INIT(m, DNS_MESSAGE_MAGIC);
 	m->from_to_wire = intent;
 	msginit(m);
 
@@ -780,7 +780,7 @@ dns_message_create(isc_mem_t *mctx, unsigned int intent, dns_message_t **msgp)
 		isc_mempool_destroy(&m->namepool);
 	if (m->rdspool != NULL)
 		isc_mempool_destroy(&m->rdspool);
-	m->magic = 0;
+	ISC_MAGIC_CLEAR(m);
 	isc_mem_putanddetach(&mctx, m, sizeof(dns_message_t));
 
 	return (ISC_R_NOMEMORY);
@@ -809,7 +809,7 @@ dns_message_destroy(dns_message_t **msgp) {
 	msgreset(msg, true);
 	isc_mempool_destroy(&msg->namepool);
 	isc_mempool_destroy(&msg->rdspool);
-	msg->magic = 0;
+	ISC_MAGIC_CLEAR(msg);
 	isc_mem_putanddetach(&msg->mctx, msg, sizeof(dns_message_t));
 }
 

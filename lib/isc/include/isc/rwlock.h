@@ -43,7 +43,7 @@ struct isc_rwlock {
 
 struct isc_rwlock {
 	/* Unlocked. */
-	unsigned int		magic;
+	isc_magic_t magic;
 	isc_mutex_t		lock;
 	atomic_int_fast32_t	spins;
 

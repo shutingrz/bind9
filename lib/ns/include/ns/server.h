@@ -72,7 +72,7 @@ typedef isc_result_t
  * Server context.
  */
 struct ns_server {
-	unsigned int		magic;
+	isc_magic_t magic;
 	isc_mem_t *		mctx;
 
 	isc_refcount_t		references;

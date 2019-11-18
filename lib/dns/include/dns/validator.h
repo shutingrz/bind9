@@ -117,7 +117,7 @@ typedef struct dns_validatorevent {
  */
 struct dns_validator {
 	/* Unlocked. */
-	unsigned int			magic;
+	isc_magic_t			magic;
 	isc_mutex_t			lock;
 	dns_view_t *			view;
 	/* Locked by lock. */

@@ -142,7 +142,7 @@ isc_radix_create(isc_mem_t *mctx, isc_radix_tree_t **target, int maxbits) {
 	radix->num_active_node = 0;
 	radix->num_added_node = 0;
 	RUNTIME_CHECK(maxbits <= RADIX_MAXBITS); /* XXX */
-	radix->magic = RADIX_TREE_MAGIC;
+	ISC_MAGIC_INIT(radix, RADIX_TREE_MAGIC);
 	*target = radix;
 	return (ISC_R_SUCCESS);
 }

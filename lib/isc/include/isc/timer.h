@@ -71,6 +71,7 @@
 #include <isc/event.h>
 #include <isc/eventclass.h>
 #include <isc/lang.h>
+#include <isc/magic.h>
 #include <isc/time.h>
 
 ISC_LANG_BEGINDECLS
@@ -109,8 +110,8 @@ typedef struct isc_timerevent {
  * all timer invariants.
  */
 struct isc_timermgr {
-	unsigned int		impmagic;
-	unsigned int		magic;
+	isc_magic_t impmagic;
+	isc_magic_t magic;
 };
 
 #define ISCAPI_TIMERMGR_MAGIC		ISC_MAGIC('A','t','m','g')
@@ -122,8 +123,8 @@ struct isc_timermgr {
  * that for the timermgr structure applies.
  */
 struct isc_timer {
-	unsigned int		impmagic;
-	unsigned int		magic;
+	isc_magic_t impmagic;
+	isc_magic_t magic;
 };
 
 #define ISCAPI_TIMER_MAGIC	ISC_MAGIC('A','t','m','r')

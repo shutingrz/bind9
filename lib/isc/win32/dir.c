@@ -44,7 +44,7 @@ isc_dir_init(isc_dir_t *dir) {
 	dir->entry_filled = false;
 	dir->search_handle = INVALID_HANDLE_VALUE;
 
-	dir->magic = ISC_DIR_MAGIC;
+	ISC_MAGIC_INIT(dir, ISC_DIR_MAGIC);
 }
 
 /*

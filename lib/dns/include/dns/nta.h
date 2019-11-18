@@ -44,7 +44,7 @@ ISC_LANG_BEGINDECLS
 
 struct dns_ntatable {
 	/* Unlocked. */
-	unsigned int		magic;
+	isc_magic_t magic;
 	dns_view_t		*view;
 	isc_rwlock_t		rwlock;
 	isc_taskmgr_t		*taskmgr;

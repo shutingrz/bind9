@@ -38,7 +38,7 @@
 
 struct dns_keytable {
 	/* Unlocked. */
-	unsigned int            magic;
+	isc_magic_t magic;
 	isc_mem_t               *mctx;
 	isc_refcount_t          active_nodes;
 	isc_refcount_t          references;
@@ -48,7 +48,7 @@ struct dns_keytable {
 };
 
 struct dns_keynode {
-	unsigned int            magic;
+	isc_magic_t magic;
 	isc_refcount_t          refcount;
 	dst_key_t		*key;
 	dns_rdatalist_t		*dslist;
@@ -95,7 +95,7 @@ dns_keytable_create(isc_mem_t *mctx, dns_keytable_t **keytablep) {
 
 	keytable->mctx = NULL;
 	isc_mem_attach(mctx, &keytable->mctx);
-	keytable->magic = KEYTABLE_MAGIC;
+	ISC_MAGIC_INIT(keytable, KEYTABLE_MAGIC);
 	*keytablep = keytable;
 
 	return (ISC_R_SUCCESS);
@@ -135,7 +135,7 @@ dns_keytable_detach(dns_keytable_t **keytablep) {
 		isc_refcount_destroy(&keytable->active_nodes);
 		dns_rbt_destroy(&keytable->table);
 		isc_rwlock_destroy(&keytable->rwlock);
-		keytable->magic = 0;
+		ISC_MAGIC_CLEAR(keytable);
 		isc_mem_putanddetach(&keytable->mctx,
 				     keytable, sizeof(*keytable));
 	}
@@ -963,7 +963,7 @@ dns_keynode_create(isc_mem_t *mctx, dns_keynode_t **target) {
 
 	knode = isc_mem_get(mctx, sizeof(dns_keynode_t));
 
-	knode->magic = KEYNODE_MAGIC;
+	ISC_MAGIC_INIT(knode, KEYNODE_MAGIC);
 	knode->managed = false;
 	knode->initial = false;
 	knode->key = NULL;

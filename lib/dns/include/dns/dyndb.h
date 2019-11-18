@@ -14,6 +14,7 @@
 
 #include <stdbool.h>
 
+#include <isc/magic.h>
 #include <isc/types.h>
 
 #include <dns/types.h>
@@ -32,7 +33,7 @@ ISC_LANG_BEGINDECLS
  * function should detach from them.
  */
 struct dns_dyndbctx {
-	unsigned int	magic;
+	isc_magic_t magic;
 	const void	*hashinit;
 	isc_mem_t	*mctx;
 	isc_log_t	*lctx;

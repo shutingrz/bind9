@@ -79,7 +79,7 @@ enum {
 static int dnssec_keyid_max = 65535;
 
 struct dns_stats {
-	unsigned int	magic;
+	isc_magic_t magic;
 	dns_statstype_t	type;
 	isc_mem_t	*mctx;
 	isc_stats_t	*counters;
@@ -149,7 +149,7 @@ create_stats(isc_mem_t *mctx, dns_statstype_t type, int ncounters,
 	if (result != ISC_R_SUCCESS)
 		goto clean_mutex;
 
-	stats->magic = DNS_STATS_MAGIC;
+	ISC_MAGIC_INIT(stats, DNS_STATS_MAGIC);
 	stats->type = type;
 	stats->mctx = NULL;
 	isc_mem_attach(mctx, &stats->mctx);

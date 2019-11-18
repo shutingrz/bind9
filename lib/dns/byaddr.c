@@ -92,7 +92,7 @@ dns_byaddr_createptrname(const isc_netaddr_t *address, unsigned int options,
 
 struct dns_byaddr {
 	/* Unlocked. */
-	unsigned int		magic;
+	isc_magic_t magic;
 	isc_mem_t *		mctx;
 	isc_mutex_t		lock;
 	dns_fixedname_t		name;
@@ -229,7 +229,7 @@ dns_byaddr_create(isc_mem_t *mctx, const isc_netaddr_t *address,
 		goto cleanup_lock;
 
 	byaddr->canceled = false;
-	byaddr->magic = BYADDR_MAGIC;
+	ISC_MAGIC_INIT(byaddr, BYADDR_MAGIC);
 
 	*byaddrp = byaddr;
 
@@ -276,7 +276,7 @@ dns_byaddr_destroy(dns_byaddr_t **byaddrp) {
 	dns_lookup_destroy(&byaddr->lookup);
 
 	isc_mutex_destroy(&byaddr->lock);
-	byaddr->magic = 0;
+	ISC_MAGIC_CLEAR(byaddr);
 	isc_mem_putanddetach(&byaddr->mctx, byaddr, sizeof(*byaddr));
 
 	*byaddrp = NULL;

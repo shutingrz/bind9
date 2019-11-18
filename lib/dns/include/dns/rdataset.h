@@ -105,7 +105,7 @@ typedef struct dns_rdatasetmethods {
  * rdataset implementations may change any of the fields.
  */
 struct dns_rdataset {
-	unsigned int			magic;		/* XXX ? */
+	isc_magic_t			magic;		/* XXX ? */
 	dns_rdatasetmethods_t *		methods;
 	ISC_LINK(dns_rdataset_t)	link;
 

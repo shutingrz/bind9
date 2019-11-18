@@ -32,7 +32,7 @@
 
 struct dns_lookup {
 	/* Unlocked. */
-	unsigned int		magic;
+	isc_magic_t magic;
 	isc_mem_t *		mctx;
 	isc_mutex_t		lock;
 	dns_rdatatype_t		type;
@@ -401,7 +401,7 @@ dns_lookup_create(isc_mem_t *mctx, const dns_name_t *name, dns_rdatatype_t type,
 	lookup->canceled = false;
 	dns_rdataset_init(&lookup->rdataset);
 	dns_rdataset_init(&lookup->sigrdataset);
-	lookup->magic = LOOKUP_MAGIC;
+	ISC_MAGIC_INIT(lookup, LOOKUP_MAGIC);
 
 	*lookupp = lookup;
 
@@ -443,7 +443,7 @@ dns_lookup_destroy(dns_lookup_t **lookupp) {
 		dns_rdataset_disassociate(&lookup->sigrdataset);
 
 	isc_mutex_destroy(&lookup->lock);
-	lookup->magic = 0;
+	ISC_MAGIC_CLEAR(lookup);
 	isc_mem_putanddetach(&lookup->mctx, lookup, sizeof(*lookup));
 
 	*lookupp = NULL;

@@ -53,7 +53,7 @@ struct irs_context {
 	 * An IRS context is a thread-specific object, and does not need to
 	 * be locked.
 	 */
-	unsigned int			magic;
+	isc_magic_t magic;
 	isc_mem_t			*mctx;
 	isc_appctx_t			*actx;
 	isc_taskmgr_t			*taskmgr;
@@ -262,7 +262,7 @@ irs_context_create(irs_context_t **contextp) {
 			goto fail;
 	}
 
-	context->magic = IRS_CONTEXT_MAGIC;
+	ISC_MAGIC_INIT(context, IRS_CONTEXT_MAGIC);
 	*contextp = context;
 
 	return (ISC_R_SUCCESS);
@@ -298,7 +298,7 @@ irs_context_destroy(irs_context_t **contextp) {
 	ctxs_destroy(NULL, &context->actx, &context->taskmgr,
 		     &context->socketmgr, &context->timermgr);
 
-	context->magic = 0;
+	ISC_MAGIC_CLEAR(context);
 
 	isc_mem_putanddetach(&context->mctx, context, sizeof(*context));
 

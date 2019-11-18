@@ -152,7 +152,7 @@ dns_compress_init(dns_compress_t *cctx, int edns, isc_mem_t *mctx) {
 
 	memset(&cctx->table[0], 0, sizeof(cctx->table));
 
-	cctx->magic = CCTX_MAGIC;
+	ISC_MAGIC_INIT(cctx, CCTX_MAGIC);
 
 	return (ISC_R_SUCCESS);
 }
@@ -177,7 +177,7 @@ dns_compress_invalidate(dns_compress_t *cctx) {
 		}
 	}
 
-	cctx->magic = 0;
+	ISC_MAGIC_CLEAR(cctx);
 	cctx->allowed = 0;
 	cctx->edns = -1;
 }
@@ -511,7 +511,7 @@ dns_decompress_init(dns_decompress_t *dctx, int edns,
 	dctx->allowed = DNS_COMPRESS_NONE;
 	dctx->edns = edns;
 	dctx->type = type;
-	dctx->magic = DCTX_MAGIC;
+	ISC_MAGIC_INIT(dctx, DCTX_MAGIC);
 }
 
 void
@@ -519,7 +519,7 @@ dns_decompress_invalidate(dns_decompress_t *dctx) {
 
 	REQUIRE(VALID_DCTX(dctx));
 
-	dctx->magic = 0;
+	ISC_MAGIC_CLEAR(dctx);
 }
 
 void

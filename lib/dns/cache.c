@@ -125,7 +125,7 @@ struct cache_cleaner {
 
 struct dns_cache {
 	/* Unlocked. */
-	unsigned int		magic;
+	isc_magic_t magic;
 	isc_mutex_t		lock;
 	isc_mutex_t		filelock;
 	isc_mem_t		*mctx;		/* Main cache memory */
@@ -267,7 +267,7 @@ dns_cache_create(isc_mem_t *cmctx, isc_mem_t *hmctx, isc_taskmgr_t *taskmgr,
 
 	cache->filename = NULL;
 
-	cache->magic = CACHE_MAGIC;
+	ISC_MAGIC_INIT(cache, CACHE_MAGIC);
 
 	/*
 	 * RBT-type cache DB has its own mechanism of cache cleaning and doesn't
@@ -384,7 +384,7 @@ cache_free(dns_cache_t *cache) {
 	isc_mutex_destroy(&cache->lock);
 	isc_mutex_destroy(&cache->filelock);
 
-	cache->magic = 0;
+	ISC_MAGIC_CLEAR(cache);
 	isc_mem_detach(&cache->hmctx);
 	isc_mem_putanddetach(&cache->mctx, cache, sizeof(*cache));
 }

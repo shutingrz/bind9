@@ -294,7 +294,7 @@ typedef enum {
 } journal_state_t;
 
 struct dns_journal {
-	unsigned int		magic;		/*%< JOUR */
+	isc_magic_t magic;		/*%< JOUR */
 	isc_mem_t		*mctx;		/*%< Memory context */
 	journal_state_t		state;
 	char 			*filename;	/*%< Journal file name */
@@ -592,7 +592,7 @@ journal_open(isc_mem_t *mctx, const char *filename, bool writable,
 	/*
 	 * Set magic early so that seek/read can succeed.
 	 */
-	j->magic = DNS_JOURNAL_MAGIC;
+	ISC_MAGIC_INIT(j, DNS_JOURNAL_MAGIC);
 
 	CHECK(journal_seek(j, 0));
 	CHECK(journal_read(j, &rawheader, sizeof(rawheader)));
@@ -656,7 +656,7 @@ journal_open(isc_mem_t *mctx, const char *filename, bool writable,
 	return (ISC_R_SUCCESS);
 
  failure:
-	j->magic = 0;
+	ISC_MAGIC_CLEAR(j);
 	if (j->rawindex != NULL)
 		isc_mem_put(j->mctx, j->rawindex, j->header.index_size *
 			    sizeof(journal_rawpos_t));
@@ -1252,7 +1252,7 @@ dns_journal_destroy(dns_journal_t **journalp) {
 		isc_mem_free(j->mctx, j->filename);
 	if (j->fp != NULL)
 		(void)isc_stdio_close(j->fp);
-	j->magic = 0;
+	ISC_MAGIC_CLEAR(j);
 	isc_mem_putanddetach(&j->mctx, j, sizeof(*j));
 	*journalp = NULL;
 }

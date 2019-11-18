@@ -25,8 +25,8 @@
 #define VALID_COUNTER(r)		ISC_MAGIC_VALID(r, COUNTER_MAGIC)
 
 struct isc_counter {
-	unsigned int	magic;
-	isc_mem_t	*mctx;
+	isc_magic_t		magic;
+	isc_mem_t		*mctx;
 	isc_refcount_t		references;
 	atomic_uint_fast32_t	limit;
 	atomic_uint_fast32_t	used;
@@ -47,7 +47,7 @@ isc_counter_create(isc_mem_t *mctx, int limit, isc_counter_t **counterp) {
 	atomic_init(&counter->limit, limit);
 	atomic_init(&counter->used, 0);
 
-	counter->magic = COUNTER_MAGIC;
+	ISC_MAGIC_INIT(counter, COUNTER_MAGIC);
 	*counterp = counter;
 	return (ISC_R_SUCCESS);
 }
@@ -90,7 +90,7 @@ isc_counter_attach(isc_counter_t *source, isc_counter_t **targetp) {
 
 static void
 destroy(isc_counter_t *counter) {
-	counter->magic = 0;
+	ISC_MAGIC_CLEAR(counter);
 	isc_mem_putanddetach(&counter->mctx, counter, sizeof(*counter));
 }
 

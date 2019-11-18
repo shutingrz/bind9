@@ -18,6 +18,7 @@
 #include <stdio.h>
 
 #include <isc/lang.h>
+#include <isc/magic.h>
 #include <isc/mutex.h>
 #include <isc/platform.h>
 #include <isc/types.h>
@@ -184,8 +185,8 @@ typedef struct isc_memmethods {
  * invariants.
  */
 struct isc_mem {
-	unsigned int		impmagic;
-	unsigned int		magic;
+	isc_magic_t impmagic;
+	isc_magic_t magic;
 	isc_memmethods_t	*methods;
 };
 
@@ -198,8 +199,8 @@ struct isc_mem {
  * that for the mem structure applies.
  */
 struct isc_mempool {
-	unsigned int		impmagic;
-	unsigned int		magic;
+	isc_magic_t impmagic;
+	isc_magic_t magic;
 };
 
 #define ISCAPI_MPOOL_MAGIC	ISC_MAGIC('A','m','p','l')

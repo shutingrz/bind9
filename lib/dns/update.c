@@ -1437,7 +1437,7 @@ dns_update_signatures(dns_update_log_t *log, dns_zone_t *zone, dns_db_t *db,
 }
 
 struct dns_update_state {
-	unsigned int magic;
+	isc_magic_t magic;
 	dns_diff_t diffnames;
 	dns_diff_t affected;
 	dns_diff_t sig_diff;
@@ -1566,7 +1566,7 @@ dns_update_signaturesinc(dns_update_log_t *log, dns_zone_t *zone, dns_db_t *db,
 		 */
 		CHECK(dns_diff_sort(diff, temp_order));
 		state->state = sign_updates;
-		state->magic = STATE_MAGIC;
+		ISC_MAGIC_INIT(state, STATE_MAGIC);
 		if (statep != NULL)
 			*statep = state;
 	} else {
@@ -2148,7 +2148,7 @@ dns_update_signaturesinc(dns_update_log_t *log, dns_zone_t *zone, dns_db_t *db,
 
 	if (state != &mystate && state != NULL) {
 		*statep = NULL;
-		state->magic = 0;
+		ISC_MAGIC_CLEAR(state);
 		isc_mem_put(diff->mctx, state, sizeof(*state));
 	}
 

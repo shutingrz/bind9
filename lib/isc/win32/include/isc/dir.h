@@ -17,17 +17,18 @@
 #include <stdlib.h>
 
 #include <isc/lang.h>
+#include <isc/magic.h>
 #include <isc/platform.h>
 #include <isc/result.h>
 
 typedef struct {
-	char 		name[NAME_MAX];
+	char		name[NAME_MAX];
 	unsigned int	length;
 	WIN32_FIND_DATA	find_data;
 } isc_direntry_t;
 
 typedef struct {
-	unsigned int	magic;
+	isc_magic_t	magic;
 	char		dirname[PATH_MAX];
 	isc_direntry_t	entry;
 	bool	entry_filled;

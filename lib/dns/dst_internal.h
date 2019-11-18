@@ -77,7 +77,7 @@ typedef enum { DO_SIGN, DO_VERIFY } dst_use_t;
 
 /*% DST Key Structure */
 struct dst_key {
-	unsigned int	magic;
+	isc_magic_t magic;
 	isc_refcount_t	refs;
 	dns_name_t *	key_name;	/*%< name of the key */
 	unsigned int	key_size;	/*%< size of the key in bits */
@@ -129,7 +129,7 @@ struct dst_key {
 };
 
 struct dst_context {
-	unsigned int magic;
+	isc_magic_t magic;
 	dst_use_t use;
 	dst_key_t *key;
 	isc_mem_t *mctx;
