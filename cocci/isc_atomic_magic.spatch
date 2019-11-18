@@ -1,0 +1,76 @@
+@@
+identifier i;
+@@
+
+struct i {
+...
+-isc_magic_t magic;
++isc_magic_t magic;
+...
+};
+
+@@
+identifier i;
+@@
+
+struct i {
+-int magic;
++isc_magic_t magic;
+...
+};
+
+@@
+identifier o;
+@@
+
+- o->magic = 0;
++ ISC_MAGIC_CLEAR(o);
+
+@@
+identifier o;
+expression M;
+@@
+
+- o->magic = M;
++ ISC_MAGIC_INIT(o, M);
+
+@@
+identifier i;
+@@
+
+struct i {
+...
+-unsigned int impmagic;
++isc_magic_t impmagic;
+...
+};
+
+@@
+identifier o;
+@@
+
+- o->common.impmagic = 0;
++ ISC_IMPMAGIC_CLEAR(&o->common);
+
+@@
+identifier o;
+expression M;
+@@
+
+- o->common.impmagic = M;
++ ISC_IMPMAGIC_INIT(&o->common, M);
+
+@@
+identifier o;
+@@
+
+- o->common.magic = 0;
++ ISC_MAGIC_CLEAR(&o->common);
+
+@@
+identifier o;
+expression M;
+@@
+
+- o->common.magic = M;
++ ISC_MAGIC_INIT(&o->common, M);
