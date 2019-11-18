@@ -9,12 +9,13 @@
  * information regarding copyright ownership.
  */
 
+#pragma once
 
-#ifndef ISC_MAGIC_H
-#define ISC_MAGIC_H 1
+#include <stdbool.h>
 
 #include <isc/atomic.h>
 #include <isc/likely.h>
+#include <isc/util.h>
 
 /*! \file isc/magic.h */
 
@@ -31,9 +32,28 @@ typedef struct {
  * the object is otherwise opaque.
  */
 
+#if (defined(__clang__) && __clang_major__ < 8) || ISC_MUTEX_ATOMICS
+#define CONST_ATOMIC 0
+#else
+#define CONST_ATOMIC 1
+#endif
+
+#if CONST_ATOMIC
+#define ISC_MAGIC_VALID(o, v)					\
+	(ISC_LIKELY((o) != NULL) &&				\
+	 ISC_LIKELY(isc_magic_valid((const isc__magic_t *)(o), (v))))
+
+static inline bool
+isc_magic_valid(const isc__magic_t *obj, uint_fast32_t val) {
+	isc__magic_t *magic;
+	DE_CONST((const void *)obj, magic);
+	return (atomic_load_acquire(&magic->magic) == val);
+}
+#else /* CONST_ATOMIC */
 #define ISC_MAGIC_VALID(o, v)						\
 	(ISC_LIKELY((o) != NULL) &&					\
 	 ISC_LIKELY(atomic_load_acquire(&((const isc__magic_t *)(o))->magic) == (v)))
+#endif /* CONST_ATOMIC */
 
 #define ISC_MAGIC(a, b, c, d)	((a) << 24 | (b) << 16 | (c) << 8 | (d))
 
@@ -44,5 +64,3 @@ typedef struct {
 #define ISC_IMPMAGIC_INIT(o, v) atomic_init(&(o)->impmagic, (v))
 
 #define ISC_IMPMAGIC_CLEAR(o) atomic_store_release(&(o)->impmagic, 0)
-
-#endif /* ISC_MAGIC_H */
