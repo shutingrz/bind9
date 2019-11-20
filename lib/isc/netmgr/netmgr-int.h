@@ -243,6 +243,10 @@ struct isc_nm {
 	 * event or wait for the other one to finish if we want to pause.
 	 */
 	atomic_bool		interlocked;
+
+	uint32_t		init_timeout;
+	uint32_t		idle_timeout;
+	uint32_t		keepalive_timeout;
 };
 
 typedef enum isc_nmsocket_type {
@@ -338,6 +342,12 @@ struct isc_nmsocket {
 	 * A TCP socket has had isc_nm_pauseread() called.
 	 */
 	atomic_bool		readpaused;
+
+	/*%
+	 * A TCP or TCPDNS socket has been set to use the keepalive
+	 * timeout instead of the default idle timeout.
+	 */
+	atomic_bool		keepalive;
 
 	/*%
 	 * 'spare' handles for that can be reused to avoid allocations,

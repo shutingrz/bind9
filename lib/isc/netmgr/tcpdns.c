@@ -86,7 +86,9 @@ timer_close_cb(uv_handle_t *handle) {
 static void
 dnstcp_readtimeout(uv_timer_t *timer) {
 	isc_nmsocket_t *sock = (isc_nmsocket_t *) timer->data;
+
 	REQUIRE(VALID_NMSOCK(sock));
+
 	isc_nmsocket_detach(&sock->outer);
 	uv_close((uv_handle_t*) &sock->timer, timer_close_cb);
 }
@@ -119,7 +121,7 @@ dnslisten_acceptcb(isc_nmhandle_t *handle, isc_result_t result, void *cbarg) {
 	isc_nmsocket_attach(handle->sock, &dnssock->outer);
 	dnssock->peer = handle->sock->peer;
 	dnssock->iface = handle->sock->iface;
-	dnssock->read_timeout = 5000;
+	dnssock->read_timeout = handle->sock->mgr->init_timeout;
 	dnssock->tid = isc_nm_tid();
 	dnssock->closehandle_cb = resume_processing;
 
@@ -215,6 +217,10 @@ dnslisten_readcb(isc_nmhandle_t *handle, isc_region_t *region, void *arg) {
 	memmove(dnssock->buf + dnssock->buf_len, base, len);
 	dnssock->buf_len += len;
 
+	dnssock->read_timeout = (dnssock->keepalive
+				 ? dnssock->mgr->keepalive_timeout
+				 : dnssock->mgr->idle_timeout);
+
 	do {
 		isc_result_t result;
 		isc_nmhandle_t *dnshandle = NULL;
@@ -270,7 +276,7 @@ isc_result_t
 isc_nm_listentcpdns(isc_nm_t *mgr, isc_nmiface_t *iface,
 		    isc_nm_recv_cb_t cb, void *cbarg,
 		    size_t extrahandlesize, isc_quota_t *quota,
-		    isc_nmsocket_t **rv)
+		    isc_nmsocket_t **sockp)
 {
 	/* A 'wrapper' socket object with outer set to true TCP socket */
 	isc_nmsocket_t *dnslistensock =
@@ -291,7 +297,8 @@ isc_nm_listentcpdns(isc_nm_t *mgr, isc_nmiface_t *iface,
 				  quota, &dnslistensock->outer);
 
 	atomic_store(&dnslistensock->listening, true);
-	*rv = dnslistensock;
+	*sockp = dnslistensock;
+
 	return (result);
 }
 
@@ -329,6 +336,20 @@ isc_nm_tcpdns_sequential(isc_nmhandle_t *handle) {
 	 */
 	isc_nm_pauseread(handle->sock->outer);
 	atomic_store(&handle->sock->sequential, true);
+}
+
+void
+isc_nm_tcpdns_keepalive(isc_nmhandle_t *handle) {
+	REQUIRE(VALID_NMHANDLE(handle));
+
+	if (handle->sock->type != isc_nm_tcpdnssocket ||
+	    handle->sock->outer == NULL)
+	{
+		return;
+	}
+
+	handle->sock->keepalive = true;
+	handle->sock->outer->keepalive = true;
 }
 
 typedef struct tcpsend {

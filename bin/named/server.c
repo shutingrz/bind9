@@ -8472,6 +8472,7 @@ load_configuration(const char *filename, named_server_t *server,
 
 	ns_server_settimeouts(named_g_server->sctx,
 			      initial, idle, keepalive, advertised);
+	isc_nm_tcptimeouts(named_g_nm, initial, idle, keepalive);
 
 	/*
 	 * Configure sets of UDP query source ports.

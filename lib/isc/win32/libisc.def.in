@@ -450,7 +450,9 @@ isc_nm_listenudp
 isc_nm_maxudp
 isc_nm_send
 isc_nm_start
+isc_nm_tcptimeouts
 isc_nmsocket_detach
+isc_nm_tcpdns_keepalive
 isc_nm_tcpdns_sequential
 isc_nm_tcpdns_stoplistening
 isc_nm_tid

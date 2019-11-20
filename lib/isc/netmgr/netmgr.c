@@ -94,6 +94,14 @@ isc_nm_start(isc_mem_t *mctx, uint32_t workers) {
 	atomic_init(&mgr->paused, false);
 	atomic_init(&mgr->interlocked, false);
 
+	/*
+	 * Default TCP timeout values.
+	 * May be updated by isc_nm_listentcp().
+	 */
+	mgr->init_timeout = 30000;
+	mgr->idle_timeout = 30000;
+	mgr->keepalive_timeout = 30000;
+
 	mgr->workers = isc_mem_get(mctx, workers * sizeof(isc__networker_t));
 	for (size_t i = 0; i < workers; i++) {
 		int r;
@@ -301,6 +309,17 @@ isc_nm_maxudp(isc_nm_t *mgr, uint32_t maxudp) {
 	REQUIRE(VALID_NM(mgr));
 
 	atomic_store(&mgr->maxudp, maxudp);
+}
+
+void
+isc_nm_tcptimeouts(isc_nm_t *mgr, uint32_t init_timeout,
+		   uint32_t idle_timeout, uint32_t keepalive_timeout)
+{
+	REQUIRE(VALID_NM(mgr));
+
+	mgr->init_timeout = init_timeout * 100;
+	mgr->idle_timeout = idle_timeout * 100;
+	mgr->keepalive_timeout = keepalive_timeout * 100;
 }
 
 /*
