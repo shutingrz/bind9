@@ -217,7 +217,7 @@ dnslisten_readcb(isc_nmhandle_t *handle, isc_region_t *region, void *arg) {
 	memmove(dnssock->buf + dnssock->buf_len, base, len);
 	dnssock->buf_len += len;
 
-	dnssock->read_timeout = (dnssock->keepalive
+	dnssock->read_timeout = (atomic_load(&dnssock->keepalive)
 				 ? dnssock->mgr->keepalive_timeout
 				 : dnssock->mgr->idle_timeout);
 
@@ -239,7 +239,7 @@ dnslisten_readcb(isc_nmhandle_t *handle, isc_region_t *region, void *arg) {
 		atomic_store(&dnssock->outer->processing, true);
 		uv_timer_stop(&dnssock->timer);
 
-		if (dnssock->sequential) {
+		if (atomic_load(&dnssock->sequential)) {
 			/*
 			 * We're in sequential mode and we processed
 			 * one packet, so we're done until the next read
@@ -348,8 +348,8 @@ isc_nm_tcpdns_keepalive(isc_nmhandle_t *handle) {
 		return;
 	}
 
-	handle->sock->keepalive = true;
-	handle->sock->outer->keepalive = true;
+	atomic_store(&handle->sock->keepalive, true);
+	atomic_store(&handle->sock->outer->keepalive, true);
 }
 
 typedef struct tcpsend {
@@ -384,7 +384,7 @@ resume_processing(void *arg) {
 	 * For sequential sockets: Process what's in the buffer, or
 	 * if there aren't any messages buffered, resume reading.
 	 */
-	if (sock->sequential) {
+	if (atomic_load(&sock->sequential)) {
 		isc_nmhandle_t *handle = NULL;
 
 		result = processbuffer(sock, &handle);

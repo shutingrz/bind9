@@ -731,7 +731,6 @@ isc__nmsocket_init(isc_nmsocket_t *sock, isc_nm_t *mgr,
 		.inactivehandles = isc_astack_new(mgr->mctx, 60),
 		.inactivereqs = isc_astack_new(mgr->mctx, 60)
 	};
-
 	isc_nm_attach(mgr, &sock->mgr);
 	sock->uv_handle.handle.data = sock;
 
@@ -969,26 +968,26 @@ isc_nmhandle_unref(isc_nmhandle_t *handle) {
 	if (sock->closehandle_cb != NULL) {
 		if (sock->tid == isc_nm_tid()) {
 			sock->closehandle_cb(sock);
-
-			/*
-			 * If we do this asynchronously then
-			 * the async event will clean it up.
-			 */
-			if (sock->ah == 0 &&
-			    !atomic_load(&sock->active) &&
-			    !atomic_load(&sock->destroying))
-			{
-				nmsocket_maybe_destroy(sock);
-			}
 		} else {
-
 			isc__netievent_closecb_t * event =
 				isc__nm_get_ievent(sock->mgr,
 						   netievent_closecb);
 			isc_nmsocket_attach(sock, &event->sock);
 			isc__nm_enqueue_ievent(&sock->mgr->workers[sock->tid],
 					       (isc__netievent_t *) event);
+			/*
+			 * If we do this asynchronously then the async event
+			 * will clean the socket, so just exit.
+			 */
+			return;
 		}
+	}
+
+	if (atomic_load(&sock->ah) == 0 &&
+	    !atomic_load(&sock->active) &&
+	    !atomic_load(&sock->destroying))
+	{
+		nmsocket_maybe_destroy(sock);
 	}
 }
 

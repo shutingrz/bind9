@@ -400,7 +400,7 @@ read_cb(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf) {
 		INSIST(sock->rcb.recv != NULL);
 		sock->rcb.recv(sock->tcphandle, &region, sock->rcbarg);
 
-		sock->read_timeout = (sock->keepalive
+		sock->read_timeout = (atomic_load(&sock->keepalive)
 				      ? sock->mgr->keepalive_timeout
 				      : sock->mgr->idle_timeout);
 
