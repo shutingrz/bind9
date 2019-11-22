@@ -1185,13 +1185,13 @@ isc__nm_async_closecb(isc__networker_t *worker, isc__netievent_t *ievent0) {
 
 static void
 shutdown_walk_cb(uv_handle_t *handle, void *arg) {
+	isc_nmsocket_t *sock = NULL;
+
 	UNUSED(arg);
-	isc_nmsocket_t *sock = (isc_nmsocket_t*) handle->data;
+
 	switch(handle->type) {
 	case UV_TCP:
-		INSIST(VALID_NMSOCK(sock));
-		/* XXX TODO this should be in tcp.c, not here */
-		sock->rcb.recv(sock->tcphandle, NULL, sock->rcbarg);
+		isc__nm_tcp_shutdown((isc_nmsocket_t *) handle->data);
 		break;
 	default:
 		break;

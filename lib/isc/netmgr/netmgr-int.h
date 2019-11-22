@@ -552,6 +552,12 @@ isc__nm_tcp_close(isc_nmsocket_t *sock);
  */
 
 void
+isc__nm_tcp_shutdown(isc_nmsocket_t *sock);
+/*%<
+ * Called on shutdown to close and clean up a listening TCP socket.
+ */
+
+void
 isc__nm_async_tcpconnect(isc__networker_t *worker, isc__netievent_t *ievent0);
 void
 isc__nm_async_tcplisten(isc__networker_t *worker, isc__netievent_t *ievent0);
