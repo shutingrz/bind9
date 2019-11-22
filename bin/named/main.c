@@ -939,6 +939,12 @@ create_managers(void) {
 static void
 destroy_managers(void) {
 	/*
+	 * isc_nm_shutdown closes all active connections, freeing attached
+	 * clients and all other resources - but not does not shutdown the
+	 * processing yet.
+	 */
+	isc_nm_shutdown(named_g_nm);
+	/*
 	 * isc_taskmgr_destroy() will block until all tasks have exited,
 	 */
 	isc_taskmgr_destroy(&named_g_taskmgr);

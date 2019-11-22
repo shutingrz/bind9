@@ -242,6 +242,8 @@ struct isc_nm {
 	atomic_uint_fast32_t	maxudp;
 	atomic_bool		paused;
 
+	atomic_bool		shutdown;
+
 	/*
 	 * A worker is actively waiting for other workers, for example to
 	 * stop listening; that means no other thread can do the same thing

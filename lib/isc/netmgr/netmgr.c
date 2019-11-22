@@ -297,6 +297,18 @@ isc_nm_detach(isc_nm_t **mgr0) {
 	}
 }
 
+void
+isc_nm_shutdown(isc_nm_t *mgr) {
+	REQUIRE(VALID_NM(mgr));
+	atomic_store(&mgr->shutdown, true);
+	for (size_t i = 0; i < mgr->nworkers; i++) {
+		isc__netievent_t *event = NULL;
+		event = isc__nm_get_ievent(mgr, netievent_shutdown);
+		isc__nm_enqueue_ievent(&mgr->workers[i], event);
+	}
+}
+
+
 
 void
 isc_nm_destroy(isc_nm_t **mgr0) {
@@ -309,11 +321,7 @@ isc_nm_destroy(isc_nm_t **mgr0) {
 	mgr = *mgr0;
 	*mgr0 = NULL;
 
-	for (size_t i = 0; i < mgr->nworkers; i++) {
-		isc__netievent_t *event = NULL;
-		event = isc__nm_get_ievent(mgr, netievent_shutdown);
-		isc__nm_enqueue_ievent(&mgr->workers[i], event);
-	}
+	isc_nm_shutdown(mgr);
 
 	/*
 	 * Wait for the manager to be dereferenced elsehwere.
@@ -1185,8 +1193,6 @@ isc__nm_async_closecb(isc__networker_t *worker, isc__netievent_t *ievent0) {
 
 static void
 shutdown_walk_cb(uv_handle_t *handle, void *arg) {
-	isc_nmsocket_t *sock = NULL;
-
 	UNUSED(arg);
 
 	switch(handle->type) {

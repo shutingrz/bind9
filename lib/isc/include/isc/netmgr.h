@@ -46,6 +46,13 @@ isc_nm_destroy(isc_nm_t **mgr0);
  * for all other references to be gone.
  */
 
+void
+isc_nm_shutdown(isc_nm_t *mgr);
+/*%<
+ * Shuts down all active connections, freeing all associated
+ * resources.
+ */
+
 /* Return thread id of current thread, or ISC_NETMGR_TID_UNKNOWN */
 int
 isc_nm_tid(void);
