@@ -96,7 +96,7 @@ isc_nm_start(isc_mem_t *mctx, uint32_t workers) {
 
 	/*
 	 * Default TCP timeout values.
-	 * May be updated by isc_nm_listentcp().
+	 * May be updated by isc_nm_tcptimeouts().
 	 */
 	mgr->init_timeout = 30000;
 	mgr->idle_timeout = 30000;
@@ -122,7 +122,6 @@ isc_nm_start(isc_mem_t *mctx, uint32_t workers) {
 		isc_mutex_init(&worker->lock);
 		isc_condition_init(&worker->cond);
 
-		isc_mempool_create(mgr->mctx, 65536, &worker->mpool_bufs);
 		worker->ievents = isc_queue_new(mgr->mctx, 128);
 
 		/*
@@ -182,7 +181,6 @@ nm_destroy(isc_nm_t **mgr0) {
 		int r = uv_loop_close(&mgr->workers[i].loop);
 		INSIST(r == 0);
 		isc_queue_destroy(mgr->workers[i].ievents);
-		isc_mempool_destroy(&mgr->workers[i].mpool_bufs);
 	}
 
 	isc_condition_destroy(&mgr->wkstatecond);
@@ -388,7 +386,7 @@ nm_thread(void *worker0) {
 			 * XXX: uv_run() in UV_RUN_DEFAULT mode returns
 			 * zero if there are still active uv_handles.
 			 * This shouldn't happen, but if it does, we just
-			 * to keep checking until they're done. We nap for a
+			 * keep checking until they're done. We nap for a
 			 * tenth of a second on each loop so as not to burn
 			 * CPU. (We do a conditional wait instead, but it
 			 * seems like overkill for this case.)
@@ -415,21 +413,16 @@ nm_thread(void *worker0) {
 }
 
 /*
- * async_cb is an universal callback for 'async' events sent to event loop.
- * It's the only way to safely pass data to libuv event loop. We use a single
- * async event and a lockless queue of 'isc__netievent_t' structures passed
- * from other threads.
+ * async_cb is a universal callback for 'async' events sent to event loop.
+ * It's the only way to safely pass data to the libuv event loop. We use a
+ * single async event and a lockless queue of 'isc__netievent_t' structures
+ * passed from other threads.
  */
 static void
 async_cb(uv_async_t *handle) {
 	isc__networker_t *worker = (isc__networker_t *) handle->loop->data;
 	isc__netievent_t *ievent;
 
-	/*
-	 * We only try dequeue to not waste time, libuv guarantees
-	 * that if someone calls uv_async_send -after- async_cb was called
-	 * then async_cb will be called again, we won't loose any signals.
-	 */
 	while ((ievent = (isc__netievent_t *)
 		isc_queue_dequeue(worker->ievents)) != NULL)
 	{
