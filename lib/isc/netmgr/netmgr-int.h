@@ -116,11 +116,8 @@ typedef enum isc__netievent_type {
 	netievent_tcpstoplisten,
 	netievent_tcpclose,
 	netievent_closecb,
+	netievent_shutdown,
 } isc__netievent_type;
-
-typedef struct isc__netievent_stop {
-	isc__netievent_type        type;
-} isc__netievent_stop_t;
 
 /*
  * We have to split it because we can read and write on a socket
@@ -187,6 +184,7 @@ typedef isc__netievent__socket_t isc__netievent_startread_t;
 typedef isc__netievent__socket_t isc__netievent_pauseread_t;
 typedef isc__netievent__socket_t isc__netievent_resumeread_t;
 typedef isc__netievent__socket_t isc__netievent_closecb_t;
+typedef isc__netievent__socket_t isc__netievent_closecb_t;
 
 typedef struct isc__netievent__socket_req {
 	isc__netievent_type	type;
@@ -209,10 +207,13 @@ typedef struct isc__netievent {
 	isc__netievent_type	type;
 } isc__netievent_t;
 
+typedef isc__netievent_t isc__netievent_shutdown_t;
+typedef isc__netievent_t isc__netievent_stop_t;
+
 typedef union {
 		isc__netievent_t		  ni;
-		isc__netievent_stop_t		  nis;
-		isc__netievent_udplisten_t	  niul;
+		isc__netievent__socket_t	  nis;
+		isc__netievent__socket_req_t	  nisr;
 		isc__netievent_udpsend_t	  nius;
 } isc__netievent_storage_t;
 
@@ -510,6 +511,13 @@ void
 isc__nm_async_closecb(isc__networker_t *worker, isc__netievent_t *ievent0);
 /*%<
  * Issue a 'handle closed' callback on the socket.
+ */
+
+void
+isc__nm_async_shutdown(isc__networker_t *worker, isc__netievent_t *ievent0);
+/*%<
+ * Walk through all uv handles, get the underlying sockets and issue
+ * close on them.
  */
 
 isc_result_t
