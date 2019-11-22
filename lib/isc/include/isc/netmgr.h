@@ -113,8 +113,20 @@ isc_nmhandle_setdata(isc_nmhandle_t *handle, void *arg,
 
 isc_sockaddr_t
 isc_nmhandle_peeraddr(isc_nmhandle_t *handle);
+/*%<
+ * Return the peer address for the given handle.
+ */
 isc_sockaddr_t
 isc_nmhandle_localaddr(isc_nmhandle_t *handle);
+/*%<
+ * Return the peer address for the given handle.
+ */
+
+isc_nm_t *
+isc_nmhandle_netmgr(isc_nmhandle_t *handle);
+/*%<
+ * Return a pointer to the netmgr object for the given handle.
+ */
 
 typedef void (*isc_nm_recv_cb_t)(isc_nmhandle_t *handle, isc_region_t *region,
 				 void *cbarg);
@@ -299,16 +311,35 @@ isc_nm_tcpdns_keepalive(isc_nmhandle_t *handle);
  */
 
 void
+isc_nm_tcp_settimeouts(isc_nm_t *mgr, uint32_t init, uint32_t idle,
+		   uint32_t keepalive, uint32_t advertised);
+/*%<
+ * Sets the initial, idle, and keepalive timeout values to use for
+ * TCP connections, and the timeout value to advertise in responses using
+ * the EDNS TCP Keepalive option (which should ordinarily be the same
+ * as 'keepalive'), in tenths of seconds.
+ *
+ * Requires:
+ * \li	'mgr' is a valid netmgr.
+ */
+
+void
+isc_nm_tcp_gettimeouts(isc_nm_t *mgr, uint32_t *initial, uint32_t *idle,
+		       uint32_t *keepalive, uint32_t *advertised);
+/*%<
+ * Gets the initial, idle, keepalive, or advertised timeout values,
+ * in tenths of seconds.
+ *
+ * Any integer pointer parameter not set to NULL will be updated to
+ * contain the corresponding timeout value.
+ *
+ * Requires:
+ * \li	'mgr' is a valid netmgr.
+ */
+
+void
 isc_nm_maxudp(isc_nm_t *mgr, uint32_t maxudp);
 /*%<
  * Simulate a broken firewall that blocks UDP messages larger than a given
  * size.
- */
-
-void
-isc_nm_tcptimeouts(isc_nm_t *mgr, uint32_t init_timeout,
-		   uint32_t idle_timeout, uint32_t keepalive_timeout);
-/*%<
- * Sets the initial, idle, and keepalive timeouts to use for TCP
- * connections.
  */

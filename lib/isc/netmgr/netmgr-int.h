@@ -250,9 +250,17 @@ struct isc_nm {
 	 */
 	atomic_bool		interlocked;
 
-	uint32_t		init_timeout;
-	uint32_t		idle_timeout;
-	uint32_t		keepalive_timeout;
+	/*
+	 * Timeout values for TCP connections, coresponding to
+	 * tcp-intiial-timeout, tcp-idle-timeout, tcp-keepalive-timeout,
+	 * and tcp-advertised-timeout. Note that these are stored in
+	 * milliseconds so they can be used directly with the libuv timer,
+	 * but they are configured in tenths of seconds.
+	 */
+	uint32_t		init;
+	uint32_t		idle;
+	uint32_t		keepalive;
+	uint32_t		advertised;
 };
 
 typedef enum isc_nmsocket_type {

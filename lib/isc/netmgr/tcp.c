@@ -402,8 +402,8 @@ read_cb(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf) {
 		sock->rcb.recv(sock->tcphandle, &region, sock->rcbarg);
 
 		sock->read_timeout = (atomic_load(&sock->keepalive)
-				      ? sock->mgr->keepalive_timeout
-				      : sock->mgr->idle_timeout);
+				      ? sock->mgr->keepalive
+				      : sock->mgr->idle);
 
 		if (sock->timer_initialized && sock->read_timeout != 0) {
 			/* The timer will be updated */
@@ -491,7 +491,7 @@ accept_connection(isc_nmsocket_t *ssock) {
 	handle = isc__nmhandle_get(csock, NULL, &local);
 
 	INSIST(ssock->rcb.accept != NULL);
-	csock->read_timeout = ssock->mgr->init_timeout;
+	csock->read_timeout = ssock->mgr->init;
 	ssock->rcb.accept(handle, ISC_R_SUCCESS, ssock->rcbarg);
 	isc_nmsocket_detach(&csock);
 

@@ -121,7 +121,7 @@ dnslisten_acceptcb(isc_nmhandle_t *handle, isc_result_t result, void *cbarg) {
 	isc_nmsocket_attach(handle->sock, &dnssock->outer);
 	dnssock->peer = handle->sock->peer;
 	dnssock->iface = handle->sock->iface;
-	dnssock->read_timeout = handle->sock->mgr->init_timeout;
+	dnssock->read_timeout = handle->sock->mgr->init;
 	dnssock->tid = isc_nm_tid();
 	dnssock->closehandle_cb = resume_processing;
 
@@ -218,8 +218,8 @@ dnslisten_readcb(isc_nmhandle_t *handle, isc_region_t *region, void *arg) {
 	dnssock->buf_len += len;
 
 	dnssock->read_timeout = (atomic_load(&dnssock->keepalive)
-				 ? dnssock->mgr->keepalive_timeout
-				 : dnssock->mgr->idle_timeout);
+				 ? dnssock->mgr->keepalive
+				 : dnssock->mgr->idle);
 
 	do {
 		isc_result_t result;

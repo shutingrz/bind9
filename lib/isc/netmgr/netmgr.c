@@ -98,9 +98,10 @@ isc_nm_start(isc_mem_t *mctx, uint32_t workers) {
 	 * Default TCP timeout values.
 	 * May be updated by isc_nm_tcptimeouts().
 	 */
-	mgr->init_timeout = 30000;
-	mgr->idle_timeout = 30000;
-	mgr->keepalive_timeout = 30000;
+	mgr->init = 30000;
+	mgr->idle = 30000;
+	mgr->keepalive = 30000;
+	mgr->advertised = 30000;
 
 	isc_mutex_init(&mgr->reqlock);
 	isc_mempool_create(mgr->mctx, sizeof(isc__nm_uvreq_t), &mgr->reqpool);
@@ -333,14 +334,38 @@ isc_nm_maxudp(isc_nm_t *mgr, uint32_t maxudp) {
 }
 
 void
-isc_nm_tcptimeouts(isc_nm_t *mgr, uint32_t init_timeout,
-		   uint32_t idle_timeout, uint32_t keepalive_timeout)
+isc_nm_tcp_settimeouts(isc_nm_t *mgr, uint32_t init, uint32_t idle,
+		       uint32_t keepalive, uint32_t advertised)
 {
 	REQUIRE(VALID_NM(mgr));
 
-	mgr->init_timeout = init_timeout * 100;
-	mgr->idle_timeout = idle_timeout * 100;
-	mgr->keepalive_timeout = keepalive_timeout * 100;
+	mgr->init = init * 100;
+	mgr->idle = idle * 100;
+	mgr->keepalive = keepalive * 100;
+	mgr->advertised = advertised * 100;
+}
+
+void
+isc_nm_tcp_gettimeouts(isc_nm_t *mgr, uint32_t *initial, uint32_t *idle,
+		       uint32_t *keepalive, uint32_t *advertised)
+{
+	REQUIRE(VALID_NM(mgr));
+
+	if (initial != NULL) {
+		*initial = mgr->init / 100;
+	}
+
+	if (idle != NULL) {
+		*idle = mgr->idle / 100;
+	}
+
+	if (keepalive != NULL) {
+		*keepalive = mgr->keepalive / 100;
+	}
+
+	if (advertised != NULL) {
+		*advertised = mgr->advertised / 100;
+	}
 }
 
 /*
@@ -1041,6 +1066,14 @@ isc_nmhandle_localaddr(isc_nmhandle_t *handle) {
 	REQUIRE(VALID_NMHANDLE(handle));
 
 	return (handle->local);
+}
+
+isc_nm_t *
+isc_nmhandle_netmgr(isc_nmhandle_t *handle) {
+	REQUIRE(VALID_NMHANDLE(handle));
+	REQUIRE(VALID_NMSOCK(handle->sock));
+
+	return (handle->sock->mgr);
 }
 
 isc__nm_uvreq_t *

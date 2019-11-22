@@ -170,8 +170,5 @@ close_connections $((TCP_LIMIT + 1)) || :
 if [ $ret != 0 ]; then echo_i "failed"; fi
 status=$((status + ret))
 
-# wait for connections to close
-sleep 5
-
 echo_i "exit status: $status"
 [ $status -eq 0 ] || exit 1
