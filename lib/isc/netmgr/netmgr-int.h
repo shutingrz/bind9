@@ -184,7 +184,6 @@ typedef isc__netievent__socket_t isc__netievent_startread_t;
 typedef isc__netievent__socket_t isc__netievent_pauseread_t;
 typedef isc__netievent__socket_t isc__netievent_resumeread_t;
 typedef isc__netievent__socket_t isc__netievent_closecb_t;
-typedef isc__netievent__socket_t isc__netievent_closecb_t;
 
 typedef struct isc__netievent__socket_req {
 	isc__netievent_type	type;
