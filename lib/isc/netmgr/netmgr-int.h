@@ -230,6 +230,13 @@ struct isc_nm {
 	isc_mutex_t		lock;
 	isc_condition_t		wkstatecond;
 	isc__networker_t	*workers;
+
+	isc_mempool_t		*reqpool;
+	isc_mutex_t		reqlock;
+
+	isc_mempool_t		*evpool;
+	isc_mutex_t		evlock;
+
 	atomic_uint_fast32_t	workers_running;
 	atomic_uint_fast32_t	workers_paused;
 	atomic_uint_fast32_t	maxudp;

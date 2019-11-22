@@ -102,6 +102,23 @@ isc_nm_start(isc_mem_t *mctx, uint32_t workers) {
 	mgr->idle_timeout = 30000;
 	mgr->keepalive_timeout = 30000;
 
+	isc_mutex_init(&mgr->reqlock);
+	isc_mempool_create(mgr->mctx, sizeof(isc__nm_uvreq_t), &mgr->reqpool);
+	isc_mempool_setname(mgr->reqpool, "nm_reqpool");
+	isc_mempool_setmaxalloc(mgr->reqpool, 32768);
+	isc_mempool_setfreemax(mgr->reqpool, 32768);
+	isc_mempool_associatelock(mgr->reqpool, &mgr->reqlock);
+	isc_mempool_setfillcount(mgr->reqpool, 32);
+
+	isc_mutex_init(&mgr->evlock);
+	isc_mempool_create(mgr->mctx, sizeof(isc__netievent_storage_t),
+			   &mgr->evpool);
+	isc_mempool_setname(mgr->evpool, "nm_evpool");
+	isc_mempool_setmaxalloc(mgr->evpool, 32768);
+	isc_mempool_setfreemax(mgr->evpool, 32768);
+	isc_mempool_associatelock(mgr->evpool, &mgr->evlock);
+	isc_mempool_setfillcount(mgr->evpool, 32);
+
 	mgr->workers = isc_mem_get(mctx, workers * sizeof(isc__networker_t));
 	for (size_t i = 0; i < workers; i++) {
 		int r;
@@ -175,8 +192,7 @@ nm_destroy(isc_nm_t **mgr0) {
 		while ((ievent = (isc__netievent_t *)
 			isc_queue_dequeue(mgr->workers[i].ievents)) != NULL)
 		{
-			isc_mem_put(mgr->mctx, ievent,
-				    sizeof(isc__netievent_storage_t));
+			isc_mempool_put(mgr->evpool, ievent);
 		}
 		int r = uv_loop_close(&mgr->workers[i].loop);
 		INSIST(r == 0);
@@ -185,6 +201,13 @@ nm_destroy(isc_nm_t **mgr0) {
 
 	isc_condition_destroy(&mgr->wkstatecond);
 	isc_mutex_destroy(&mgr->lock);
+
+	isc_mempool_destroy(&mgr->evpool);
+	isc_mutex_destroy(&mgr->evlock);
+
+	isc_mempool_destroy(&mgr->reqpool);
+	isc_mutex_destroy(&mgr->reqlock);
+
 	isc_mem_put(mgr->mctx, mgr->workers,
 		    mgr->nworkers * sizeof(isc__networker_t));
 	isc_mem_putanddetach(&mgr->mctx, mgr, sizeof(*mgr));
@@ -429,8 +452,7 @@ async_cb(uv_async_t *handle) {
 		switch (ievent->type) {
 		case netievent_stop:
 			uv_stop(handle->loop);
-			isc_mem_put(worker->mgr->mctx, ievent,
-				    sizeof(isc__netievent_storage_t));
+			isc_mempool_put(worker->mgr->evpool, ievent);
 			return;
 		case netievent_udplisten:
 			isc__nm_async_udplisten(worker, ievent);
@@ -476,10 +498,8 @@ async_cb(uv_async_t *handle) {
 
 void *
 isc__nm_get_ievent(isc_nm_t *mgr, isc__netievent_type type) {
-	isc__netievent_storage_t *event =
-		isc_mem_get(mgr->mctx, sizeof(isc__netievent_storage_t));
+	isc__netievent_storage_t *event = isc_mempool_get(mgr->evpool);
 
-	/* XXX: Use a memory pool? */
 	*event = (isc__netievent_storage_t) {
 		.ni.type = type
 	};
@@ -488,7 +508,7 @@ isc__nm_get_ievent(isc_nm_t *mgr, isc__netievent_type type) {
 
 void
 isc__nm_put_ievent(isc_nm_t *mgr, void *ievent) {
-	isc_mem_put(mgr->mctx, ievent, sizeof(isc__netievent_storage_t));
+	isc_mempool_put(mgr->evpool, ievent);
 }
 
 void
@@ -580,7 +600,7 @@ nmsocket_cleanup(isc_nmsocket_t *sock, bool dofree) {
 	isc_astack_destroy(sock->inactivehandles);
 
 	while ((uvreq = isc_astack_pop(sock->inactivereqs)) != NULL) {
-		isc_mem_put(sock->mgr->mctx, uvreq, sizeof(*uvreq));
+		isc_mempool_put(sock->mgr->reqpool, uvreq);
 	}
 
 	isc_astack_destroy(sock->inactivereqs);
@@ -1036,7 +1056,7 @@ isc__nm_uvreq_get(isc_nm_t *mgr, isc_nmsocket_t *sock) {
 	}
 
 	if (req == NULL) {
-		req = isc_mem_get(mgr->mctx, sizeof(isc__nm_uvreq_t));
+		req = isc_mempool_get(mgr->reqpool);
 	}
 
 	*req = (isc__nm_uvreq_t) {
@@ -1074,7 +1094,7 @@ isc__nm_uvreq_put(isc__nm_uvreq_t **req0, isc_nmsocket_t *sock) {
 	if (!atomic_load(&sock->active) ||
 	    !isc_astack_trypush(sock->inactivereqs, req))
 	{
-		isc_mem_put(sock->mgr->mctx, req, sizeof(isc__nm_uvreq_t));
+		isc_mempool_put(sock->mgr->reqpool, req);
 	}
 
 	if (handle != NULL) {
