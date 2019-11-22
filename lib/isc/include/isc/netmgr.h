@@ -119,7 +119,7 @@ isc_nmhandle_peeraddr(isc_nmhandle_t *handle);
 isc_sockaddr_t
 isc_nmhandle_localaddr(isc_nmhandle_t *handle);
 /*%<
- * Return the peer address for the given handle.
+ * Return the local address for the given handle.
  */
 
 isc_nm_t *
