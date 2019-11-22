@@ -287,6 +287,7 @@ struct isc_nmsocket {
 	isc_nm_t		*mgr;
 	isc_nmsocket_t		*parent;
 	isc_quota_t		*quota;
+	isc_quota_t		*gquota; /* non-attached quota for listening */
 	bool			overquota;
 	uv_timer_t		timer;
 	bool			timer_initialized;
@@ -306,6 +307,9 @@ struct isc_nmsocket {
 
 	/*% extra data allocated at the end of each isc_nmhandle_t */
 	size_t			extrahandlesize;
+
+	/*% TCP backlog */
+	int backlog;
 
 	/*% libuv data */
 	uv_os_sock_t		fd;
