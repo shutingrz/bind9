@@ -22,6 +22,7 @@
 #include <inttypes.h>
 #include <stdbool.h>
 
+#include <isc/atomic.h>
 #include <isc/mutexblock.h>
 #include <isc/netaddr.h>
 #include <isc/print.h>
@@ -251,9 +252,9 @@ struct dns_adbentry {
 	unsigned char			edns;
 	unsigned char			to4096;		/* Our max. */
 
-	uint8_t			mode;
+	uint8_t				mode;
 	uint32_t			quota;
-	uint32_t			active;
+	atomic_uint_fast32_t		active;
 	double				atr;
 
 	/*
@@ -1832,7 +1833,7 @@ new_adbentry(dns_adb_t *adb) {
 	e->srtt = (isc_random_uniform(0x1f)) + 1;
 	e->lastage = 0;
 	e->expires = 0;
-	e->active = 0;
+	atomic_init(&e->active, 0);
 	e->mode = 0;
 	e->quota = adb->quota;
 	e->atr = 0.0;
@@ -2161,8 +2162,9 @@ log_quota(dns_adbentry_t *entry, const char *fmt, ...) {
 	isc_netaddr_format(&netaddr, addrbuf, sizeof(addrbuf));
 
 	isc_log_write(dns_lctx, DNS_LOGCATEGORY_DATABASE, DNS_LOGMODULE_ADB,
-		      ISC_LOG_INFO, "adb: quota %s (%u/%u): %s",
-		      addrbuf, entry->active, entry->quota, msgbuf);
+		      ISC_LOG_INFO, "adb: quota %s (%" PRIuFAST32 "/%u): %s",
+		      addrbuf, atomic_load_relaxed(&entry->active),
+		      entry->quota, msgbuf);
 }
 
 static void
@@ -2186,7 +2188,7 @@ copy_namehook_lists(dns_adb_t *adb, dns_adbfind_t *find,
 			LOCK(&adb->entrylocks[bucket]);
 
 			if (entry->quota != 0 &&
-			    entry->active >= entry->quota)
+			    atomic_load_relaxed(&entry->active) >= entry->quota)
 			{
 				find->options |=
 					(DNS_ADBFIND_LAMEPRUNED|
@@ -2226,7 +2228,7 @@ copy_namehook_lists(dns_adb_t *adb, dns_adbfind_t *find,
 			LOCK(&adb->entrylocks[bucket]);
 
 			if (entry->quota != 0 &&
-			    entry->active >= entry->quota)
+			    atomic_load_relaxed(&entry->active) >= entry->quota)
 			{
 				find->options |=
 					(DNS_ADBFIND_LAMEPRUNED|
@@ -4773,21 +4775,17 @@ dns_adb_setquota(dns_adb_t *adb, uint32_t quota, uint32_t freq,
 bool
 dns_adbentry_overquota(dns_adbentry_t *entry) {
 	REQUIRE(DNS_ADBENTRY_VALID(entry));
-	return (entry->quota != 0 && entry->active >= entry->quota);
+	return (entry->quota != 0 &&
+		atomic_load_relaxed(&entry->active) >= entry->quota);
 }
 
 void
 dns_adb_beginudpfetch(dns_adb_t *adb, dns_adbaddrinfo_t *addr) {
-	int bucket;
 
 	REQUIRE(DNS_ADB_VALID(adb));
 	REQUIRE(DNS_ADBADDRINFO_VALID(addr));
 
-	bucket = addr->entry->lock_bucket;
-
-	LOCK(&adb->entrylocks[bucket]);
-	addr->entry->active++;
-	UNLOCK(&adb->entrylocks[bucket]);
+	atomic_fetch_add(&addr->entry->active, 1);
 }
 
 void
@@ -4800,7 +4798,8 @@ dns_adb_endudpfetch(dns_adb_t *adb, dns_adbaddrinfo_t *addr) {
 	bucket = addr->entry->lock_bucket;
 
 	LOCK(&adb->entrylocks[bucket]);
-	if (addr->entry->active > 0)
-		addr->entry->active--;
+	if (atomic_load_relaxed(&addr->entry->active) > 0) {
+		atomic_fetch_sub(&addr->entry->active, 1);
+	}
 	UNLOCK(&adb->entrylocks[bucket]);
 }
