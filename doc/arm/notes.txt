@@ -347,7 +347,4 @@ policy.
 
 Thank You
 
-Thank you to everyone who assisted us in making this release possible. If
-you would like to contribute to ISC to assist us in continuing to make
-quality open source software, please visit our donations page at https://
-www.isc.org/donate/.
+Thank you to everyone who assisted us in making this release possible.
