@@ -19,9 +19,6 @@
 #if _MSC_VER > 1400
 #define HAVE_TLS 1
 #define HAVE___DECLSPEC_THREAD 1
-#define ISC_THREAD_LOCAL static __declspec( thread )
-#else
-#error "Thread-local storage support is required!"
 #endif /* if defined(HAVE_TLS) */
 
 /*
