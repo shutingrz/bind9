@@ -22,7 +22,7 @@
 
 #include <inttypes.h>
 
-#include <isc/platform.h>
+#include <isc/thread.h>
 
 /*
  * This is xoshiro128** 1.0, our 32-bit all-purpose, rock-solid generator.

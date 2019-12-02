@@ -36,6 +36,7 @@
 #include <isc/platform.h>
 #include <isc/random.h>
 #include <isc/result.h>
+#include <isc/thread.h>
 #include <isc/types.h>
 #include <isc/util.h>
 
