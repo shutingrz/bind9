@@ -127,59 +127,19 @@ struct dns_dtenv {
 		goto cleanup; \
 	} while (0)
 
-static isc_mutex_t dt_mutex;
-static bool dt_initialized = false;
-static isc_thread_key_t dt_key;
-static isc_once_t mutex_once = ISC_ONCE_INIT;
-static isc_mem_t *dt_mctx = NULL;
+
+typedef struct ioq {
+	unsigned int generation;
+	struct fstrm_iothr_queue *ioq;
+} dt__ioq_t;
+
+
+ISC_THREAD_LOCAL dt__ioq_t *dt_ioq = NULL;
 
 /*
  * Change under task exclusive.
  */
 static unsigned int generation;
-
-static void
-mutex_init(void) {
-	isc_mutex_init(&dt_mutex);
-}
-
-static void
-dtfree(void *arg) {
-	free(arg);
-	isc_thread_key_setspecific(dt_key, NULL);
-}
-
-static isc_result_t
-dt_init(void) {
-	isc_result_t result;
-
-	result = isc_once_do(&mutex_once, mutex_init);
-	if (result != ISC_R_SUCCESS)
-		return (result);
-
-	if (dt_initialized)
-		return (ISC_R_SUCCESS);
-
-	LOCK(&dt_mutex);
-	if (!dt_initialized) {
-		int ret;
-
-		if (dt_mctx == NULL) {
-			isc_mem_create(&dt_mctx);
-		}
-		isc_mem_setname(dt_mctx, "dt", NULL);
-		isc_mem_setdestroycheck(dt_mctx, false);
-
-		ret = isc_thread_key_create(&dt_key, dtfree);
-		if (ret == 0)
-			dt_initialized = true;
-		else
-			result = ISC_R_FAILURE;
-	}
-	UNLOCK(&dt_mutex);
-
-	return (result);
-}
 
 isc_result_t
 dns_dt_create(isc_mem_t *mctx, dns_dtmode_t mode, const char *path,
@@ -476,47 +436,26 @@ dns_dt_setversion(dns_dtenv_t *env, const char *version) {
 
 static struct fstrm_iothr_queue *
 dt_queue(dns_dtenv_t *env) {
-	isc_result_t result;
-	struct ioq {
-		unsigned int generation;
-		struct fstrm_iothr_queue *ioq;
-	} *ioq;
-
 	REQUIRE(VALID_DTENV(env));
 
 	if (env->iothr == NULL)
 		return (NULL);
 
-	result = dt_init();
-	if (result != ISC_R_SUCCESS)
-		return (NULL);
-
-	ioq = (struct ioq *)isc_thread_key_getspecific(dt_key);
-	if (ioq != NULL && ioq->generation != generation) {
-		result = isc_thread_key_setspecific(dt_key, NULL);
-		if (result != ISC_R_SUCCESS)
-			return (NULL);
-		free(ioq);
-		ioq = NULL;
+	if (dt_ioq != NULL && dt_ioq->generation != generation) {
+		isc_mem_put(env->mctx, dt_ioq, sizeof(*dt_ioq));
+		dt_ioq = NULL;
 	}
-	if (ioq == NULL) {
-		ioq = malloc(sizeof(*ioq));
-		if (ioq == NULL)
-			return (NULL);
-		ioq->generation = generation;
-		ioq->ioq = fstrm_iothr_get_input_queue(env->iothr);
-		if (ioq->ioq == NULL) {
-			free(ioq);
-			return (NULL);
-		}
-		result = isc_thread_key_setspecific(dt_key, ioq);
-		if (result != ISC_R_SUCCESS) {
-			free(ioq);
+	if (dt_ioq == NULL) {
+		dt_ioq = isc_mem_get(env->mctx, sizeof(*dt_ioq));
+		dt_ioq->generation = generation;
+		dt_ioq->ioq = fstrm_iothr_get_input_queue(env->iothr);
+		if (dt_ioq->ioq == NULL) {
+			isc_mem_put(env->mctx, dt_ioq, sizeof(*dt_ioq));
 			return (NULL);
 		}
 	}
 
-	return (ioq->ioq);
+	return (dt_ioq->ioq);
 }
 
 void
@@ -925,12 +864,6 @@ dns_dt_send(dns_view_t *view, dns_dtmsgtype_t msgtype,
 
 	if (pack_dt(&dm.d, &dm.buf, &dm.len) == ISC_R_SUCCESS)
 		send_dt(view->dtenv, dm.buf, dm.len);
-}
-
-void
-dns_dt_shutdown() {
-	if (dt_mctx != NULL)
-		isc_mem_detach(&dt_mctx);
 }
 
 static isc_result_t

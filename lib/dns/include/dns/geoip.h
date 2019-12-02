@@ -87,6 +87,7 @@ typedef struct dns_geoip_elem {
 } dns_geoip_elem_t;
 
 struct dns_geoip_databases {
+	isc_mem_t *mctx;
 	void *country;		/* GeoIP2-Country or GeoLite2-Country */
 	void *city;		/* GeoIP2-CIty or GeoLite2-City */
 	void *domain;		/* GeoIP2-Domain */
@@ -104,9 +105,6 @@ bool
 dns_geoip_match(const isc_netaddr_t *reqaddr,
 		const dns_geoip_databases_t *geoip,
 		const dns_geoip_elem_t *elt);
-
-void
-dns_geoip_shutdown(void);
 
 ISC_LANG_ENDDECLS
 

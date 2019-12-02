@@ -1296,18 +1296,6 @@ dns_name_internalwildcard(const dns_name_t *name);
  * \li	'name' to be valid.
  */
 
-void
-dns_name_destroy(void);
-/*%<
- * Cleanup dns_name_settotextfilter() / dns_name_totext() state.
- *
- * This should be called as part of the final cleanup process.
- *
- * Note: dns_name_settotextfilter(NULL); should be called for all
- * threads which have called dns_name_settotextfilter() with a
- * non-NULL argument prior to calling dns_name_destroy();
- */
-
 bool
 dns_name_isdnssd(const dns_name_t *owner);
 /*%<

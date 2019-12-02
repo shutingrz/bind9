@@ -67,6 +67,9 @@ named_geoip_init(void) {
 #if defined(HAVE_GEOIP2)
 	if (named_g_geoip == NULL) {
 		named_g_geoip = &geoip_table;
+		isc_mem_create(&named_g_geoip->mctx);
+		isc_mem_setname(named_g_geoip->mctx, "geoip_state", NULL);
+		isc_mem_setdestroycheck(named_g_geoip->mctx, false);
 	}
 #else
 	return;
@@ -138,5 +141,5 @@ named_geoip_shutdown(void) {
 	}
 #endif /* HAVE_GEOIP2 */
 
-	dns_geoip_shutdown();
+	isc_mem_detach(&named_g_geoip->mctx);
 }
