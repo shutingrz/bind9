@@ -23,6 +23,8 @@
 #include <isc/string.h>
 #include <isc/types.h>
 
+#if HAVE_PTHREAD
+
 typedef pthread_cond_t isc_condition_t;
 
 #define isc_condition_init(cond)                                \
@@ -60,3 +62,43 @@ isc_result_t
 isc_condition_waituntil(isc_condition_t *, isc_mutex_t *, isc_time_t *);
 
 ISC_LANG_ENDDECLS
+
+#elif HAVE_C11_THREAD_SUPPORT
+
+#include <threads.h>
+
+typedef cnd_t isc_condition_t;
+
+#define isc_condition_init(cond)                                   \
+	switch (cnd_init(cond)) {                                  \
+	case thrd_success:                                         \
+		break;                                             \
+	case thrd_nomem:                                           \
+		isc_error_fatal(__FILE__, __LINE__,                \
+				"cnd_init failed: Out of memory"); \
+	default:                                                   \
+		isc_error_fatal(__FILE__, __LINE__,                \
+				"cnd_init failed: Unknown error"); \
+	}
+
+#define isc_condition_wait(cond, mutex)                          \
+	((cnd_wait(cond, mutex) == thrd_success) ? ISC_R_SUCCESS \
+						 : ISC_R_UNEXPECTED)
+
+#define isc_condition_signal(cond) \
+	((cnd_signal(cond) == thrd_success) ? ISC_R_SUCCESS : ISC_R_UNEXPECTED)
+
+#define isc_condition_broadcast(cond)                          \
+	((cnd_broadcast(cond) == thrd_success) ? ISC_R_SUCCESS \
+					       : ISC_R_UNEXPECTED)
+
+#define isc_condition_destroy(cond) cnd_destroy((cond))
+
+ISC_LANG_BEGINDECLS
+
+isc_result_t
+isc_condition_waituntil(isc_condition_t *, isc_mutex_t *, isc_time_t *);
+
+ISC_LANG_ENDDECLS
+
+#endif

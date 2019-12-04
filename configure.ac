@@ -321,6 +321,7 @@ AC_CHECK_HEADERS([fcntl.h regex.h sys/time.h unistd.h sys/mman.h sys/sockio.h sy
 # Check for thread local storage
 #
 AC_CHECK_HEADERS([threads.h])
+AC_CHECK_FUNCS([thrd_create mtx_init cnd_init], [AC_DEFINE([HAVE_C11_THREAD_SUPPORT], [1], [Defined if the compiler provides C11 Thread Support library])])
 AX_TLS([AS_IF([test "$ac_cv_tls" != "thread_local"],
 	      [AC_DEFINE_UNQUOTED([thread_local], [$ac_cv_tls], [Define if the compiler uses a different keyword than thread_local for TLS variables])])],
        [AC_MSG_ERROR([Thread Local Storage support required, update your toolchain to build BIND 9])])

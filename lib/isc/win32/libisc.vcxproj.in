@@ -303,6 +303,7 @@ copy InstallFiles ..\Build\Release\
     <ClInclude Include="..\include\isc\buffer.h" />
     <ClInclude Include="..\include\isc\bufferlist.h" />
     <ClInclude Include="..\include\isc\commandline.h" />
+    <ClInclude Include="..\include\isc\condition.h" />
     <ClInclude Include="..\include\isc\counter.h" />
     <ClInclude Include="..\include\isc\crc64.h" />
     <ClInclude Include="..\include\isc\endian.h" />
@@ -333,10 +334,12 @@ copy InstallFiles ..\Build\Release\
     <ClInclude Include="..\include\isc\md.h" />
     <ClInclude Include="..\include\isc\mem.h" />
     <ClInclude Include="..\include\isc\meminfo.h" />
+    <ClInclude Include="..\include\isc\mutex.h" />
     <ClInclude Include="..\include\isc\mutexblock.h" />
     <ClInclude Include="..\include\isc\netaddr.h" />
     <ClInclude Include="..\include\isc\netscope.h" />
     <ClInclude Include="..\include\isc\nonce.h" />
+    <ClInclude Include="..\include\isc\once.h" />
     <ClInclude Include="..\include\isc\os.h" />
     <ClInclude Include="..\include\isc\parseint.h" />
     <ClInclude Include="..\include\isc\pool.h" />
@@ -367,6 +370,7 @@ copy InstallFiles ..\Build\Release\
     <ClInclude Include="..\include\isc\symtab.h" />
     <ClInclude Include="..\include\isc\task.h" />
     <ClInclude Include="..\include\isc\taskpool.h" />
+    <ClInclude Include="..\include\isc\thread.h" />
     <ClInclude Include="..\include\isc\timer.h" />
     <ClInclude Include="..\include\isc\tm.h" />
     <ClInclude Include="..\include\isc\types.h" />
@@ -382,23 +386,19 @@ copy InstallFiles ..\Build\Release\
     <ClInclude Include="errno2result.h" />
     <ClInclude Include="include\isc\bindevt.h" />
     <ClInclude Include="include\isc\bind_registry.h" />
-    <ClInclude Include="include\isc\condition.h" />
     <ClInclude Include="include\isc\dir.h" />
     <ClInclude Include="include\isc\ipv6.h" />
-    <ClInclude Include="include\isc\mutex.h" />
     <ClInclude Include="include\isc\net.h" />
     <ClInclude Include="include\isc\netdb.h" />
     <ClInclude Include="include\isc\ntgroups.h" />
     <ClInclude Include="include\isc\ntpaths.h" />
     <ClInclude Include="include\isc\offset.h" />
-    <ClInclude Include="include\isc\once.h" />
     <ClInclude Include="include\isc\platform.h" />
     <ClInclude Include="include\isc\stat.h" />
     <ClInclude Include="include\isc\stdatomic.h" />
     <ClInclude Include="include\isc\stdtime.h" />
     <ClInclude Include="include\isc\strerror.h" />
     <ClInclude Include="include\isc\syslog.h" />
-    <ClInclude Include="include\isc\thread.h" />
     <ClInclude Include="include\isc\time.h" />
     <ClInclude Include="include\isc\win32os.h" />
     <ClInclude Include="..\entropy_private.h" />
@@ -419,6 +419,7 @@ copy InstallFiles ..\Build\Release\
     <ClCompile Include="..\buffer.c" />
     <ClCompile Include="..\bufferlist.c" />
     <ClCompile Include="..\commandline.c" />
+    <ClCompile Include="..\condition.c" />
     <ClCompile Include="..\counter.c" />
     <ClCompile Include="..\crc64.c" />
     <ClCompile Include="..\entropy.c" />
@@ -448,6 +449,7 @@ copy InstallFiles ..\Build\Release\
     <ClCompile Include="..\netmgr\tcpdns.c" />
     <ClCompile Include="..\netscope.c" />
     <ClCompile Include="..\nonce.c" />
+    <ClCompile Include="..\once.c" />
     <ClCompile Include="..\openssl_shim.c" />
     <ClCompile Include="..\parseint.c" />
     <ClCompile Include="..\pool.c" />
@@ -470,6 +472,7 @@ copy InstallFiles ..\Build\Release\
     <ClCompile Include="..\symtab.c" />
     <ClCompile Include="..\task.c" />
     <ClCompile Include="..\taskpool.c" />
+    <ClCompile Include="..\thread.c" />
     <ClCompile Include="..\timer.c" />
     <ClCompile Include="..\tm.c" />
     <ClCompile Include="..\utf8.c" />
@@ -477,7 +480,6 @@ copy InstallFiles ..\Build\Release\
     <ClCompile Include="..\pk11.c" />
     <ClCompile Include="..\pk11_result.c" />
 @END PKCS11
-    <ClCompile Include="condition.c" />
     <ClCompile Include="dir.c" />
     <ClCompile Include="DLLMain.c" />
     <ClCompile Include="errno.c" />
@@ -489,14 +491,12 @@ copy InstallFiles ..\Build\Release\
     <ClCompile Include="meminfo.c" />
     <ClCompile Include="net.c" />
     <ClCompile Include="ntpaths.c" />
-    <ClCompile Include="once.c" />
     <ClCompile Include="os.c" />
     <ClCompile Include="resource.c" />
     <ClCompile Include="socket.c" />
     <ClCompile Include="stdio.c" />
     <ClCompile Include="stdtime.c" />
     <ClCompile Include="syslog.c" />
-    <ClCompile Include="thread.c" />
     <ClCompile Include="time.c" />
     <ClCompile Include="win32os.c" />
 @IF PKCS11

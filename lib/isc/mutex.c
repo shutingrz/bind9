@@ -24,6 +24,8 @@
 #include <isc/string.h>
 #include <isc/util.h>
 
+#if HAVE_PTHREAD
+
 #if ISC_MUTEX_PROFILE
 
 /*@{*/
@@ -298,3 +300,9 @@ isc__mutex_init(isc_mutex_t *mp, const char *file, unsigned int line) {
 }
 #endif /* if !(ISC_MUTEX_DEBUG && defined(PTHREAD_MUTEX_ERRORCHECK)) && \
 	* !ISC_MUTEX_PROFILE */
+
+#elif HAVE_C11_THREAD_SUPPORT
+
+EMPTY_TRANSLATION_UNIT
+
+#endif

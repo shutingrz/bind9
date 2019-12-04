@@ -65,6 +65,9 @@
     <ClInclude Include="..\include\isc\commandline.h">
       <Filter>Library Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\include\isc\condition.h">
+      <Filter>Win32 Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="..\include\isc\counter.h">
       <Filter>Library Header Files</Filter>
     </ClInclude>
@@ -149,6 +152,9 @@
     <ClInclude Include="..\include\isc\meminfo.h">
       <Filter>Win32 Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\include\isc\mutex.h">
+      <Filter>Win32 Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="..\include\isc\mutexblock.h">
       <Filter>Library Header Files</Filter>
     </ClInclude>
@@ -160,6 +166,9 @@
     </ClInclude>
     <ClInclude Include="..\include\isc\nonce.h">
       <Filter>Library Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\isc\once.h">
+      <Filter>Win32 Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\include\isc\os.h">
       <Filter>Library Header Files</Filter>
@@ -251,6 +260,9 @@
     <ClInclude Include="..\include\isc\taskpool.h">
       <Filter>Library Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\include\isc\thread.h">
+      <Filter>Win32 Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="..\include\isc\timer.h">
       <Filter>Library Header Files</Filter>
     </ClInclude>
@@ -289,16 +301,10 @@
     <ClInclude Include="include\isc\bindevt.h">
       <Filter>Win32 Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\isc\condition.h">
-      <Filter>Win32 Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="include\isc\dir.h">
       <Filter>Win32 Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\isc\ipv6.h">
-      <Filter>Win32 Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\isc\mutex.h">
       <Filter>Win32 Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\isc\net.h">
@@ -314,9 +320,6 @@
       <Filter>Win32 Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\isc\offset.h">
-      <Filter>Win32 Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\isc\once.h">
       <Filter>Win32 Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\isc\platform.h">
@@ -335,9 +338,6 @@
       <Filter>Win32 Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\isc\syslog.h">
-      <Filter>Win32 Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\isc\thread.h">
       <Filter>Win32 Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\isc\time.h">

@@ -11,6 +11,12 @@
 
 /*! \file */
 
+#include <isc/strerr.h>
+#include <isc/thread.h>
+#include <isc/util.h>
+
+#if HAVE_PTHREAD
+
 #if defined(HAVE_SCHED_H)
 #include <sched.h>
 #endif /* if defined(HAVE_SCHED_H) */
@@ -25,10 +31,6 @@
 #include <sys/procset.h>
 #include <sys/types.h>
 #endif /* if defined(HAVE_SYS_PROCSET_H) */
-
-#include <isc/strerr.h>
-#include <isc/thread.h>
-#include <isc/util.h>
 
 #ifndef THREAD_MINSTACKSIZE
 #define THREAD_MINSTACKSIZE (1024U * 1024)
@@ -171,3 +173,49 @@ isc_thread_setaffinity(int cpu) {
 #endif /* if defined(HAVE_CPUSET_SETAFFINITY) */
 	return (ISC_R_SUCCESS);
 }
+
+#elif HAVE_C11_THREAD_SUPPORT
+
+EMPTY_TRANSLATION_UNIT
+
+#elif _WIN32
+
+#include <process.h>
+
+void
+isc_thread_create(isc_threadfunc_t start, isc_threadarg_t arg,
+		  isc_thread_t *threadp) {
+	isc_thread_t thread;
+	unsigned int id;
+
+	thread = (isc_thread_t)_beginthreadex(NULL, 0, start, arg, 0, &id);
+	if (thread == NULL) {
+		char strbuf[ISC_STRERRORSIZE];
+		strerror_r(errno, strbuf, sizeof(strbuf));
+		isc_error_fatal(__FILE__, __LINE__, "_beginthreadex failed: %s",
+				strbuf);
+	}
+
+	*threadp = thread;
+
+	return;
+}
+
+void
+isc_thread_join(isc_thread_t thread, isc_threadresult_t *rp) {
+	DWORD result;
+
+	result = WaitForSingleObject(thread, INFINITE);
+	if (result != WAIT_OBJECT_0) {
+		isc_error_fatal(__FILE__, __LINE__,
+				"WaitForSingleObject() != WAIT_OBJECT_0");
+	}
+	if (rp != NULL && !GetExitCodeThread(thread, rp)) {
+		isc_error_fatal(__FILE__, __LINE__,
+				"GetExitCodeThread() failed: %d",
+				GetLastError());
+	}
+	(void)CloseHandle(thread);
+}
+
+#endif

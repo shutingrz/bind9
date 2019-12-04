@@ -17,6 +17,7 @@ libisc_la_HEADERS =			\
 	include/isc/buffer.h		\
 	include/isc/bufferlist.h	\
 	include/isc/commandline.h	\
+	include/isc/condition.h		\
 	include/isc/counter.h		\
 	include/isc/crc64.h		\
 	include/isc/deprecated.h	\
@@ -49,12 +50,14 @@ libisc_la_HEADERS =			\
 	include/isc/md.h		\
 	include/isc/mem.h		\
 	include/isc/meminfo.h		\
+	include/isc/mutex.h		\
 	include/isc/mutexatomic.h	\
 	include/isc/mutexblock.h	\
 	include/isc/netaddr.h		\
 	include/isc/netmgr.h		\
 	include/isc/netscope.h		\
 	include/isc/nonce.h		\
+	include/isc/once.h		\
 	include/isc/os.h		\
 	include/isc/parseint.h		\
 	include/isc/pool.h		\
@@ -85,15 +88,12 @@ libisc_la_HEADERS =			\
 	include/isc/symtab.h		\
 	include/isc/task.h		\
 	include/isc/taskpool.h		\
+	include/isc/thread.h		\
 	include/isc/timer.h		\
 	include/isc/tm.h		\
 	include/isc/types.h		\
 	include/isc/utf8.h		\
 	include/isc/util.h		\
-	pthreads/include/isc/condition.h\
-	pthreads/include/isc/mutex.h	\
-	pthreads/include/isc/once.h	\
-	pthreads/include/isc/thread.h	\
 	unix/include/isc/align.h	\
 	unix/include/isc/dir.h		\
 	unix/include/isc/netdb.h	\
@@ -158,6 +158,7 @@ libisc_la_SOURCES =		\
 	buffer.c		\
 	bufferlist.c		\
 	commandline.c		\
+	condition.c		\
 	counter.c		\
 	crc64.c			\
 	entropy.c		\
@@ -177,6 +178,7 @@ libisc_la_SOURCES =		\
 	log.c			\
 	md.c			\
 	mem.c			\
+	mutex.c			\
 	mutexblock.c		\
 	netaddr.c		\
 	netscope.c		\
@@ -204,12 +206,10 @@ libisc_la_SOURCES =		\
 	symtab.c		\
 	task.c			\
 	taskpool.c		\
+	thread.c		\
 	timer.c			\
 	tm.c			\
 	utf8.c			\
-	pthreads/condition.c	\
-	pthreads/mutex.c	\
-	pthreads/thread.c	\
 	entropy_private.h	\
 	mem_p.h			\
 	task_p.h		\
