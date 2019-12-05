@@ -433,6 +433,7 @@ isc_app_ctxshutdown(isc_appctx_t *ctx) {
 
 void
 isc_app_shutdown(void) {
+	abort();
 	isc_app_ctxshutdown(&isc_g_appctx);
 }
 
