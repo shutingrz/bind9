@@ -293,7 +293,7 @@ httpdmgr_socket_accept(isc_task_t *task, isc_httpdmgr_t *httpdmgr) {
 	result = isc_socket_accept(httpdmgr->sock, task, isc_httpd_accept,
 				   httpdmgr);
 	if (result != ISC_R_SUCCESS) {
-		INSIST(isc_refcount_decrement(&httpdmgr->references) > 1);
+		isc_refcount_decrement1(&httpdmgr->references);
 	}
 	return (result);
 }
@@ -307,7 +307,7 @@ httpd_socket_recv(isc_httpd_t *httpd, isc_region_t *region, isc_task_t *task) {
 	result = isc_socket_recv(httpd->sock, region, 1, task,
 				 isc_httpd_recvdone, httpd);
 	if (result != ISC_R_SUCCESS) {
-		INSIST(isc_refcount_decrement(&httpd->references) > 1);
+		isc_refcount_decrement1(&httpd->references);
 	}
 }
 
@@ -320,7 +320,7 @@ httpd_socket_send(isc_httpd_t *httpd, isc_region_t *region, isc_task_t *task) {
 	result = isc_socket_send(httpd->sock, region, task, isc_httpd_senddone,
 				 httpd);
 	if (result != ISC_R_SUCCESS) {
-		INSIST(isc_refcount_decrement(&httpd->references) > 1);
+		isc_refcount_decrement1(&httpd->references);
 	}
 }
 
@@ -381,7 +381,7 @@ isc_httpdmgr_create(isc_mem_t *mctx, isc_socket_t *sock, isc_task_t *task,
 
 cleanup:
 	httpdmgr->magic = 0;
-	isc_refcount_decrement(&httpdmgr->references);
+	isc_refcount_decrementz(&httpdmgr->references);
 	isc_refcount_destroy(&httpdmgr->references);
 	isc_task_detach(&httpdmgr->task);
 	isc_socket_detach(&httpdmgr->sock);
