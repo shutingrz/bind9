@@ -155,12 +155,15 @@ status=`expr $status + $ret`
 echo_i "checking that priming queries are not forwarded"
 ret=0
 $DIG $DIGOPTS +noadd +noauth txt.example1. txt @10.53.0.7 > dig.out.f7 || ret=1
-sent=`tr -d '\r' < ns7/named.run | sed -n '/sending packet to 10.53.0.1/,/^$/p' | grep ";.*IN.*NS" | wc -l`
-[ $sent -eq 1 ] || ret=1
-sent=`grep "10.53.0.7#.* (.): query '\./NS/IN' approved" ns4/named.run | wc -l`
-[ $sent -eq 0 ] || ret=1
-sent=`grep "10.53.0.7#.* (.): query '\./NS/IN' approved" ns1/named.run | wc -l`
-[ $sent -eq 1 ] || ret=1
+check_priming_queries () {
+	sent=`tr -d '\r' < ns7/named.run | sed -n '/sending packet to 10.53.0.1/,/^$/p' | grep ";.*IN.*NS" | wc -l`
+	[ $sent -eq 1 ] || return 1
+	sent=`grep "10.53.0.7#.* (.): query '\./NS/IN' approved" ns4/named.run | wc -l`
+	[ $sent -eq 0 ] || return 1
+	sent=`grep "10.53.0.7#.* (.): query '\./NS/IN' approved" ns1/named.run | wc -l`
+	[ $sent -eq 1 ] || return 1
+}
+retry_quiet 20 check_priming_queries || ret=1
 if [ $ret != 0 ]; then echo_i "failed"; fi
 status=`expr $status + $ret`
 
