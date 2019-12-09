@@ -1041,7 +1041,7 @@ check_if_nsec3param_exists() {
 	$DIG $DIGOPTS NSEC3PARAM jitter.nsec3.example @10.53.0.3 > dig.out.ns3.1.test$n || return 1
 	grep -q "^jitter\.nsec3\.example\..*NSEC3PARAM" dig.out.ns3.1.test$n || return 1
 }
-retry_quiet 20 check_if_nsec3param_exists || ret=1
+retry_quiet 50 check_if_nsec3param_exists || ret=1
 $DIG $DIGOPTS AXFR jitter.nsec3.example @10.53.0.3 > dig.out.ns3.2.test$n || ret=1
 # Check jitter distribution.
 checkjitter dig.out.ns3.2.test$n || ret=1
