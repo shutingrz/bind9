@@ -314,10 +314,70 @@ typedef enum isc_nmsocket_type {
 struct isc_nmsocket {
 	/*% Unlocked, RO */
 	int			magic;
+	isc_refcount_t	      	references;
 	int			tid;
 	isc_nmsocket_type	type;
 	isc_nm_t		*mgr;
 	isc_nmsocket_t		*parent;
+
+	isc__nm_readcb_t	rcb;
+	void			*rcbarg;
+
+	/*% libuv data */
+	uv_os_sock_t		fd;
+	union uv_any_handle	uv_handle;
+
+	/*% Peer address */
+	isc_sockaddr_t		peer;
+
+	/*%
+	 * Socket is active if it's listening, working, etc. If it's
+	 * closing, then it doesn't make a sense, for example, to
+	 * push handles or reqs for reuse.
+	 */
+	atomic_bool        	active;
+	atomic_bool	   	destroying;
+
+	/*%
+	 * 'spare' handles for that can be reused to avoid allocations,
+	 * for UDP.
+	 */
+	isc_astack_t 		*inactivehandles;
+	isc_astack_t 		*inactivereqs;
+
+	/*%
+	 * Used to wait for TCP listening events to complete, and
+	 * for the number of running children to reach zero during
+	 * shutdown.
+	 */
+	isc_mutex_t		lock;
+	isc_condition_t		cond;
+
+	/*%
+	 * List of active handles.
+	 * ah - current position in 'ah_frees'; this represents the
+	 *	current number of active handles;
+	 * ah_size - size of the 'ah_frees' and 'ah_handles' arrays
+	 * ah_handles - array pointers to active handles
+	 *
+	 * Adding a handle
+	 *  - if ah == ah_size, reallocate
+	 *  - x = ah_frees[ah]
+	 *  - ah_frees[ah++] = 0;
+	 *  - ah_handles[x] = handle
+	 *  - x must be stored with the handle!
+	 * Removing a handle:
+	 *  - ah_frees[--ah] = x
+	 *  - ah_handles[x] = NULL;
+	 *
+	 * XXX: for now this is locked with socket->lock, but we
+	 * might want to change it to something lockless in the
+	 * future.
+	 */
+	atomic_int_fast32_t     ah;
+	size_t			ah_size;
+	size_t			*ah_frees;
+	isc_nmhandle_t		**ah_handles;
 
 	/*%
 	 * quota is the TCP client, attached when a TCP connection
@@ -348,35 +408,16 @@ struct isc_nmsocket {
 	isc_nmiface_t		*iface;
 	isc_nmhandle_t		*tcphandle;
 
-	/*% Used to transfer listening TCP sockets to children */
-	uv_pipe_t		ipc;
-	char			ipc_pipe_name[64];
-	atomic_int_fast32_t	schildren;
-
 	/*% Extra data allocated at the end of each isc_nmhandle_t */
 	size_t			extrahandlesize;
 
 	/*% TCP backlog */
 	int backlog;
 
-	/*% libuv data */
-	uv_os_sock_t		fd;
-	union uv_any_handle	uv_handle;
-
-	/*% Peer address */
-	isc_sockaddr_t		peer;
-
 	/* Atomic */
 	/*% Number of running (e.g. listening) child sockets */
 	atomic_int_fast32_t     rchildren;
 
-	/*%
-	 * Socket is active if it's listening, working, etc. If it's
-	 * closing, then it doesn't make a sense, for example, to
-	 * push handles or reqs for reuse.
-	 */
-	atomic_bool        	active;
-	atomic_bool	   	destroying;
 
 	/*%
 	 * Socket is closed if it's not active and all the possible
@@ -386,7 +427,6 @@ struct isc_nmsocket {
 	 */
 	atomic_bool	      	closed;
 	atomic_bool	      	listening;
-	isc_refcount_t	      	references;
 
 	/*%
 	 * TCPDNS socket has been set not to pipeliine.
@@ -417,51 +457,12 @@ struct isc_nmsocket {
 	 */
 	atomic_bool		keepalive;
 
-	/*%
-	 * 'spare' handles for that can be reused to avoid allocations,
-	 * for UDP.
-	 */
-	isc_astack_t 		*inactivehandles;
-	isc_astack_t 		*inactivereqs;
-
-	/*%
-	 * Used to wait for TCP listening events to complete, and
-	 * for the number of running children to reach zero during
-	 * shutdown.
-	 */
-	isc_mutex_t		lock;
-	isc_condition_t		cond;
 
 	/*%
 	 * Used to pass a result back from TCP listening events.
 	 */
 	isc_result_t		result;
 
-	/*%
-	 * List of active handles.
-	 * ah - current position in 'ah_frees'; this represents the
-	 *	current number of active handles;
-	 * ah_size - size of the 'ah_frees' and 'ah_handles' arrays
-	 * ah_handles - array pointers to active handles
-	 *
-	 * Adding a handle
-	 *  - if ah == ah_size, reallocate
-	 *  - x = ah_frees[ah]
-	 *  - ah_frees[ah++] = 0;
-	 *  - ah_handles[x] = handle
-	 *  - x must be stored with the handle!
-	 * Removing a handle:
-	 *  - ah_frees[--ah] = x
-	 *  - ah_handles[x] = NULL;
-	 *
-	 * XXX: for now this is locked with socket->lock, but we
-	 * might want to change it to something lockless in the
-	 * future.
-	 */
-	atomic_int_fast32_t     ah;
-	size_t			ah_size;
-	size_t			*ah_frees;
-	isc_nmhandle_t		**ah_handles;
 
 	/*% Buffer for TCPDNS processing */
 	size_t			buf_size;
@@ -475,8 +476,10 @@ struct isc_nmsocket {
 	 */
 	isc_nm_opaquecb_t	closehandle_cb;
 
-	isc__nm_readcb_t	rcb;
-	void			*rcbarg;
+	/*% Used to transfer listening TCP sockets to children */
+	uv_pipe_t		ipc;
+	char			ipc_pipe_name[64];
+	atomic_int_fast32_t	schildren;
 };
 
 bool
