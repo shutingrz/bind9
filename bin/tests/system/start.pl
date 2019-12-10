@@ -230,6 +230,9 @@ sub construct_ns_command {
 		}
 
 		$command .= "$NAMED -m none -M external ";
+	} elsif ($ENV{'USE_RR'}) {
+		$ENV{'_RR_TRACE_DIR'} = $testdir . "/" . $server . "/";
+		$command = "rr record -h $NAMED -n 4 ";
 	} else {
 		$command = "$NAMED ";
 	}
