@@ -337,7 +337,7 @@ typedef struct {
 	/* Protected in the refcount routines. */
 	isc_refcount_t                  references;
 	/* Locked by lock. */
-	bool                   exiting;
+	atomic_bool                   exiting;
 } rbtdb_nodelock_t;
 
 typedef struct rbtdb_changed {
@@ -1168,9 +1168,7 @@ maybe_free_rbtdb(dns_rbtdb_t *rbtdb) {
 	 * may be nodes in use.
 	 */
 	for (i = 0; i < rbtdb->node_lock_count; i++) {
-		NODE_LOCK(&rbtdb->node_locks[i].lock, isc_rwlocktype_write);
-		rbtdb->node_locks[i].exiting = true;
-		NODE_UNLOCK(&rbtdb->node_locks[i].lock, isc_rwlocktype_write);
+		atomic_store(&rbtdb->node_locks[i].exiting, true);
 		if (isc_refcount_current(&rbtdb->node_locks[i].references) == 0)
 		{
 			inactive++;
@@ -5217,7 +5215,7 @@ detachnode(dns_db_t *db, dns_dbnode_t **targetp) {
 	if (decrement_reference(rbtdb, node, 0, isc_rwlocktype_read,
 				isc_rwlocktype_none, false)) {
 		if (isc_refcount_current(&nodelock->references) == 0 &&
-		    nodelock->exiting) {
+		    atomic_load(&nodelock->exiting)) {
 			inactive = true;
 		}
 	}
@@ -8204,7 +8202,7 @@ dns_rbtdb_create(isc_mem_t *mctx, const dns_name_t *origin, dns_dbtype_t type,
 			}
 			goto cleanup_deadnodes;
 		}
-		rbtdb->node_locks[i].exiting = false;
+		atomic_init(&rbtdb->node_locks[i].exiting, false);
 	}
 
 	/*
