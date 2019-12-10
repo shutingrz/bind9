@@ -1106,7 +1106,9 @@ isc_nmhandle_unref(isc_nmhandle_t *handle) {
 	}
 
 	nmhandle_deactivate(sock, handle);
-	nmsocket_maybe_destroy(sock);
+	if (!atomic_load(&sock->active)) {
+		nmsocket_maybe_destroy(sock);
+	}
 }
 
 void *
