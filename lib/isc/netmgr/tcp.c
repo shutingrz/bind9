@@ -335,9 +335,8 @@ isc__nm_async_tcplisten(isc__networker_t *worker, isc__netievent_t *ev0) {
 		}
 	}
 
-	atomic_store(&sock->listening, true);
-
  done:
+	atomic_store(&sock->listening, true);
 	LOCK(&sock->lock);
 	SIGNAL(&sock->cond);
 	UNLOCK(&sock->lock);
