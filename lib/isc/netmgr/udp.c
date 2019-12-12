@@ -151,6 +151,7 @@ udp_close_cb(uv_handle_t *handle) {
 static void
 stop_udp_child(isc_nmsocket_t *sock) {
 	INSIST(sock->type == isc_nm_udpsocket);
+	INSIST(sock->tid == isc_nm_tid());
 
 	uv_udp_recv_stop(&sock->uv_handle.udp);
 	uv_close((uv_handle_t *) &sock->uv_handle.udp, udp_close_cb);
@@ -175,7 +176,7 @@ stoplistening(isc_nmsocket_t *sock) {
 	for (int i = 0; i < sock->nchildren; i++) {
 		isc__netievent_udpstop_t *event = NULL;
 
-		if (i == sock->tid) {
+		if (isc_nm_tid() == sock->tid) {
 			stop_udp_child(&sock->children[i]);
 			continue;
 		}
