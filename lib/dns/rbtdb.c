@@ -1575,26 +1575,27 @@ mark_header_ancient(dns_rbtdb_t *rbtdb, rdatasetheader_t *header) {
 	update_rrsetstats(rbtdb, header, true);
 }
 
-static inline void
-mark_header_stale(dns_rbtdb_t *rbtdb, rdatasetheader_t *header) {
-	/*
-	 * If we are already stale there is nothing to do.
-	 */
-	if (STALE(header)) {
-		return;
+static inline bool
+mark_header_stale(dns_rbtdb_t *rbtdb, rdatasetheader_t *header,
+		  isc_rwlocktype_t *locktype, nodelock_t *lock) {
+	if (*locktype == isc_rwlocktype_write ||
+	    NODE_TRYUPGRADE(lock) == ISC_R_SUCCESS) {
+		/* Decrement the stats counter for the appropriate RRtype.
+		 * If the ANCIENT attribute is set (although it is very
+		 * unlikely that an RRset goes from ANCIENT to STALE), this
+		 * will decrement the ancient stale type counter, otherwise it
+		 * decrements the active stats type counter.
+		 */
+		update_rrsetstats(rbtdb, header, false);
+
+		header->attributes |= RDATASET_ATTR_STALE;
+
+		update_rrsetstats(rbtdb, header, true);
+
+		*locktype = isc_rwlocktype_write;
+		return (true);
 	}
-
-	/* Decrement the stats counter for the appropriate RRtype.
-	 * If the ANCIENT attribute is set (although it is very
-	 * unlikely that an RRset goes from ANCIENT to STALE), this
-	 * will decrement the ancient stale type counter, otherwise it
-	 * decrements the active stats type counter.
-	 */
-	update_rrsetstats(rbtdb, header, false);
-
-	header->attributes |= RDATASET_ATTR_STALE;
-
-	update_rrsetstats(rbtdb, header, true);
+	return (false);
 }
 
 static inline void
@@ -4451,8 +4452,10 @@ check_stale_header(dns_rbtnode_t *node, rdatasetheader_t *header,
 		 * DNS_DBFIND_STALEOK is not set we tell the caller to
 		 * skip this record.
 		 */
-		if (KEEPSTALE(search->rbtdb) && stale > search->now) {
-			mark_header_stale(search->rbtdb, header);
+		if (KEEPSTALE(search->rbtdb) && stale > search->now &&
+		    (STALE(header) ||
+		     mark_header_stale(search->rbtdb, header, locktype, lock)))
+		{
 			*header_prev = header;
 			return ((search->options & DNS_DBFIND_STALEOK) == 0);
 		}
