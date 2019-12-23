@@ -487,6 +487,9 @@ dlv			DLV	30795 1 1 (
 
 ; type 65280-65534 (private use)
 
+httpssvc0		HTTPSSVC	0 example.net.
+httpssvc1		HTTPSSVC	1 . port=60
+
 ; keydata (internal type used for managed keys)
 keydata			TYPE65533	\# 0
 keydata			TYPE65533	\# 6 010203040506 

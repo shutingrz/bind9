@@ -453,8 +453,8 @@ towire_in_httpssvc(ARGS_TOWIRE) {
 	 * SvcFieldPriority.
 	 */
 	dns_rdata_toregion(rdata, &region);
-	RETERR(mem_tobuffer(target, region.base, 3));
-	isc_region_consume(&region, 3);
+	RETERR(mem_tobuffer(target, region.base, 2));
+	isc_region_consume(&region, 2);
 
 	/*
 	 * SvcDomainName.
