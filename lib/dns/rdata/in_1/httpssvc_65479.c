@@ -9,7 +9,7 @@
  * information regarding copyright ownership.
  */
 
-/* draft-nygren-dnsop-svcb-httpssvc-00 */
+/* draft-ietf-dnsop-svcb-httpssvc-01 */
 
 #ifndef RDATA_IN_1_HTTPSSVC_65479_C
 #define RDATA_IN_1_HTTPSSVC_65479_C
@@ -29,7 +29,7 @@ static const struct {
 	{ "key0=", 0, sbpr_text, true },
 	{ "alpn=", 1, sbpr_text, true },
 	{ "port=", 2, sbpr_port, true },
-	{ "esnikeys=", 3, sbpr_base64, true },
+	{ "esniconfig=", 3, sbpr_base64, true },
 	{ "ipv4hint=", 4, sbpr_ipv4s, true },
 	{ "ipv6hint=", 6, sbpr_ipv6s, true },
 };

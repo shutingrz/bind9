@@ -2318,9 +2318,9 @@ httpssvc(void **state) {
 		TEXT_VALID("2 svc.example.net. port=50"),
 		TEXT_VALID("2 svc.example.net. ipv4hint=10.50.0.1,10.50.0.2"),
 		TEXT_VALID("2 svc.example.net. ipv6hint=::1,2002::1"),
-		TEXT_VALID("2 svc.example.net. esnikeys=abcdefghijkl"),
+		TEXT_VALID("2 svc.example.net. esniconfig=abcdefghijkl"),
 		/* bad base64 */
-		TEXT_INVALID("2 svc.example.net. esnikeys=abcdefghijklm"),
+		TEXT_INVALID("2 svc.example.net. esniconfig=abcdefghijklm"),
 		TEXT_VALID("2 svc.example.net. key5=\"2222\""),
 		TEXT_VALID_CHANGED("2 svc.example.net. key5=\"2222\" alpn=h2",
 				   "2 svc.example.net. key5=\"2222\" "
