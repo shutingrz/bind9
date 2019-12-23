@@ -570,7 +570,7 @@ additionaldata_in_httpssvc(ARGS_ADDLDATA) {
 
 	dns_name_init(&name, offsets);
 	dns_rdata_toregion(rdata, &region);
-	isc_region_consume(&region, 3);
+	isc_region_consume(&region, 2);
 	dns_name_fromregion(&name, &region);
 	if (dns_name_equal(&name, dns_rootname))
 		return (ISC_R_SUCCESS);
@@ -617,7 +617,7 @@ checknames_in_httpssvc(ARGS_CHECKNAMES) {
 
 #if 0
 	dns_rdata_toregion(rdata, &region);
-	isc_region_consume(&region, 3);
+	isc_region_consume(&region, 2);
 	dns_name_init(&name, NULL);
 	dns_name_fromregion(&name, &region);
 	if (!dns_name_ishostname(&name, false)) {
