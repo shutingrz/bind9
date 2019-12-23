@@ -378,7 +378,8 @@ fromwire_in_httpssvc(ARGS_FROMWIRE) {
 	 */
 	isc_buffer_activeregion(source, &region);
 	while (region.length > 0U) {
-		unsigned short len;
+		unsigned short key, len;
+		size_t i;
 
 		/*
 		 * SvcParamKey
@@ -387,6 +388,7 @@ fromwire_in_httpssvc(ARGS_FROMWIRE) {
 			return (ISC_R_UNEXPECTEDEND);
 		}
 		RETERR(mem_tobuffer(target, region.base, 2));
+		key = uint16_fromregion(&region);
 		isc_region_consume(&region, 2);
 
 		/*
@@ -404,6 +406,30 @@ fromwire_in_httpssvc(ARGS_FROMWIRE) {
 		 */
 		if (region.length < len) {
 			return (ISC_R_UNEXPECTEDEND);
+		}
+		for (i = 0; i < ARRAYSIZE(sbpr); i++) {
+			if (sbpr[i].value == key) {
+				switch (sbpr[i].encoding) {
+				case sbpr_port:
+					if (len != 2) {
+						return (DNS_R_FORMERR);
+					}
+					break;
+				case sbpr_ipv4s:
+					if ((len % 4) != 0 || len == 0) {
+						return (DNS_R_FORMERR);
+					}
+					break;
+				case sbpr_ipv6s:
+					if ((len % 16) != 0 || len == 0) {
+						return (DNS_R_FORMERR);
+					}
+					break;
+				case sbpr_text:
+				case sbpr_base64:
+					break;
+				}
+			}
 		}
 		RETERR(mem_tobuffer(target, region.base, len));
 		isc_region_consume(&region, len);

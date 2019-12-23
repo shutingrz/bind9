@@ -2304,6 +2304,8 @@ httpssvc(void **state) {
 		TEXT_INVALID("0"),
 		/* minimal record */
 		TEXT_VALID("0 ."),
+		/* Alias form requires SvcFieldValue to be empty */
+		TEXT_INVALID("0 . alpn=\"h2\""),
 		/* no "key" prefix */
 		TEXT_INVALID("2 svc.example.net. 0=\"2222\""),
 		/* zero pad invalid */
@@ -2316,7 +2318,11 @@ httpssvc(void **state) {
 		TEXT_VALID_CHANGED("2 svc.example.net. alpn=h3",
 				   "2 svc.example.net. alpn=\"h3\""),
 		TEXT_VALID("2 svc.example.net. port=50"),
+		/* empty hint */
+		TEXT_INVALID("2 svc.example.net. ipv4hint="),
 		TEXT_VALID("2 svc.example.net. ipv4hint=10.50.0.1,10.50.0.2"),
+		/* empty hint */
+		TEXT_INVALID("2 svc.example.net. ipv6hint="),
 		TEXT_VALID("2 svc.example.net. ipv6hint=::1,2002::1"),
 		TEXT_VALID("2 svc.example.net. esniconfig=abcdefghijkl"),
 		/* bad base64 */
@@ -2329,14 +2335,37 @@ httpssvc(void **state) {
 		TEXT_INVALID("2 svc.example.net. key65536=\"2222\""),
 		TEXT_SENTINEL()
 	};
-	wire_ok_t wire_ok[] = { /*
-				 * Too short
-				 */
-				WIRE_INVALID(0x00, 0x00),
-				/*
-				 * Minimal length record.
-				 */
-				WIRE_VALID(0x00, 0x00, 0x00), WIRE_SENTINEL()
+	wire_ok_t wire_ok[] = {
+		/*
+		 * Too short
+		 */
+		WIRE_INVALID(0x00, 0x00),
+		/*
+		 * Minimal length record.
+		 */
+		WIRE_VALID(0x00, 0x00, 0x00),
+		/*
+		 * Alias with non-empty SvcFieldValue (key0="").
+		 */
+		WIRE_INVALID(0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00),
+		/*
+		 * Bad key0= length (longer than rdata).
+		 */
+		WIRE_INVALID(0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x01),
+		/*
+		 * Port (0x02) too small (zero and one octets).
+		 */
+		WIRE_INVALID(0x00, 0x01, 0x00, 0x00, 0x02, 0x00, 0x00),
+		WIRE_INVALID(0x00, 0x01, 0x00, 0x00, 0x02, 0x00, 0x01, 0x00),
+		/* Valid port */
+		WIRE_VALID(0x00, 0x01, 0x00, 0x00, 0x02, 0x00, 0x02, 0x00,
+			   0x00),
+		/*
+		 * Port (0x02) too big (three octets).
+		 */
+		WIRE_INVALID(0x00, 0x01, 0x00, 0x00, 0x02, 0x00, 0x03, 0x00,
+			     0x00, 0x00),
+		WIRE_SENTINEL()
 	};
 
 	UNUSED(state);
