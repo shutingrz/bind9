@@ -166,6 +166,7 @@ fromtext_in_httpssvc(ARGS_FROMTEXT) {
 	isc_token_t token;
 	dns_name_t name;
 	isc_buffer_t buffer;
+	bool alias;
 #if 0
 	bool ok;
 #endif
@@ -187,6 +188,8 @@ fromtext_in_httpssvc(ARGS_FROMTEXT) {
 	}
 	RETERR(uint16_tobuffer(token.value.as_ulong, target));
 
+	alias = token.value.as_ulong == 0;
+
 	/*
 	 * SvcDomainName.
 	 */
@@ -200,13 +203,20 @@ fromtext_in_httpssvc(ARGS_FROMTEXT) {
 	RETTOK(dns_name_fromtext(&name, &buffer, origin, options, target));
 #if 0
 	ok = true;
-	if ((options & DNS_RDATA_CHECKNAMES) != 0)
+	if ((options & DNS_RDATA_CHECKNAMES) != 0) {
 		ok = dns_name_ishostname(&name, false);
-	if (!ok && (options & DNS_RDATA_CHECKNAMESFAIL) != 0)
+	}
+	if (!ok && (options & DNS_RDATA_CHECKNAMESFAIL) != 0) {
 		RETTOK(DNS_R_BADNAME);
-	if (!ok && callbacks != NULL)
+	}
+	if (!ok && callbacks != NULL) {
 		warn_badname(&name, lexer, callbacks);
+	}
 #endif
+
+	if (alias) {
+		return (ISC_R_SUCCESS);
+	}
 
 	/*
 	 * SvcFieldValue
@@ -331,6 +341,7 @@ static inline isc_result_t
 fromwire_in_httpssvc(ARGS_FROMWIRE) {
 	dns_name_t name;
 	isc_region_t region;
+	bool alias;
 
 	REQUIRE(type == dns_rdatatype_httpssvc);
 	REQUIRE(rdclass == dns_rdataclass_in);
@@ -346,15 +357,21 @@ fromwire_in_httpssvc(ARGS_FROMWIRE) {
 	 * SvcFieldPriority.
 	 */
 	isc_buffer_activeregion(source, &region);
-	if (region.length < 2)
+	if (region.length < 2) {
 		return (ISC_R_UNEXPECTEDEND);
+	}
 	RETERR(mem_tobuffer(target, region.base, 2));
+	alias = uint16_fromregion(&region) == 0;
 	isc_buffer_forward(source, 2);
 
 	/*
 	 * SvcDomainName.
 	 */
 	RETERR(dns_name_fromwire(&name, source, dctx, options, target));
+
+	if (alias) {
+		return (ISC_R_SUCCESS);
+	}
 
 	/*
 	 * SvcFieldValue.
