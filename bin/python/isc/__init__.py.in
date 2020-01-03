@@ -11,7 +11,7 @@
 
 __all__ = ['checkds', 'coverage', 'keymgr', 'dnskey', 'eventlist',
            'keydict', 'keyevent', 'keyseries', 'keyzone', 'policy',
-           'parsetab', 'rndc', 'utils']
+           'parsetab', 'rndc', 'utils', 'lex', 'yacc']
 
 from isc.dnskey import *
 from isc.eventlist import *

@@ -10,8 +10,8 @@
 ############################################################################
 
 import re
-import lex
-import yacc
+from . import lex
+from . import yacc
 from string import *
 from copy import copy
 
