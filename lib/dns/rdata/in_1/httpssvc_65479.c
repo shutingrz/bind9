@@ -168,7 +168,7 @@ fromtext_in_httpssvc(ARGS_FROMTEXT) {
 	isc_buffer_t buffer;
 	bool alias;
 #if 0
-	bool ok;
+	bool ok = true;
 #endif
 
 	REQUIRE(type == dns_rdatatype_httpssvc);
@@ -202,7 +202,6 @@ fromtext_in_httpssvc(ARGS_FROMTEXT) {
 	}
 	RETTOK(dns_name_fromtext(&name, &buffer, origin, options, target));
 #if 0
-	ok = true;
 	if ((options & DNS_RDATA_CHECKNAMES) != 0) {
 		ok = dns_name_ishostname(&name, false);
 	}
@@ -484,6 +483,7 @@ compare_in_httpssvc(ARGS_COMPARE) {
 
 	dns_rdata_toregion(rdata1, &region1);
 	dns_rdata_toregion(rdata2, &region2);
+
 	return (isc_region_compare(&region1, &region2));
 }
 
@@ -504,6 +504,7 @@ fromstruct_in_httpssvc(ARGS_FROMSTRUCT) {
 	RETERR(uint16_tobuffer(httpssvc->priority, target));
 	dns_name_toregion(&httpssvc->svcdomain, &region);
 	RETERR(isc_buffer_copyregion(target, &region));
+
 	return (mem_tobuffer(target, httpssvc->svc, httpssvc->svclen));
 }
 
@@ -523,15 +524,19 @@ tostruct_in_httpssvc(ARGS_TOSTRUCT) {
 	ISC_LINK_INIT(&httpssvc->common, link);
 
 	dns_rdata_toregion(rdata, &region);
+
 	httpssvc->priority = uint16_fromregion(&region);
 	isc_region_consume(&region, 2);
+
 	dns_name_init(&httpssvc->svcdomain, NULL);
 	dns_name_init(&name, NULL);
 	dns_name_fromregion(&name, &region);
 	isc_region_consume(&region, name_length(&name));
+
 	RETERR(name_duporclone(&name, mctx, &httpssvc->svcdomain));
 	httpssvc->svclen = region.length;
 	httpssvc->svc = mem_maybedup(mctx, region.base, region.length);
+
 	if (httpssvc->svc == NULL) {
 		if (mctx != NULL) {
 			dns_name_free(&httpssvc->svcdomain, httpssvc->mctx);
@@ -540,6 +545,7 @@ tostruct_in_httpssvc(ARGS_TOSTRUCT) {
 	}
 
 	httpssvc->mctx = mctx;
+
 	return (ISC_R_SUCCESS);
 }
 
@@ -551,8 +557,9 @@ freestruct_in_httpssvc(ARGS_FREESTRUCT) {
 	REQUIRE(httpssvc->common.rdclass == dns_rdataclass_in);
 	REQUIRE(httpssvc->common.rdtype == dns_rdatatype_httpssvc);
 
-	if (httpssvc->mctx == NULL)
+	if (httpssvc->mctx == NULL) {
 		return;
+	}
 
 	dns_name_free(&httpssvc->svcdomain, httpssvc->mctx);
 	isc_mem_free(httpssvc->mctx, httpssvc->svc);
@@ -572,8 +579,9 @@ additionaldata_in_httpssvc(ARGS_ADDLDATA) {
 	dns_rdata_toregion(rdata, &region);
 	isc_region_consume(&region, 2);
 	dns_name_fromregion(&name, &region);
-	if (dns_name_equal(&name, dns_rootname))
+	if (dns_name_equal(&name, dns_rootname)) {
 		return (ISC_R_SUCCESS);
+	}
 
 	return ((add)(arg, &name, dns_rdatatype_a));
 }
@@ -621,8 +629,9 @@ checknames_in_httpssvc(ARGS_CHECKNAMES) {
 	dns_name_init(&name, NULL);
 	dns_name_fromregion(&name, &region);
 	if (!dns_name_ishostname(&name, false)) {
-		if (bad != NULL)
+		if (bad != NULL) {
 			dns_name_clone(&name, bad);
+		}
 		return (false);
 	}
 #endif
