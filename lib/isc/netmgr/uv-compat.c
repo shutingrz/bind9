@@ -10,6 +10,7 @@
  */
 
 #include <unistd.h>
+#include <isc/log.h>
 #include "uv-compat.h"
 
 /*
@@ -35,21 +36,42 @@ typedef struct {
 int
 uv__tcp_xfer_import(uv_tcp_t *tcp, uv__ipc_socket_xfer_type_t xfer_type,
 		    uv__ipc_socket_xfer_info_t *xfer_info);
+
 int
-uv__tcp_xfer_export(uv_tcp_t *handle, int pid,
-		    uv__ipc_socket_xfer_info_t *xfer_info);
+uv__tcp_xfer_export(uv_tcp_t* handle,
+                    int target_pid,
+                    uv__ipc_socket_xfer_type_t* xfer_type,
+                    uv__ipc_socket_xfer_info_t* xfer_info);
 
 int
 isc_uv_export(uv_stream_t *stream, isc_uv_stream_info_t *info) {
+	uv__ipc_socket_xfer_info_t xfer_info;
+	uv__ipc_socket_xfer_type_t xfer_type;
+	isc_log_write(isc_lctx, ISC_LOGCATEGORY_GENERAL,
+		      ISC_LOGMODULE_NETMGR, ISC_LOG_ERROR,
+		      "uv_export sizeofs 1 %d 2 %d", sizeof(isc_uv_stream_info_t), sizeof(uv__ipc_socket_xfer_info_t));
 	if (stream->type != UV_TCP) {
+		isc_log_write(isc_lctx, ISC_LOGCATEGORY_GENERAL,
+			      ISC_LOGMODULE_NETMGR, ISC_LOG_ERROR,
+			      "uv_export failed: stream not tcp");
 		return (-1);
 	}
-	if (uv__tcp_xfer_export((uv_tcp_t *) stream, GetCurrentProcessId(),
-				&info->socket_info) == -1) {
-		return (-1);
+	int r = uv__tcp_xfer_export((uv_tcp_t *) stream, GetCurrentProcessId(), &xfer_type, &xfer_info);
+	if (r != 0) {
+		isc_log_write(isc_lctx, ISC_LOGCATEGORY_GENERAL,
+			      ISC_LOGMODULE_NETMGR, ISC_LOG_ERROR,
+			      "uv_export failed: result %d", r);
+		return (r);
 	}
-
+	if (xfer_info.delayed_error != 0) {
+		isc_log_write(isc_lctx, ISC_LOGCATEGORY_GENERAL,
+			      ISC_LOGMODULE_NETMGR, ISC_LOG_ERROR,
+			      "uv_export failed: delayed error %d", xfer_info.delayed_error);
+		return (xfer_info.delayed_error);
+	}
 	info->type = UV_TCP;
+	info->socket_info = xfer_info.socket_info;
+	return (0);
 }
 
 int
@@ -59,6 +81,7 @@ isc_uv_import(uv_stream_t *stream, isc_uv_stream_info_t *info) {
 	if (stream->type != UV_TCP || info->type != UV_TCP) {
 		return (-1);
 	}
+	xfer_info.delayed_error = 0;
 	xfer_info.socket_info = info->socket_info;
 
 	return (uv__tcp_xfer_import((uv_tcp_t *) stream,
