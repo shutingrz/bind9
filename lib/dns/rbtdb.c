@@ -1207,6 +1207,7 @@ detach(dns_db_t **dbp) {
 	*dbp = NULL;
 
 	if (isc_refcount_decrement(&rbtdb->references) == 1) {
+		(void)isc_refcount_current(&rbtdb->references);
 		maybe_free_rbtdb(rbtdb);
 	}
 }
@@ -1975,7 +1976,6 @@ decrement_reference(dns_rbtdb_t *rbtdb, dns_rbtnode_t *node,
 	rbtdb_nodelock_t *nodelock;
 	int bucket = node->locknum;
 	bool no_reference = true;
-	uint_fast32_t refs;
 
 	nodelock = &rbtdb->node_locks[bucket];
 
@@ -1986,8 +1986,8 @@ decrement_reference(dns_rbtdb_t *rbtdb, dns_rbtnode_t *node,
 	/* Handle easy and typical case first. */
 	if (!node->dirty && KEEP_NODE(node, rbtdb, locked)) {
 		if (isc_refcount_decrement(&node->references) == 1) {
-			refs = isc_refcount_decrement(&nodelock->references);
-			INSIST(refs > 0);
+			(void)isc_refcount_current(&node->references);
+			(void)isc_refcount_decrement(&nodelock->references);
 			return (true);
 		} else {
 			return (false);
@@ -2006,6 +2006,7 @@ decrement_reference(dns_rbtdb_t *rbtdb, dns_rbtnode_t *node,
 			NODE_DOWNGRADE(&nodelock->lock);
 		return (false);
 	}
+	(void)isc_refcount_current(&node->references);
 
 	if (node->dirty) {
 		if (IS_CACHE(rbtdb))
@@ -2048,8 +2049,7 @@ decrement_reference(dns_rbtdb_t *rbtdb, dns_rbtnode_t *node,
 	} else
 		write_locked = true;
 
-	refs = isc_refcount_decrement(&nodelock->references);
-	INSIST(refs > 0);
+	(void)isc_refcount_decrement(&nodelock->references);
 
 	if (KEEP_NODE(node, rbtdb, locked || write_locked)) {
 		goto restore_locks;
@@ -2415,6 +2415,8 @@ closeversion(dns_db_t *db, dns_dbversion_t **versionp, bool commit) {
 		goto end;
 	}
 
+	(void)isc_refcount_current(&version->references);
+
 	/*
 	 * Update the zone's secure status in version before making
 	 * it the current version.
@@ -2440,10 +2442,10 @@ closeversion(dns_db_t *db, dns_dbversion_t **versionp, bool commit) {
 			cur_ref = isc_refcount_decrement(&cur_version->references);
 			if (cur_ref == 1) {
 				(void)isc_refcount_current(&cur_version->references);
-				if (cur_version->serial == rbtdb->least_serial)
+				if (cur_version->serial == rbtdb->least_serial) {
 					INSIST(EMPTY(cur_version->changed_list));
-				UNLINK(rbtdb->open_versions,
-				       cur_version, link);
+				}
+				UNLINK(rbtdb->open_versions, cur_version, link);
 			}
 			if (EMPTY(rbtdb->open_versions)) {
 				/*
@@ -2556,6 +2558,7 @@ closeversion(dns_db_t *db, dns_dbversion_t **versionp, bool commit) {
 	RBTDB_UNLOCK(&rbtdb->lock, isc_rwlocktype_write);
 
 	if (cleanup_version != NULL) {
+		isc_refcount_destroy(&cleanup_version->references);
 		INSIST(EMPTY(cleanup_version->changed_list));
 		free_gluetable(cleanup_version);
 		isc_rwlock_destroy(&cleanup_version->glue_rwlock);
@@ -8322,7 +8325,7 @@ dns_rbtdb_create(isc_mem_t *mctx, const dns_name_t *origin, dns_dbtype_t type,
 	rbtdb->next_serial = 2;
 	rbtdb->current_version = allocate_version(mctx, 1, 1, false);
 	if (rbtdb->current_version == NULL) {
-		isc_refcount_decrement(&rbtdb->references);
+		(void)isc_refcount_decrement(&rbtdb->references);
 		free_rbtdb(rbtdb, false, NULL);
 		return (ISC_R_NOMEMORY);
 	}
@@ -8343,7 +8346,7 @@ dns_rbtdb_create(isc_mem_t *mctx, const dns_name_t *origin, dns_dbtype_t type,
 		isc_mem_put(mctx, rbtdb->current_version,
 			    sizeof(*rbtdb->current_version));
 		rbtdb->current_version = NULL;
-		isc_refcount_decrement(&rbtdb->references);
+		(void)isc_refcount_decrement(&rbtdb->references);
 		free_rbtdb(rbtdb, false, NULL);
 		return (result);
 	}
