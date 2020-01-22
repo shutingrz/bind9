@@ -920,9 +920,9 @@ isc__nmsocket_init(isc_nmsocket_t *sock, isc_nm_t *mgr,
 		.type = type,
 		.iface = iface,
 		.fd = -1,
-		.ah_size = 32,
-		.inactivehandles = isc_astack_new(mgr->mctx, 60),
-		.inactivereqs = isc_astack_new(mgr->mctx, 60)
+		.ah_size = 200,
+		.inactivehandles = isc_astack_new(mgr->mctx, 200),
+		.inactivereqs = isc_astack_new(mgr->mctx, 200)
 	};
 
 	isc_nm_attach(mgr, &sock->mgr);
@@ -933,7 +933,7 @@ isc__nmsocket_init(isc_nmsocket_t *sock, isc_nm_t *mgr,
 	sock->ah_handles = isc_mem_allocate(mgr->mctx,
 					    sock->ah_size *
 					     sizeof(isc_nmhandle_t *));
-	for (size_t i = 0; i < 32; i++) {
+	for (size_t i = 0; i < sock->ah_size; i++) {
 		sock->ah_frees[i] = i;
 		sock->ah_handles[i] = NULL;
 	}
