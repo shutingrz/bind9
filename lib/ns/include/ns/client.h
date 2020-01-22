@@ -182,7 +182,7 @@ struct ns_clientmgr {
 
 #if CLIENT_NMCTXS > 0
 	/*%< mctx pool for clients. */
-	unsigned int		nextmctx;
+	atomic_uint_fast32_t	nextmctx;
 	isc_mem_t *		mctxpool[CLIENT_NMCTXS];
 #endif
 };

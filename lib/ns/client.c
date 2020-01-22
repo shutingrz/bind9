@@ -2219,24 +2219,13 @@ get_clientmctx(ns_clientmgr_t *manager, isc_mem_t **mctxp) {
 	MTRACE("clientmctx");
 
 #if CLIENT_NMCTXS > 0
-	LOCK(&manager->lock);
 	if (isc_nm_tid() >= 0) {
 		nextmctx = isc_nm_tid();
 	} else {
-		nextmctx = manager->nextmctx++;
-		if (manager->nextmctx == CLIENT_NMCTXS)
-			manager->nextmctx = 0;
-
-		INSIST(nextmctx < CLIENT_NMCTXS);
+		nextmctx = atomic_fetch_add(&manager->nextmctx, 1);
+		nextmctx %= CLIENT_NMCTXS;
 	}
-
 	clientmctx = manager->mctxpool[nextmctx];
-	if (clientmctx == NULL) {
-		isc_mem_create(&clientmctx);
-		isc_mem_setname(clientmctx, "client", NULL);
-		manager->mctxpool[nextmctx] = clientmctx;
-	}
-	UNLOCK(&manager->lock);
 #else
 	clientmctx = manager->mctx;
 #endif
@@ -2478,8 +2467,10 @@ ns_clientmgr_create(isc_mem_t *mctx, ns_server_t *sctx, isc_taskmgr_t *taskmgr,
 	ISC_LIST_INIT(manager->recursing);
 #if CLIENT_NMCTXS > 0
 	manager->nextmctx = 0;
-	for (i = 0; i < CLIENT_NMCTXS; i++)
-		manager->mctxpool[i] = NULL; /* will be created on-demand */
+	for (i = 0; i < CLIENT_NMCTXS; i++) {
+		isc_mem_create(&manager->mctxpool[i]);
+		isc_mem_setname(manager->mctxpool[i], "client", NULL);
+	}
 #endif
 	manager->magic = MANAGER_MAGIC;
 
