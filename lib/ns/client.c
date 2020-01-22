@@ -2249,6 +2249,10 @@ ns__client_setup(ns_client_t *client, ns_clientmgr_t *mgr, bool new) {
 	REQUIRE(VALID_MANAGER(mgr) || !new);
 
 	if (new) {
+		int tid = isc_nm_tid();
+		if (tid < 0) {
+			tid = -1;
+		}
 		*client = (ns_client_t) {
 			.magic = 0
 		};
@@ -2256,7 +2260,7 @@ ns__client_setup(ns_client_t *client, ns_clientmgr_t *mgr, bool new) {
 		get_clientmctx(mgr, &client->mctx);
 		clientmgr_attach(mgr, &client->manager);
 		ns_server_attach(mgr->sctx, &client->sctx);
-		result = isc_task_create(mgr->taskmgr, 20,  &client->task);
+		result = isc_task_create_bound(mgr->taskmgr, 20,  &client->task, tid);
 		if (result != ISC_R_SUCCESS) {
 			goto cleanup;
 		}
