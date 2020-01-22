@@ -239,7 +239,8 @@ while running:
             rsp = create_response(msg[0])
             if rsp:
                 print(dns.rcode.to_text(rsp.rcode()))
-                s.sendto(rsp.to_wire(), msg[1])
+                while s.sendto(rsp.to_wire(), msg[1]) == 0:
+                    pass
             else:
                 print("NO RESPONSE")
     if not running:
