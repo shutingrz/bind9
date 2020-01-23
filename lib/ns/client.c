@@ -871,7 +871,7 @@ ns_client_error(ns_client_t *client, isc_result_t result) {
 		/*
 		 * SERVFAIL caching: store qname/qtype of failed queries
 		 */
-		isc_time_t expire;
+/*		isc_time_t expire;
 		isc_interval_t i;
 		uint32_t flags = 0;
 
@@ -885,7 +885,7 @@ ns_client_error(ns_client_t *client, isc_result_t result) {
 					 client->query.qname,
 					 client->query.qtype,
 					 true, flags, &expire);
-		}
+		} */
 	}
 
 	ns_client_send(client);

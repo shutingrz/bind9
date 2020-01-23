@@ -6116,10 +6116,11 @@ ns__query_sfcache(query_ctx_t *qctx) {
 					  &qctx->client->tnow);
 	}
 #else
-	failcache = dns_badcache_find(qctx->view->failcache,
+/*	failcache = dns_badcache_find(qctx->view->failcache,
 				      qctx->client->query.qname,
 				      qctx->qtype, &flags,
-				      &qctx->client->tnow);
+				      &qctx->client->tnow); */
+	failcache = false;
 #endif
 	if (failcache &&
 	    (((flags & NS_FAILCACHE_CD) != 0) ||
