@@ -2229,19 +2229,19 @@ get_clientmctx(ns_clientmgr_t *manager, isc_mem_t **mctxp) {
 
 static void
 get_clienttask(ns_clientmgr_t *manager, isc_task_t **taskp) {
-	isc_task_t *clienttask;
-	unsigned int nexttask;
+/*	isc_task_t *clienttask;
+	unsigned int nexttask; */
 	int tid = isc_nm_tid();
 	if (tid < 0) {
 		tid = 0;
 	}
 	MTRACE("clienttask");
-
+/*
 	nexttask = isc_random_uniform(CLIENT_NTASKS_PERCPU) * isc_nm_threads() + tid;
 	clienttask = manager->taskpool[nexttask];
-
-//	isc_task_create_bound(manager->taskmgr, 20, taskp, tid);
-	isc_task_attach(clienttask, taskp);
+*/
+	isc_task_create_bound(manager->taskmgr, 20, taskp, tid);
+//	isc_task_attach(clienttask, taskp);
 }
 
 isc_result_t
