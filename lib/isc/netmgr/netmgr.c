@@ -121,6 +121,9 @@ static const isc_statscounter_t unixstatsindex[] = {
 
 ISC_THREAD_LOCAL int isc__nm_tid_v = ISC_NETMGR_TID_UNKNOWN;
 
+/* An assumption that we'll have one netmgr per named */
+static atomic_uint_fast32_t isc__nm_tid_count_v;
+
 static void
 nmsocket_maybe_destroy(isc_nmsocket_t *sock);
 static void
@@ -136,7 +139,10 @@ int
 isc_nm_tid() {
 	return (isc__nm_tid_v);
 }
-
+int
+isc_nm_threads() {
+	return (isc__nm_tid_count_v);
+}
 bool
 isc__nm_in_netthread() {
 	return (isc__nm_tid_v >= 0);
@@ -151,6 +157,7 @@ isc_nm_start(isc_mem_t *mctx, uint32_t workers) {
 	*mgr = (isc_nm_t) {
 		.nworkers = workers
 	};
+	atomic_init(&isc__nm_tid_count_v, workers);
 
 	isc_mem_attach(mctx, &mgr->mctx);
 	isc_mutex_init(&mgr->lock);

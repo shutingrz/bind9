@@ -106,6 +106,7 @@ struct isc__task {
 	isc_mutex_t			lock;
 	/* Locked by task lock. */
 	task_state_t			state;
+	int				pause_cnt;
 	isc_refcount_t			references;
 	isc_eventlist_t			events;
 	isc_eventlist_t			on_shutdown;
@@ -308,6 +309,7 @@ isc_task_create_bound(isc_taskmgr_t *manager0, unsigned int quantum,
 
 	isc_mutex_init(&task->lock);
 	task->state = task_state_idle;
+	task->pause_cnt = 0;
 
 	isc_refcount_init(&task->references, 1);
 	INIT_LIST(task->events);
@@ -407,7 +409,7 @@ task_shutdown(isc__task_t *task) {
 /*
  * Moves a task onto the appropriate run queue.
  *
- * Caller must NOT hold manager lock.
+ * Caller must NOT hold queue lock.
  */
 static inline void
 task_ready(isc__task_t *task) {
@@ -415,7 +417,7 @@ task_ready(isc__task_t *task) {
 	bool has_privilege = isc_task_privilege((isc_task_t *) task);
 
 	REQUIRE(VALID_MANAGER(manager));
-	REQUIRE(task->state == task_state_ready);
+//	REQUIRE(task->state == task_state_ready);
 
 	XTRACE("task_ready");
 	LOCK(&manager->queues[task->threadid].lock);
@@ -967,10 +969,13 @@ pop_readyq(isc__taskmgr_t *manager, int c) {
  * Push 'task' onto the ready_tasks queue.  If 'task' has the privilege
  * flag set, then also push it onto the ready_priority_tasks queue.
  *
- * Caller must hold the task manager lock.
+ * Caller must hold the task queue lock.
  */
 static inline void
 push_readyq(isc__taskmgr_t *manager, isc__task_t *task, int c) {
+	if (ISC_LINK_LINKED(task, ready_link)) {
+		return;
+	}
 	ENQUEUE(manager->queues[c].ready_tasks, task, ready_link);
 	if (TASK_PRIVILEGED(task)) {
 		ENQUEUE(manager->queues[c].ready_priority_tasks, task,
@@ -1128,6 +1133,16 @@ dispatch(isc__taskmgr_t *manager, unsigned int threadid) {
 						  memory_order_acquire);
 
 			LOCK(&task->lock);
+			/*
+			 * It is possible if we're pausing this thread right
+			 * now and we haven't popped it from the queue yet,
+			 * just bail then.
+			 */
+			if (task->state != task_state_ready) {
+				UNLOCK(&task->lock);
+				LOCK(&manager->queues[threadid].lock);
+				continue;
+			}
 			INSIST(task->state == task_state_ready);
 			task->state = task_state_running;
 			XTRACE("running");
@@ -1690,6 +1705,16 @@ isc_task_pause(isc_task_t *task0) {
 	bool running = false;
 
 	LOCK(&task->lock);
+	task->pause_cnt++;
+	if (task->pause_cnt > 1) {
+		/*
+		 * Someone already paused this thread, just increase
+		 * the number of pausing clients.
+		 */
+		UNLOCK(&task->lock);
+		return;
+	}
+
 	INSIST(task->state == task_state_idle ||
 	       task->state == task_state_ready ||
 	       task->state == task_state_running);
@@ -1699,8 +1724,9 @@ isc_task_pause(isc_task_t *task0) {
 	} else {
 		task->state = task_state_paused;
 	}
-	UNLOCK(&task->lock);
 
+	UNLOCK(&task->lock);
+	
 	if (running) {
 		return;
 	}
@@ -1711,6 +1737,7 @@ isc_task_pause(isc_task_t *task0) {
 			task, ready_link);
 	}
 	UNLOCK(&manager->queues[task->threadid].lock);
+
 }
 
 void
@@ -1721,6 +1748,12 @@ isc_task_unpause(isc_task_t *task0) {
 	REQUIRE(ISCAPI_TASK_VALID(task0));
 
 	LOCK(&task->lock);
+	task->pause_cnt--;
+	if (task->pause_cnt > 0) {
+		UNLOCK(&task->lock);
+		return;
+	}
+	
 	INSIST(task->state == task_state_paused ||
 	       task->state == task_state_pausing);
 	/* If the task was pausing we can't reschedule it */

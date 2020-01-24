@@ -59,6 +59,10 @@ isc_nm_closedown(isc_nm_t *mgr);
 int
 isc_nm_tid(void);
 
+/* Return number of netmgr worker threads */
+int
+isc_nm_threads(void);
+
 /*
  * isc_nm_freehandle frees a handle, releasing resources
  */

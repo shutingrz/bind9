@@ -85,9 +85,9 @@
 #define NS_CLIENT_SEND_BUFFER_SIZE		4096
 #define NS_CLIENT_RECV_BUFFER_SIZE		4096
 
-#define CLIENT_NMCTXS				100
+#define CLIENT_NMCTXS_PERCPU			8
 /*%<
- * Number of 'mctx pools' for clients. (Should this be configurable?)
+ * Number of 'mctx pools' for clients per CPU. (Should this be configurable?)
  * When enabling threads, we use a pool of memory contexts shared by
  * client objects, since concurrent access to a shared context would cause
  * heavy contentions.  The above constant is expected to be enough for
@@ -95,7 +95,7 @@
  * server.
  */
 
-#define CLIENT_NTASKS				100
+#define CLIENT_NTASKS_PERCPU			8
 /*%<
  * Number of tasks to be used by clients - those are used only when recursing
  */
@@ -169,6 +169,8 @@ struct ns_clientmgr {
 
 	/* Attached by clients, needed for e.g. recursion */
 	isc_task_t **		taskpool;
+	int			numtasks;
+	atomic_uint_fast32_t	nexttask;
 
 	ns_interface_t		*interface;
 
@@ -180,11 +182,10 @@ struct ns_clientmgr {
 	isc_mutex_t		reclock;
 	client_list_t		recursing;    /*%< Recursing clients */
 
-#if CLIENT_NMCTXS > 0
 	/*%< mctx pool for clients. */
 	atomic_uint_fast32_t	nextmctx;
-	isc_mem_t *		mctxpool[CLIENT_NMCTXS];
-#endif
+	int			nummctxs;
+	isc_mem_t **		mctxpool;
 };
 
 /*% nameserver client structure */
