@@ -85,7 +85,7 @@
 #define NS_CLIENT_SEND_BUFFER_SIZE		4096
 #define NS_CLIENT_RECV_BUFFER_SIZE		4096
 
-#define CLIENT_NMCTXS_PERCPU			8
+#define CLIENT_NMCTXS_PERCPU			16
 /*%<
  * Number of 'mctx pools' for clients per CPU. (Should this be configurable?)
  * When enabling threads, we use a pool of memory contexts shared by
@@ -95,7 +95,7 @@
  * server.
  */
 
-#define CLIENT_NTASKS_PERCPU			8
+#define CLIENT_NTASKS_PERCPU			16
 /*%<
  * Number of tasks to be used by clients - those are used only when recursing
  */
