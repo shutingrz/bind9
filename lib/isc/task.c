@@ -1230,7 +1230,8 @@ dispatch(isc__taskmgr_t *manager, unsigned int threadid) {
 						}
 					}
 					done = true;
-				} else if (dispatch_count >= task->quantum) {
+				} else if (dispatch_count >= task->quantum ||
+					   task->state == task_state_pausing) {
 					/*
 					 * Our quantum has expired, but
 					 * there is more work to be done.
