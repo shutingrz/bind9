@@ -17,7 +17,7 @@
 #include <isc/util.h>
 #include <isc/siphash.h>
 
-#if HAVE_OPENSSL_SIPHASH
+#if 0 /* HAVE_OPENSSL_SIPHASH */
 #include <openssl/evp.h>
 
 void
