@@ -141,7 +141,7 @@ isc_nm_tid() {
 }
 int
 isc_nm_threads() {
-	return (isc__nm_tid_count_v);
+	return atomic_load(&isc__nm_tid_count_v);
 }
 bool
 isc__nm_in_netthread() {

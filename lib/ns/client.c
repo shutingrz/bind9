@@ -2477,7 +2477,7 @@ ns_clientmgr_create(isc_mem_t *mctx, ns_server_t *sctx, isc_taskmgr_t *taskmgr,
 	ns_server_attach(sctx, &manager->sctx);
 
 	ISC_LIST_INIT(manager->recursing);
-	manager->nextmctx = 0;
+	atomic_init(&manager->nextmctx, 0);
 	manager->nummctxs = CLIENT_NMCTXS_PERCPU * isc_nm_threads();
 	INSIST(manager->nummctxs > 0);
 	manager->mctxpool = isc_mem_get(manager->mctx,
