@@ -75,6 +75,7 @@ struct ns_interfacemgr {
 	isc_timermgr_t *	timermgr;	/*%< Timer manager. */
 	isc_socketmgr_t *	socketmgr;	/*%< Socket manager. */
 	isc_nm_t *		nm;		/*%< Net manager. */
+	int			ncpus;		/*%< Number of workers . */
 	dns_dispatchmgr_t *	dispatchmgr;
 	unsigned int		generation;	/*%< Current generation no. */
 	ns_listenlist_t *	listenon4;
@@ -181,6 +182,7 @@ ns_interfacemgr_create(isc_mem_t *mctx,
 		       isc_task_t *task,
 		       unsigned int udpdisp,
 		       dns_geoip_databases_t *geoip,
+		       int ncpus,
 		       ns_interfacemgr_t **mgrp)
 {
 	isc_result_t result;
@@ -219,6 +221,7 @@ ns_interfacemgr_create(isc_mem_t *mctx,
 	mgr->listenon4 = NULL;
 	mgr->listenon6 = NULL;
 	mgr->udpdisp = udpdisp;
+	mgr->ncpus = ncpus;
 	atomic_init(&mgr->shuttingdown, false);
 
 	ISC_LIST_INIT(mgr->interfaces);
@@ -425,7 +428,7 @@ ns_interface_create(ns_interfacemgr_t *mgr, isc_sockaddr_t *addr,
 
 	result = ns_clientmgr_create(mgr->mctx, mgr->sctx,
 				     mgr->taskmgr, mgr->timermgr, ifp,
-				     &ifp->clientmgr);
+				     mgr->ncpus, &ifp->clientmgr);
 	if (result != ISC_R_SUCCESS) {
 		isc_log_write(IFMGR_COMMON_LOGARGS, ISC_LOG_ERROR,
 			      "ns_clientmgr_create() failed: %s",

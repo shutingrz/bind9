@@ -237,7 +237,7 @@ create_managers(void) {
 
 	CHECK(ns_interfacemgr_create(mctx, sctx, taskmgr, timermgr,
 				     socketmgr, nm, dispatchmgr, maintask,
-				     ncpus, NULL, &interfacemgr));
+				     ncpus, NULL, 1, &interfacemgr));
 
 	CHECK(ns_listenlist_default(mctx, port, -1, true, &listenon));
 	ns_interfacemgr_setlistenon4(interfacemgr, listenon);
