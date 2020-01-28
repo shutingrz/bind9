@@ -309,7 +309,7 @@ typedef ISC_LIST(dns_rbtnode_t)         rbtnodelist_t;
 	(((header)->rdh_ttl > (now)) || \
 	 ((header)->rdh_ttl == (now) && ZEROTTL(header)))
 
-#define DEFAULT_NODE_LOCK_COUNT         7       /*%< Should be prime. */
+#define DEFAULT_NODE_LOCK_COUNT         53       /*%< Should be prime. */
 #define RBTDB_GLUE_TABLE_INIT_SIZE     2U
 
 /*%
@@ -329,7 +329,7 @@ typedef ISC_LIST(dns_rbtnode_t)         rbtnodelist_t;
 #define DEFAULT_CACHE_NODE_LOCK_COUNT DNS_RBTDB_CACHE_NODE_LOCK_COUNT
 #endif
 #else
-#define DEFAULT_CACHE_NODE_LOCK_COUNT   16
+#define DEFAULT_CACHE_NODE_LOCK_COUNT   97
 #endif	/* DNS_RBTDB_CACHE_NODE_LOCK_COUNT */
 
 typedef struct {
