@@ -923,8 +923,8 @@ isc__nmsocket_init(isc_nmsocket_t *sock, isc_nm_t *mgr,
 		.iface = iface,
 		.fd = -1,
 		.ah_size = 32,
-		.inactivehandles = isc_astack_new(mgr->mctx, 60),
-		.inactivereqs = isc_astack_new(mgr->mctx, 60)
+		.inactivehandles = isc_astack_new(mgr->mctx, 600),
+		.inactivereqs = isc_astack_new(mgr->mctx, 600)
 	};
 
 	isc_nm_attach(mgr, &sock->mgr);
