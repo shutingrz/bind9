@@ -33,8 +33,8 @@
 
 #include "uv-compat.h"
 
-#define ISC_NETMGR_TID_UNKNOWN -1
-
+#define ISC_NETMGR_TID_UNKNOWN	-1
+#define ISC_NETMGR_RECVBUF_SIZE (20 * 65536)
 /*
  * Single network event loop worker.
  */
@@ -56,7 +56,7 @@ typedef struct isc__networker {
 				    * worker is paused */
 	isc_refcount_t references;
 	atomic_int_fast64_t pktcount;
-	char recvbuf[65536];
+	char *recvbuf;
 	bool recvbuf_inuse;
 } isc__networker_t;
 
