@@ -1,5 +1,8 @@
 #!/bin/sh
 
+set -x
+set -v
+
 # Find the top of the BIND9 tree.
 export TOP=@abs_top_builddir@
 KYUA=@KYUA@
@@ -17,11 +20,10 @@ if [ -n "${UNITTESTS}" ] && [ -f Kyuafile ]
 then
 	echo "S:unit:$(date)"
 	echo "T:unit:1:A"
-	echo "I: unit tests (using kyua)"
+	echo "I:unit tests (using kyua)"
+
 	${KYUA} -v parallelism="${TEST_PARALLEL_JOBS:-1}" --logfile kyua.log --loglevel debug test --results-file "${KYUA_RESULT:-NEW}"
 	status=$?
-
-	kyua_report
 
 	if command -v sysctl >/dev/null; then
 		if [ "$(uname -s)" = "Linux" ] && [ "$(sysctl -n kernel.core_uses_pid)" -ne 1 ]; then
@@ -33,18 +35,21 @@ then
 		echo "kyua may not find core file of broken tests"
 	fi
 
-	# Use kyua-debug(1) facility to gather additional data on failed tests.
-	# Some runs will just show verbose information from the run, some will
-	# show backtrace via gdb(1).
 	broken_tests=$(kyua_report | awk '$2 == "->" && ( $3 == "broken:" || $3 == "failed:" ) { print $1 }')
-	if [ -n "${CI}" ] && [ "$(id -u)" -eq 0 ] && [ -n "${broken_tests}" ] && [ -n "${GDB}" ]; then
-		if grep '^#define USE_LIBTOOL 1$' "${TOP}/config.h" >/dev/null; then
-			# kyua debug command misidentifies broken binary when libtool is used
-			# to configure BIND (see https://github.com/jmmv/kyua/issues/207).
-			# Here we try "trick" kyua use our custom gdb script instead
-			# of using gdb(1) directly. That's why this part needs to be run as root
-			# and, for safety reasons, only in the CI.
-			mv "${GDB}" "${GDB}.orig"
+
+	# kyua debug command misidentifies broken binary when libtool is used
+	# to configure BIND (see https://github.com/jmmv/kyua/issues/207).
+	# Here we try "trick" kyua use our custom gdb script instead
+	# of using gdb(1) directly. That's why this part needs to be run as root
+	# and, for safety reasons, only in the CI.
+	RWFS=$(mktemp "$(dirname "${GDB}")/XXXXXX")
+	USE_LIBTOOL=$(grep -c '^#define USE_LIBTOOL 1$' "${TOP}/config.h")
+	[ "$(id -u)" -eq 0 ] || [ "$(sudo -n id -u)" -eq 0 ]
+	ROOT_POTENTIAL="${?}"
+	if [ -n "${CI}" ] && [ -n "${GDB}" ] && [ -n "${RWFS}" ] && [ "${ROOT_POTENTIAL}" -eq 0 ] && [ -n "${broken_tests}" ]; then
+		if [ -n "${USE_LIBTOOL}" ]; then
+			rm "${RWFS}"
+			mv "${GDB}" "${GDB}.orig" 
 			cp "${TOP}/unit/gdb" "${GDB}"
 			for test in ${broken_tests}; do
 				echo
@@ -57,6 +62,7 @@ then
 				${KYUA} debug "${test}"
 			done
 		fi
+		kyua_report
 	fi
 
 	if [ "${status}" -eq 0 ]
