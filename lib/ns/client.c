@@ -2228,7 +2228,8 @@ ns__client_tcpconn(isc_nmhandle_t *handle, isc_result_t result, void *arg) {
 }
 
 static void
-get_clientmctx(ns_clientmgr_t *manager, isc_mem_t **mctxp) {
+get_clientmctx(ns_clientmgr_t *manager, isc_mem_t **mctxp)
+{
 	isc_mem_t *clientmctx;
 	MTRACE("clientmctx");
 
@@ -2244,7 +2245,8 @@ get_clientmctx(ns_clientmgr_t *manager, isc_mem_t **mctxp) {
 }
 
 static void
-get_clienttask(ns_clientmgr_t *manager, isc_task_t **taskp) {
+get_clienttask(ns_clientmgr_t *manager, isc_task_t **taskp)
+{
 	MTRACE("clienttask");
 
 	int tid = isc_nm_tid();
