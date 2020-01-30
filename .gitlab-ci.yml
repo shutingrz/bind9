@@ -314,7 +314,7 @@ stages:
 
 .cppcheck_args: &run_cppcheck |
   cppcheck --enable=warning,performance,portability,information,missingInclude \
-	   --dump \
+           --dump \
            --include=config.h \
            --quiet \
            --std=c11 \
