@@ -1153,6 +1153,9 @@ system:msvc:windows:amd64:
   dependencies:
     - msvc:windows:amd64
   needs: ["msvc:windows:amd64"]
+  except:
+    variables:
+      - $DEBUG_CPPCHECK == "1"
 
 msvc-debug:windows:amd64:
   <<: *windows_build_job
@@ -1170,6 +1173,9 @@ system:msvc-debug:windows:amd64:
   dependencies:
     - msvc-debug:windows:amd64
   needs: ["msvc-debug:windows:amd64"]
+  except:
+    variables:
+      - $DEBUG_CPPCHECK == "1"
 
 # Job producing a release tarball
 
