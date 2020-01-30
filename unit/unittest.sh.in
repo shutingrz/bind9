@@ -1,5 +1,8 @@
 #!/bin/sh
 
+set -x
+set -v
+
 # Find the top of the BIND9 tree.
 export TOP=@abs_top_builddir@
 KYUA=@KYUA@

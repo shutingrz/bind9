@@ -43,7 +43,7 @@ _setup(void **state) {
 	UNUSED(state);
 
 	result = ns_test_begin(NULL, true);
-	assert_int_equal(result, ISC_R_SUCCESS);
+	assert_int_equal(result, ISC_R_FAILURE);
 
 	return (0);
 }
