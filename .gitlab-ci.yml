@@ -269,6 +269,9 @@ stages:
     untracked: true
     expire_in: "1 day"
     when: on_failure
+  except:
+    variables:
+      - $DEBUG_CPPCHECK == "1"
 
 .kyua_report: &kyua_report_html |
   kyua --logfile /dev/null report-html \
@@ -317,6 +320,9 @@ stages:
       - kyua_html/
     expire_in: "1 day"
     when: on_failure
+  except:
+    variables:
+      - $DEBUG_CPPCHECK == "1"
 
 .cppcheck_args: &run_cppcheck |
   cppcheck --enable=warning,performance,portability,information,missingInclude \
