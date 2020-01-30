@@ -632,9 +632,6 @@ unit:gcc:buster:amd64:
                 --keep-going \
                 -o scan-build.reports \
                 make -j${BUILD_PARALLEL_JOBS:-1} all V=1
-  except:
-    variables:
-      - $DEBUG_CPPCHECK == "1"
 
 scan-build:buster:amd64:
   <<: *default_triggering_rules
@@ -657,6 +654,9 @@ scan-build:buster:amd64:
       - scan-build.reports/
     expire_in: "1 day"
     when: on_failure
+  except:
+    variables:
+      - $DEBUG_CPPCHECK == "1"
 
 # Jobs for regular GCC builds on Debian Sid (amd64)
 
