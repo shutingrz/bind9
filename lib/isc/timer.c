@@ -666,8 +666,8 @@ static void
 set_index(void *what, unsigned int index) {
 	isc__timer_t *timer;
 
+	REQUIRE(VALID_TIMER(what));
 	timer = what;
-	REQUIRE(VALID_TIMER(timer));
 
 	timer->index = index;
 }
