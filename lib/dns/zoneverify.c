@@ -1215,15 +1215,15 @@ verify_nsec3_chains(const vctx_t *vctx, isc_mem_t *mctx) {
 			result = ISC_R_FAILURE;
 		}
 		if (first == NULL || newchain(first, e)) {
-			if (prev != NULL) {
-				if (!checknext(vctx, prev, first)) {
-					result = ISC_R_FAILURE;
-				}
-				if (prev != first) {
-					free_element(mctx, prev);
-				}
-			}
 			if (first != NULL) {
+				if (prev != NULL) {
+					if (!checknext(vctx, prev, first)) {
+						result = ISC_R_FAILURE;
+					}
+					if (prev != first) {
+						free_element(mctx, prev);
+					}
+				}
 				free_element(mctx, first);
 			}
 			prev = first = e;
