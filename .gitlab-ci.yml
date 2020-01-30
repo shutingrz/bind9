@@ -213,8 +213,8 @@ stages:
     untracked: true
     expire_in: "1 day"
   except:
-    variable:
-      - $DEBUG_CPPCHECK == 1
+    variables:
+      - $DEBUG_CPPCHECK == "1"
 
 .windows_build: &windows_build_job
   stage: build
