@@ -1340,13 +1340,7 @@ dns_client_startresolve(dns_client_t *client, const dns_name_t *name,
 	ISC_LIST_INIT(event->answerlist);
 
 	rctx = isc_mem_get(mctx, sizeof(*rctx));
-	if (rctx == NULL)
-		result = ISC_R_NOMEMORY;
-	else {
-		isc_mutex_init(&rctx->lock);
-	}
-	if (result != ISC_R_SUCCESS)
-		goto cleanup;
+	isc_mutex_init(&rctx->lock);
 
 	result = getrdataset(mctx, &rdataset);
 	if (result != ISC_R_SUCCESS)
