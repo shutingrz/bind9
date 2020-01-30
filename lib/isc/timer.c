@@ -452,7 +452,6 @@ isc_timer_touch(isc_timer_t *timer0) {
 
 	REQUIRE(VALID_TIMER(timer0));
 	timer = (isc__timer_t *)timer0;
-	isc_result_t result;
 
 	LOCK(&timer->lock);
 
