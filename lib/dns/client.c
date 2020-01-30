@@ -1742,13 +1742,7 @@ dns_client_startrequest(dns_client_t *client, dns_message_t *qmessage,
 				   action, arg, sizeof(*event));
 
 	ctx = isc_mem_get(client->mctx, sizeof(*ctx));
-	if (ctx == NULL)
-		result = ISC_R_NOMEMORY;
-	else {
-		isc_mutex_init(&ctx->lock);
-	}
-	if (result != ISC_R_SUCCESS)
-		goto cleanup;
+	isc_mutex_init(&ctx->lock);
 
 	ctx->client = client;
 	ISC_LINK_INIT(ctx, link);
