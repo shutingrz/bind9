@@ -29,6 +29,9 @@ variables:
   TARBALL_COMPRESSOR: xz
   TARBALL_EXTENSION: xz
 
+  # limit jobs when debugging cppcheck
+  DEBUG_CPPCHECK: 1
+
 stages:
   - precheck
   - build
@@ -209,6 +212,8 @@ stages:
   artifacts:
     untracked: true
     expire_in: "1 day"
+  except:
+    variable: $DEBUG_CPPCHECK == 1
 
 .windows_build: &windows_build_job
   stage: build
@@ -646,6 +651,7 @@ gcc:sid:amd64:
     EXTRA_CONFIGURE: "--enable-dnstap --with-libidn2"
     RUN_MAKE_INSTALL: 1
     MAKE: bear make
+    DEBUG_CPPCHECK: 0
   <<: *debian_sid_amd64_image
   <<: *build_job
 
