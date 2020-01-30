@@ -344,6 +344,7 @@ stages:
   after_script:
     - *cppcheck_report_html
   artifacts:
+    untracked: true
     paths:
       - compile_commands.json
       - cppcheck.results
