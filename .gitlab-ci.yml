@@ -245,6 +245,9 @@ stages:
   artifacts:
     untracked: true
     expire_in: "1 day"
+  except:
+    variables:
+      - $DEBUG_CPPCHECK == "1"
 
 .setup_interfaces: &setup_interfaces |
     if [ "$(id -u)" -eq "0" ]; then
@@ -440,6 +443,9 @@ docs:sid:amd64:
     paths:
       - doc/arm/
     expire_in: "1 day"
+  except:
+    variables:
+      - $DEBUG_CPPCHECK == "1"
 
 push:docs:sid:amd64:
   <<: *debian_sid_amd64_image
@@ -626,6 +632,9 @@ unit:gcc:buster:amd64:
                 --keep-going \
                 -o scan-build.reports \
                 make -j${BUILD_PARALLEL_JOBS:-1} all V=1
+  except:
+    variables:
+      - $DEBUG_CPPCHECK == "1"
 
 scan-build:buster:amd64:
   <<: *default_triggering_rules
