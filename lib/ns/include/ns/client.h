@@ -193,12 +193,7 @@ struct ns_client {
 	ns_server_t		*sctx;
 	ns_clientmgr_t		*manager;
 	ns_clientstate_t	state;
-	int			naccepts;
-	int			nreads;
-	int			nsends;
-	int			nrecvs;
 	int			nupdates;
-	int			nctls;
 	bool			shuttingdown;
 	unsigned int		attributes;
 	isc_task_t		*task;
@@ -207,8 +202,7 @@ struct ns_client {
 	isc_nmhandle_t		*handle;
 	unsigned char		*tcpbuf;
 	dns_message_t		*message;
-	unsigned char		*recvbuf;
-	unsigned char		sendbuf[NS_CLIENT_SEND_BUFFER_SIZE];
+	unsigned char		*sendbuf;
 	dns_rdataset_t		*opt;
 	uint16_t		udpsize;
 	uint16_t		extflags;
@@ -222,7 +216,6 @@ struct ns_client {
 	isc_time_t		tnow;
 	dns_name_t		signername;   /*%< [T]SIG key name */
 	dns_name_t		*signer;      /*%< NULL if not valid sig */
-	bool			mortal;	      /*%< Die after handling request */
 	isc_quota_t		*recursionquota;
 
 	isc_sockaddr_t		peeraddr;
@@ -232,8 +225,6 @@ struct ns_client {
 
 	dns_ecs_t		ecs;   /*%< EDNS client subnet sent by client */
 
-	struct in6_pktinfo	pktinfo;
-	isc_dscp_t		dscp;
 	/*%
 	 * Information about recent FORMERR response(s), for
 	 * FORMERR loop avoidance.  This is separate for each

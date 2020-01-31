@@ -172,10 +172,6 @@ ns_client_settimeout(ns_client_t *client, unsigned int seconds) {
 
 static void
 ns_client_endrequest(ns_client_t *client) {
-	INSIST(client->naccepts == 0);
-	INSIST(client->nreads == 0);
-	INSIST(client->nsends == 0);
-	INSIST(client->nrecvs == 0);
 	INSIST(client->nupdates == 0);
 	INSIST(client->state == NS_CLIENTSTATE_WORKING ||
 	       client->state == NS_CLIENTSTATE_RECURSING);
@@ -1574,7 +1570,7 @@ ns__client_put_cb(void *client0) {
 		clientmgr_detach(&client->manager);
 	}
 
-	isc_mem_put(client->mctx, client->recvbuf, NS_CLIENT_RECV_BUFFER_SIZE);
+	isc_mem_put(client->mctx, client->sendbuf, NS_CLIENT_SEND_BUFFER_SIZE);
 	if (client->opt != NULL) {
 		INSIST(dns_rdataset_isassociated(client->opt));
 		dns_rdataset_disassociate(client->opt);
@@ -1665,7 +1661,6 @@ ns__client_request(isc_nmhandle_t *handle, isc_region_t *region, void *arg) {
 	}
 
 	client->state = NS_CLIENTSTATE_READY;
-	client->dscp = ifp->dscp;
 
 	isc_task_pause(client->task);
 	if (client->handle == NULL) {
@@ -2275,8 +2270,8 @@ ns__client_setup(ns_client_t *client, ns_clientmgr_t *mgr, bool new) {
 		}
 
 
-		client->recvbuf = isc_mem_get(client->mctx,
-					      NS_CLIENT_RECV_BUFFER_SIZE);
+		client->sendbuf = isc_mem_get(client->mctx,
+					      NS_CLIENT_SEND_BUFFER_SIZE);
 		/*
 		 * Set magic earlier than usual because ns_query_init()
 		 * and the functions it calls will require it.
@@ -2290,7 +2285,7 @@ ns__client_setup(ns_client_t *client, ns_clientmgr_t *mgr, bool new) {
 		ns_clientmgr_t *oldmgr = client->manager;
 		ns_server_t *sctx = client->sctx;
 		isc_task_t *task = client->task;
-		unsigned char *recvbuf = client->recvbuf;
+		unsigned char *sendbuf = client->sendbuf;
 		dns_message_t *message = client->message;
 		isc_mem_t *oldmctx = client->mctx;
 		ns_query_t query = client->query;
@@ -2301,7 +2296,7 @@ ns__client_setup(ns_client_t *client, ns_clientmgr_t *mgr, bool new) {
 			.manager = oldmgr,
 			.sctx = sctx,
 			.task = task,
-			.recvbuf = recvbuf,
+			.sendbuf = sendbuf,
 			.message = message,
 			.query = query
 		};
@@ -2309,7 +2304,6 @@ ns__client_setup(ns_client_t *client, ns_clientmgr_t *mgr, bool new) {
 
 	client->state = NS_CLIENTSTATE_INACTIVE;
 	client->udpsize = 512;
-	client->dscp = -1;
 	client->ednsversion = -1;
 	dns_name_init(&client->signername, NULL);
 	dns_ecs_init(&client->ecs);
@@ -2326,9 +2320,9 @@ ns__client_setup(ns_client_t *client, ns_clientmgr_t *mgr, bool new) {
 	return (ISC_R_SUCCESS);
 
  cleanup:
-	if (client->recvbuf != NULL) {
-		isc_mem_put(client->mctx, client->recvbuf,
-			    NS_CLIENT_RECV_BUFFER_SIZE);
+	if (client->sendbuf != NULL) {
+		isc_mem_put(client->mctx, client->sendbuf,
+			    NS_CLIENT_SEND_BUFFER_SIZE);
 	}
 
 	if (client->message != NULL) {
