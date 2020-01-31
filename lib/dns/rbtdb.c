@@ -174,8 +174,11 @@ typedef isc_rwlock_t nodelock_t;
  * to be 0 by default either with or without threads.
  */
 #ifndef DNS_RBTDB_LIMITLRUUPDATE
-#define DNS_RBTDB_LIMITLRUUPDATE 0
-#endif /* ifndef DNS_RBTDB_LIMITLRUUPDATE */
+#define DNS_RBTDB_LIMITLRUUPDATE 1
+#endif
+
+#define DNS_RBTDB_LRUUPDATE_GLUE    300
+#define DNS_RBTDB_LRUUPDATE_REGULAR 600
 
 /*
  * Allow clients with a virtual time of up to 5 minutes in the past to see
@@ -10339,12 +10342,12 @@ need_headerupdate(rdatasetheader_t *header, isc_stdtime_t now) {
 		 * Glue records are updated if at least 60 seconds have passed
 		 * since the previous update time.
 		 */
-		return (header->last_used + 60 <= now);
+		return (header->last_used + DNS_RBTDB_LRUUPDATE_GLUE <= now);
 	}
 
 	/* Other records are updated if 5 minutes have passed. */
-	return (header->last_used + 300 <= now);
-#else  /* if DNS_RBTDB_LIMITLRUUPDATE */
+	return (header->last_used + DNS_RBTDB_LRUUPDATE_REGULAR <= now);
+#else
 	UNUSED(now);
 
 	return (true);
