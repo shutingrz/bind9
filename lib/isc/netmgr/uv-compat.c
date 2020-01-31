@@ -13,6 +13,7 @@
 #include <isc/util.h>
 #include "uv-compat.h"
 
+#ifndef HAVE_UV_IMPORT
 /*
  * XXXWPK: This code goes into libuv internals and it's platform dependent.
  * It's ugly, we shouldn't do it, but the alternative with passing sockets
@@ -189,4 +190,6 @@ isc_uv_import(uv_stream_t *stream, isc_uv_stream_info_t *info) {
 	uv_tcp_t *tcp = (uv_tcp_t *) stream;
 	return (uv_tcp_open(tcp, info->fd));
 }
+#endif
+
 #endif
