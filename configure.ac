@@ -608,7 +608,7 @@ AC_CHECK_FUNCS(arc4random arc4random_buf arc4random_uniform getrandom)
 AX_PTHREAD
 
 LIBS="$PTHREAD_LIBS -lck $LIBS"
-CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
+CFLAGS="$CFLAGS $PTHREAD_CFLAGS -I/usr/include/ck"
 CC="$PTHREAD_CC"
 
 AC_CHECK_FUNCS([pthread_attr_getstacksize pthread_attr_setstacksize])

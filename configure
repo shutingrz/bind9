@@ -15595,7 +15595,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 LIBS="$PTHREAD_LIBS -lck $LIBS"
-CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
+CFLAGS="$CFLAGS $PTHREAD_CFLAGS -I/usr/include/ck"
 CC="$PTHREAD_CC"
 
 for ac_func in pthread_attr_getstacksize pthread_attr_setstacksize
