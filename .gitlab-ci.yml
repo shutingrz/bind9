@@ -342,6 +342,7 @@ stages:
            --output-file=cppcheck.results \
            --relative-paths="$CI_PROJECT_DIR" \
            --inline-suppr \
+           -U DOXYGEN \
            --suppressions-list=util/suppressions.txt
 
 .cppcheck_report: &cppcheck_report_html |
