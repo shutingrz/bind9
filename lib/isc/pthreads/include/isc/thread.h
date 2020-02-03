@@ -46,18 +46,8 @@ isc_thread_yield(void);
 void
 isc_thread_setname(isc_thread_t thread, const char *name);
 
-
 isc_result_t
 isc_thread_setaffinity(int cpu);
-
-isc_result_t
-isc_thread_resetaffinity(void);
-
-/* XXX We could do fancier error handling... */
-
-#define isc_thread_join(t, rp) \
-	((pthread_join((t), (rp)) == 0) ? \
-	 ISC_R_SUCCESS : ISC_R_UNEXPECTED)
 
 #define isc_thread_self \
 	(unsigned long)pthread_self
