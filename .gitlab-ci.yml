@@ -333,6 +333,7 @@ stages:
            --include=config.h \
            --quiet \
            --std=c11 \
+           --library=std.cfg \
            --language=c \
            --project=compile_commands.json \
            --error-exitcode=2 \
