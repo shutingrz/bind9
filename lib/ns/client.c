@@ -382,7 +382,7 @@ ns_client_sendraw(ns_client_t *client, dns_message_t *message) {
 	r.base[1] = client->message->id & 0xff;
 
 	result = client_sendpkg(client, &buffer, true);
-	if (result == ISC_R_SUCCESS)
+	if (result == ISC_R_SUCCESS) {
 		return;
 	}
 
