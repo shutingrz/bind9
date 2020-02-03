@@ -1632,6 +1632,7 @@ lowac_checksend(ns_client_t *client) {
 	}
 	isc_buffer_add(&buffer, blen);
 
+	isc_nmhandle_ref(client->handle);
 	if (client->sendcb != NULL) {
 		client->sendcb(&buffer);
 	} else if (TCP_CLIENT(client)) {
@@ -2043,6 +2044,7 @@ ns__client_request(isc_nmhandle_t *handle, isc_region_t *region, void *arg) {
 
 	result = lowac_checksend(client);
 	if (result == ISC_R_SUCCESS) {
+		isc_task_unpause(client->task);
 		return;
 	}
 
