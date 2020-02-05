@@ -1344,7 +1344,7 @@ get_view_querysource_dispatch(const cfg_obj_t **maps, int af,
 		break;
 	}
 	if (isc_sockaddr_getport(&sa) == 0) {
-		attrs |= DNS_DISPATCHATTR_EXCLUSIVE;
+//		attrs |= DNS_DISPATCHATTR_EXCLUSIVE;
 		maxdispatchbuffers = EXCLBUFFERS;
 	} else {
 		INSIST(obj != NULL);
