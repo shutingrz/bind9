@@ -1828,8 +1828,6 @@ destroy(isc__socket_t **sockp) {
 
 	socket_log(sock, NULL, CREATION, "destroying");
 
-	isc_refcount_destroy(&sock->references);
-
 	LOCK(&sock->lock);
 	INSIST(ISC_LIST_EMPTY(sock->connect_list));
 	INSIST(ISC_LIST_EMPTY(sock->accept_list));
@@ -1856,6 +1854,7 @@ destroy(isc__socket_t **sockp) {
 	if (ISC_LIST_EMPTY(manager->socklist)) {
 		SIGNAL(&manager->shutdown_ok);
 	}
+	isc_refcount_destroy(&sock->references);
 
 	/* can't unlock manager as its memory context is still used */
 	free_socket(sockp);
@@ -2636,7 +2635,6 @@ isc_socket_detach(isc_socket_t **socketp) {
 	REQUIRE(socketp != NULL);
 	sock = (isc__socket_t *)*socketp;
 	REQUIRE(VALID_SOCKET(sock));
-
 	if (isc_refcount_decrement(&sock->references) == 1) {
 		destroy(&sock);
 	}
@@ -3153,16 +3151,20 @@ process_fd(isc__socketthread_t *thread, int fd, bool readable, bool writeable) {
 		return;
 	}
 
-	if (isc_refcount_increment0(&sock->references) == 0) {
+	LOCK(&sock->lock);
+	if (isc_refcount_current(&sock->references) == 0) {
 		/*
-		 * Sock is being closed, it will be destroyed, bail.
+		 * Sock is being closed - the final external reference
+		 * is gone but it was not yet removed from event loop
+		 * and fdstate[]/fds[] as destroy() is waiting on
+		 * thread->fdlock[lockid] or sock->lock that we're holding.
+		 * Just release the locks and bail.
 		 */
-		(void)isc_refcount_decrement(&sock->references);
+		UNLOCK(&sock->lock);
 		UNLOCK(&thread->fdlock[lockid]);
 		return;
 	}
 
-	LOCK(&sock->lock);
 	if (readable) {
 		if (sock->listener) {
 			internal_accept(sock);
@@ -3181,9 +3183,10 @@ process_fd(isc__socketthread_t *thread, int fd, bool readable, bool writeable) {
 	UNLOCK(&sock->lock);
 
 	UNLOCK(&thread->fdlock[lockid]);
-	if (isc_refcount_decrement(&sock->references) == 1) {
-		destroy(&sock);
-	}
+	/*
+	 * Socket destruction might be pending, it will resume
+	 * after releasing fdlock and sock->lock.
+	 */
 }
 
 /*
