@@ -135,11 +135,7 @@ int isc_dscp_check_value = -1;
  */
 #ifndef ISC_SOCKET_MAXSOCKETS
 #if defined(USE_KQUEUE) || defined(USE_EPOLL) || defined(USE_DEVPOLL)
-#ifdef TUNE_LARGE
-#define ISC_SOCKET_MAXSOCKETS 21000
-#else
-#define ISC_SOCKET_MAXSOCKETS 4096
-#endif /* TUNE_LARGE */
+#define ISC_SOCKET_MAXSOCKETS 65536
 #elif defined(USE_SELECT)
 #define ISC_SOCKET_MAXSOCKETS FD_SETSIZE
 #endif	/* USE_KQUEUE... */
