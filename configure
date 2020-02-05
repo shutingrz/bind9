@@ -909,7 +909,6 @@ with_geoip2
 enable_geoip
 with_maxminddb
 with_locktype
-enable_pthread_rwlock
 with_openssl
 enable_fips_mode
 enable_native_pkcs11
@@ -1624,9 +1623,6 @@ Optional Features:
   --enable-devpoll        use /dev/poll when available [default=yes]
   --disable-geoip         support GeoIP2 geolocation ACLs if available
                           [default=yes]
-  --disable-pthread-rwlock
-                          use internal rwlock implementation instead of
-                          pthread rwlock
   --enable-fips-mode      enable FIPS mode in OpenSSL library [default=no]
   --enable-native-pkcs11  use native PKCS11 for public-key crypto [default=no]
   --disable-tcp-fastopen  disable TCP Fast Open support [default=yes]
@@ -15993,37 +15989,6 @@ done
 
 
 
-
-#
-# Do we want to use pthread rwlock?
-#
-# Check whether --enable-pthread_rwlock was given.
-if test "${enable_pthread_rwlock+set}" = set; then :
-  enableval=$enable_pthread_rwlock;
-else
-  enable_pthread_rwlock=yes
-fi
-
-
-if test "$enable_pthread_rwlock" = "yes"; then :
-  for ac_func in pthread_rwlock_rdlock
-do :
-  ac_fn_c_check_func "$LINENO" "pthread_rwlock_rdlock" "ac_cv_func_pthread_rwlock_rdlock"
-if test "x$ac_cv_func_pthread_rwlock_rdlock" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_PTHREAD_RWLOCK_RDLOCK 1
-_ACEOF
-
-else
-  as_fn_error $? "pthread_rwlock_rdlock requested but not found" "$LINENO" 5
-fi
-done
-
-
-$as_echo "#define USE_PTHREAD_RWLOCK 1" >>confdefs.h
-
-
-fi
 
 CRYPTO=OpenSSL
 
