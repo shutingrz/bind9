@@ -1662,6 +1662,7 @@ ns__client_request(isc_nmhandle_t *handle, isc_region_t *region, void *arg) {
 			return;
 		}
 	}
+	atomic_fetch_add_relaxed(&mgr->tbuckets[isc_nm_tid()], 1);
 
 	client->state = NS_CLIENTSTATE_READY;
 	client->dscp = ifp->dscp;
@@ -2423,6 +2424,9 @@ clientmgr_destroy(ns_clientmgr_t *manager) {
 		if (manager->taskpool[i] != NULL) {
 			isc_task_detach(&manager->taskpool[i]);
 		}
+	}
+	for (i = 0; i < manager->ncpus; i++) {
+		fprintf(f, "T%d: %ld\n", i, manager->tbuckets[i]);
 	}
 	fclose(f);
 	isc_mem_put(manager->mctx, manager->taskpool,

@@ -171,6 +171,7 @@ struct ns_clientmgr {
 	/* Attached by clients, needed for e.g. recursion */
 	isc_task_t **		taskpool;
 	atomic_uint_fast32_t	xbuckets[1000];
+	atomic_uint_fast32_t	tbuckets[1000];
 	
 	ns_interface_t		*interface;
 
