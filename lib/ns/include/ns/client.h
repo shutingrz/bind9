@@ -95,7 +95,7 @@
  * server.
  */
 
-#define CLIENT_NTASKS_PERCPU			32
+#define CLIENT_NTASKS_PERCPU			1
 /*%<
  * Number of tasks to be used by clients - those are used only when recursing
  */
