@@ -2464,7 +2464,7 @@ ns_clientmgr_create(isc_mem_t *mctx, ns_server_t *sctx, isc_taskmgr_t *taskmgr,
 		manager->taskpool[i] = NULL;
 		result = isc_task_create_bound(manager->taskmgr, 20,
 					      &manager->taskpool[i],
-					      i % CLIENT_NTASKS_PERCPU);
+					      i % manager->ncpus);
 		RUNTIME_CHECK(result == ISC_R_SUCCESS);
 	}
 	isc_refcount_init(&manager->references, 1);
