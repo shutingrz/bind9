@@ -2238,6 +2238,7 @@ get_clienttask(ns_clientmgr_t *manager, isc_task_t **taskp) {
 
 	int rand = isc_random_uniform(CLIENT_NTASKS_PERCPU);
 	int nexttask = (rand * manager->ncpus) + tid;
+	atomic_fetch_add_relaxed(&manager->xbuckets[nexttask], 1);
 	isc_task_attach(manager->taskpool[nexttask], taskp);
 }
 
@@ -2415,11 +2416,14 @@ clientmgr_destroy(ns_clientmgr_t *manager) {
 	if (manager->excl != NULL)
 		isc_task_detach(&manager->excl);
 
+	FILE * f = fopen("/tmp/foo2","w");
 	for (i = 0; i < manager->ncpus * CLIENT_NTASKS_PERCPU; i++) {
+		fprintf(f, "%d: %ld\n", i, manager->xbuckets[i]);
 		if (manager->taskpool[i] != NULL) {
 			isc_task_detach(&manager->taskpool[i]);
 		}
 	}
+	fclose(f);
 	isc_mem_put(manager->mctx, manager->taskpool,
 		    manager->ncpus * CLIENT_NTASKS_PERCPU *
 		    sizeof(isc_task_t *));
@@ -2461,6 +2465,7 @@ ns_clientmgr_create(isc_mem_t *mctx, ns_server_t *sctx, isc_taskmgr_t *taskmgr,
 	int ntasks = CLIENT_NTASKS_PERCPU * manager->ncpus;
 	manager->taskpool = isc_mem_get(mctx, ntasks * sizeof(isc_task_t *));
 	for (i = 0; i < ntasks; i++) {
+		atomic_init(&manager->xbuckets[i], 0);
 		manager->taskpool[i] = NULL;
 		result = isc_task_create_bound(manager->taskmgr, 20,
 					      &manager->taskpool[i],
