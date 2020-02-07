@@ -1125,7 +1125,6 @@ dispatch(isc__taskmgr_t *manager, unsigned int threadid) {
 			 * have a task to do.  We must reacquire the queue
 			 * lock before exiting the 'if (task != NULL)' block.
 			 */
-			manager->queues[threadid].eprocessed++;
 			UNLOCK(&manager->queues[threadid].lock);
 			RUNTIME_CHECK(
 			      atomic_fetch_sub_explicit(&manager->tasks_ready,
@@ -1162,6 +1161,7 @@ dispatch(isc__taskmgr_t *manager, unsigned int threadid) {
 					 */
 					XTRACE("execute action");
 					XTRACE(task->name);
+					manager->queues[threadid].eprocessed++;
 					if (event->ev_action != NULL) {
 						UNLOCK(&task->lock);
 						(event->ev_action)(
