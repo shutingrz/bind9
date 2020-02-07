@@ -2415,8 +2415,9 @@ clientmgr_destroy(ns_clientmgr_t *manager) {
 
 	if (manager->excl != NULL)
 		isc_task_detach(&manager->excl);
-
-	FILE * f = fopen("/tmp/foo2","w");
+	char x[1024];
+	snprintf(x, 1024, "/tmp/foo.%p", manager);
+	FILE * f = fopen(x,"w");
 	for (i = 0; i < manager->ncpus * CLIENT_NTASKS_PERCPU; i++) {
 		fprintf(f, "%d: %ld\n", i, manager->xbuckets[i]);
 		if (manager->taskpool[i] != NULL) {
