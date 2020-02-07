@@ -14436,7 +14436,7 @@ named_server_zonedebug(named_server_t *server, isc_lex_t *lex,
 		       isc_buffer_t **text)
 {
 	char zonename[DNS_NAME_FORMATSIZE];
-	dns_zone_t *zone = NULL;
+	dns_zone_t *zone = NULL, *raw = NULL;
 	isc_result_t result = ISC_R_SUCCESS;
 
 	CHECK(zone_from_args(server, lex, NULL, &zone, zonename,
@@ -14446,7 +14446,16 @@ named_server_zonedebug(named_server_t *server, isc_lex_t *lex,
 		goto cleanup;
 	}
 
+	dns_zone_getraw(zone, &raw);
+	if (raw != NULL) {
+		CHECK(putstr(text, "secure zone:\n"));
+	}
 	dns_zone_debug(zone, *text);
+	if (raw != NULL) {
+		CHECK(putstr(text, "\nraw zone:\n"));
+		dns_zone_debug(zone, *text);
+		dns_zone_detach(&raw);
+	}
 
 	result = ISC_R_SUCCESS;
  cleanup:
