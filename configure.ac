@@ -721,16 +721,13 @@ AC_SUBST(INSTALL_LIBRARY)
 AC_ARG_ENABLE([pthread_rwlock],
 	      [AS_HELP_STRING([--enable-pthread-rwlock],
 			      [use pthread rwlock instead of internal rwlock implementation (EXPERIMENTAL)])],
-	      [], [enable_pthread_rwlock=no])
+	      [], [enable_pthread_rwlock=yes])
 
 AS_IF([test "$enable_pthread_rwlock" = "yes"],
       [AC_CHECK_FUNCS([pthread_rwlock_rdlock], [],
 		      [AC_MSG_ERROR([pthread_rwlock_rdlock requested but not found])])
        AC_DEFINE([USE_PTHREAD_RWLOCK],[1],[Define if you want to use pthread rwlock implementation])
       ])
-
-AS_IF([test "$enable_pthread_rwlock" = "yes" -a "$enable_developer" != "yes"],
-      [AC_MSG_ERROR([pthread rwlock is not meant used in production and the developer mode must be enabled])])
 
 CRYPTO=OpenSSL
 
