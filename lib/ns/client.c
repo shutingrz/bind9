@@ -183,13 +183,11 @@ ns_client_endrequest(ns_client_t *client) {
 
 	CTRACE("endrequest");
 
-	if (client->state == NS_CLIENTSTATE_RECURSING) {
-		LOCK(&client->manager->reclock);
-		if (ISC_LINK_LINKED(client, rlink)) {
-			ISC_LIST_UNLINK(client->manager->recursing, client, rlink);
-		}
-		UNLOCK(&client->manager->reclock);
+	LOCK(&client->manager->reclock);
+	if (ISC_LINK_LINKED(client, rlink)) {
+		ISC_LIST_UNLINK(client->manager->recursing, client, rlink);
 	}
+	UNLOCK(&client->manager->reclock);
 
 	if (client->cleanup != NULL) {
 		(client->cleanup)(client);
