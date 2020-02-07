@@ -11,6 +11,7 @@
 
 /*! \file */
 
+#include <ctype.h>
 #include <errno.h>
 #include <inttypes.h>
 #include <stdbool.h>
@@ -20946,4 +20947,353 @@ done:
 	}
 
 	return (result);
+}
+
+void
+dns_zone_debug(dns_zone_t *zone, isc_buffer_t *text) {
+	char namebuf[DNS_NAME_FORMATSIZE];
+	char sockaddrbuf[ISC_SOCKADDR_FORMATSIZE];
+	dns_forward_t *forward;
+	dns_include_t *include;
+	dns_notify_t *notify;
+	dns_nsec3chain_t *nsec3chain;
+	dns_signing_t *signing;
+	isc_event_t *event;
+	size_t i;
+
+	REQUIRE(DNS_ZONE_VALID(zone));
+
+	LOCK_ZONE(zone);
+
+	isc_buffer_printf(text, "zone=%p\n", zone);
+
+#define P(x) (isprint((x)&0xff) ? ((x)&0xff) : '.')
+
+	isc_buffer_printf(text, "magic=%u(%08x/%c%c%c%c)\n",
+			  zone->magic, zone->magic,
+			  P(zone->magic >> 24), P(zone->magic>>16),
+			  P(zone->magic >> 8), P(zone->magic));
+#ifdef DNS_ZONE_CHECKLOCK
+	isc_buffer_printf(text, "locked=%u\n", zone->locked);
+#endif
+	isc_buffer_printf(text, "mctx=%p\n", zone->mctx);
+	isc_buffer_printf(text, "erefs=%" PRIuFAST32 "\n",
+			  isc_refcount_current(&zone->erefs));
+	isc_buffer_printf(text, "db=%p\n", zone->db);
+	isc_buffer_printf(text, "zmgr=%p\n", zone->zmgr);
+	isc_buffer_printf(text, "link.prev=%p, link.next=%p\n",
+			  ISC_LIST_PREV(zone, link),
+			  ISC_LIST_NEXT(zone, link));
+	isc_buffer_printf(text, "timer=%p\n", zone->timer);
+	isc_buffer_printf(text, "irefs=%" PRIuFAST32 "\n",
+			  isc_refcount_current(&zone->irefs));
+	dns_name_format(&zone->origin, namebuf, sizeof(namebuf));
+	isc_buffer_printf(text, "origin=%s\n", namebuf);
+
+#define MAYBENULL(x) (((x) != NULL) ? (x) : "<null>")
+
+	isc_buffer_printf(text, "masterfile=%s\n",
+			  MAYBENULL(zone->masterfile));
+	isc_buffer_printf(text, "includes:\n");
+	for (include = ISC_LIST_HEAD(zone->includes);
+	     include != NULL;
+	     include = ISC_LIST_NEXT(include, link))
+	{
+		isc_buffer_printf(text, "\t%s\n", include->name);
+	}
+	isc_buffer_printf(text, "newincludes:\n");
+	for (include = ISC_LIST_HEAD(zone->newincludes);
+	     include != NULL;
+	     include = ISC_LIST_NEXT(include, link))
+	{
+		isc_buffer_printf(text, "\t%s\n", include->name);
+	}
+	isc_buffer_printf(text, "nincludes=%u\n", zone->nincludes);
+
+	isc_buffer_printf(text, "masterformat=%u\n", zone->masterformat);
+	isc_buffer_printf(text, "masterstyle=%p\n", zone->masterstyle);
+	isc_buffer_printf(text, "journal=%s\n", MAYBENULL(zone->journal));
+	isc_buffer_printf(text, "journalsize=%d\n", zone->journalsize);
+	isc_buffer_printf(text, "rdclass=%u\n", zone->rdclass);
+	isc_buffer_printf(text, "type=%u\n", zone->type);
+	isc_buffer_printf(text, "flags=%016" PRIxFAST64 "\n",
+			  atomic_load(&zone->flags));
+	isc_buffer_printf(text, "options=%016" PRIxFAST64 "\n",
+			  atomic_load(&zone->options));
+	isc_buffer_printf(text, "db_argc=%u\n", zone->db_argc);
+	isc_buffer_printf(text, "db_argv=%p:\n", zone->db_argv);
+	for (i = 0; zone->db_argv != NULL && i < zone->db_argc; i++) {
+		isc_buffer_printf(text, "\t%s\n", zone->db_argv[i]);
+	}
+
+#define TIMESTAMP(v)							\
+	do {								\
+		if (isc_time_isepoch(&zone->v)) {			\
+			isc_buffer_printf(text, #v "=<epoch>\n");	\
+		} else {						\
+			isc_time_formattimestamp(&zone->v, namebuf,	\
+						 sizeof(namebuf));	\
+			isc_buffer_printf(text, #v "=%s\n", namebuf);	\
+		}							\
+	} while (0)
+
+	TIMESTAMP(expiretime);
+	TIMESTAMP(refreshtime);
+	TIMESTAMP(dumptime);
+	TIMESTAMP(loadtime);
+	TIMESTAMP(notifytime);
+	TIMESTAMP(resigntime);
+	TIMESTAMP(keywarntime);
+	TIMESTAMP(signingtime);
+	TIMESTAMP(nsec3chaintime);
+	TIMESTAMP(refreshkeytime);
+	isc_buffer_printf(text, "refreshkeyinterval=%u\n",
+			  zone->refreshkeyinterval);
+	isc_buffer_printf(text, "refreshkeycount=%u\n", zone->refreshkeycount);
+	isc_buffer_printf(text, "refresh=%u\n", zone->refresh);
+	isc_buffer_printf(text, "retry=%u\n", zone->retry);
+	isc_buffer_printf(text, "expire=%u\n", zone->expire);
+	isc_buffer_printf(text, "minimum=%u\n", zone->minimum);
+	isc_buffer_printf(text, "key_expiry=%ld\n", (long)zone->key_expiry);
+	isc_buffer_printf(text, "log_key_expired_timer=%ld\n",
+			  (long)zone->log_key_expired_timer);
+	isc_buffer_printf(text, "keydirectory=%s\n",
+			  MAYBENULL(zone->keydirectory));
+	isc_buffer_printf(text, "maxrefresh=%u\n", zone->maxrefresh);
+	isc_buffer_printf(text, "minrefresh=%u\n", zone->minrefresh);
+	isc_buffer_printf(text, "maxretry=%u\n", zone->maxretry);
+	isc_buffer_printf(text, "minretry=%u\n", zone->minretry);
+	isc_buffer_printf(text, "maxrecords=%u\n", zone->maxrecords);
+	isc_buffer_printf(text, "masters=%p\n", zone->masters);
+	isc_buffer_printf(text, "masterdscps=%p\n", zone->masterdscps);
+	isc_buffer_printf(text, "masterkeynames=%p\n", zone->masterkeynames);
+	isc_buffer_printf(text, "mastersok=%p\n", zone->mastersok);
+	isc_buffer_printf(text, "masterscnt=%u\n", zone->masterscnt);
+	for (i = 0; i < zone->masterscnt; i++) {
+		bool ok;
+		isc_dscp_t dscp;
+
+		isc_sockaddr_format(&zone->masters[i],
+				    sockaddrbuf, sizeof(sockaddrbuf));
+		if (zone->masterkeynames != NULL &&
+		    zone->masterkeynames[i] != NULL)
+		{
+			dns_name_format(zone->masterkeynames[i],
+					namebuf, sizeof(namebuf));
+		} else {
+			namebuf[0] = 0;
+		}
+		dscp = zone->masterdscps != NULL ? zone->masterdscps[i] : 0;
+		ok = zone->mastersok != NULL ? zone->mastersok[i] : true;
+		isc_buffer_printf(text, "\t%s key=%s dscp=%06x ok=%u\n",
+				  sockaddrbuf, namebuf, dscp, ok);
+	}
+	isc_buffer_printf(text, "curmaster=%u\n", zone->curmaster);
+
+#define SOCKADDR(v)							\
+	do {								\
+		isc_sockaddr_format(&zone->v,				\
+				    sockaddrbuf, sizeof(sockaddrbuf));	\
+		isc_buffer_printf(text, #v "=%s\n", sockaddrbuf);	\
+	} while (0)
+
+	SOCKADDR(masteraddr);
+	isc_buffer_printf(text, "notifytype=%u\n", zone->notifytype);
+	isc_buffer_printf(text, "notify=%p\n", zone->notify);
+	isc_buffer_printf(text, "notifykeynames=%p\n", zone->notifykeynames);
+	isc_buffer_printf(text, "notifydscp=%p\n", zone->notifydscp);
+	isc_buffer_printf(text, "notifycnt=%u\n", zone->notifycnt);
+	for (i = 0; i < zone->notifycnt; i++) {
+		isc_dscp_t dscp;
+		isc_sockaddr_format(&zone->notify[i],
+				    sockaddrbuf, sizeof(sockaddrbuf));
+		if (zone->notifykeynames != NULL &&
+		    zone->notifykeynames[i] != NULL)
+		{
+			dns_name_format(zone->notifykeynames[i],
+					namebuf, sizeof(namebuf));
+		} else {
+			namebuf[0] = 0;
+		}
+		dscp = zone->notifydscp != NULL ? zone->notifydscp[i] : 0;
+		isc_buffer_printf(text, "\t%s key=%s dscp=%06x\n", sockaddrbuf,
+				  namebuf, dscp);
+	}
+	SOCKADDR(notifyfrom);
+	isc_buffer_printf(text, "task=%p\n", zone->task);
+	isc_buffer_printf(text, "loadtask=%p\n", zone->loadtask);
+	SOCKADDR(notifysrc4);
+	SOCKADDR(notifysrc6);
+	SOCKADDR(xfrsource4);
+	SOCKADDR(xfrsource6);
+	SOCKADDR(altxfrsource4);
+	SOCKADDR(altxfrsource4);
+	SOCKADDR(sourceaddr);
+	isc_buffer_printf(text, "notifysrc4dscp=%06x\n", zone->notifysrc4dscp);
+	isc_buffer_printf(text, "notifysrc6dscp=%06x\n", zone->notifysrc6dscp);
+	isc_buffer_printf(text, "xfrsource4dscp=%06x\n", zone->xfrsource4dscp);
+	isc_buffer_printf(text, "xfrsource6dscp=%06x\n", zone->xfrsource6dscp);
+	isc_buffer_printf(text, "altxfrsource4dscp=%06x\n",
+			  zone->altxfrsource4dscp);
+	isc_buffer_printf(text, "altxfrsource6dscp=%06x\n",
+			  zone->altxfrsource6dscp);
+	isc_buffer_printf(text, "xfr=%p\n", zone->xfr);
+	isc_buffer_printf(text, "tsigkey=%p\n", zone->tsigkey);
+	isc_buffer_printf(text, "update_acl=%p\n", zone->update_acl);
+	isc_buffer_printf(text, "forward_acl=%p\n", zone->forward_acl);
+	isc_buffer_printf(text, "notify_acl=%p\n", zone->notify_acl);
+	isc_buffer_printf(text, "query_acl=%p\n", zone->query_acl);
+	isc_buffer_printf(text, "queryon_acl=%p\n", zone->queryon_acl);
+	isc_buffer_printf(text, "xfr_acl=%p\n", zone->xfr_acl);
+	isc_buffer_printf(text, "update_disabled=%u\n", zone->update_disabled);
+	isc_buffer_printf(text, "zero_no_soa_ttl=%u\n", zone->zero_no_soa_ttl);
+	isc_buffer_printf(text, "notify:\n");
+	for (notify = ISC_LIST_HEAD(zone->notifies);
+	     notify != NULL;
+	     notify = ISC_LIST_NEXT(notify, link))
+	{
+		isc_buffer_printf(text, "\t%p\n", notify);
+	}
+	isc_buffer_printf(text, "request=%p\n", zone->request);
+	isc_buffer_printf(text, "lctx=%p\n", zone->lctx);
+	isc_buffer_printf(text, "readio=%p\n", zone->readio);
+	isc_buffer_printf(text, "dctx=%p\n", zone->dctx);
+	isc_buffer_printf(text, "writeio=%p\n", zone->writeio);
+	isc_buffer_printf(text, "maxxfrin=%u\n", zone->maxxfrin);
+	isc_buffer_printf(text, "maxxfrout=%u\n", zone->maxxfrout);
+	isc_buffer_printf(text, "idlein=%u\n", zone->idlein);
+	isc_buffer_printf(text, "idleout=%u\n", zone->idleout);
+	// isc_event_t		ctlevent;
+	isc_buffer_printf(text, "ssutable=%p\n", zone->ssutable);
+	isc_buffer_printf(text, "sigvalidityinterval=%u\n",
+			  zone->sigvalidityinterval);
+	isc_buffer_printf(text, "keyvalidityinterval=%u\n",
+			  zone->keyvalidityinterval);
+	isc_buffer_printf(text, "sigresigninginterval=%u\n",
+			  zone->sigresigninginterval);
+	isc_buffer_printf(text, "view=%p\n", zone->view);
+	isc_buffer_printf(text, "prev_view=%p\n", zone->prev_view);
+	isc_buffer_printf(text, "kasp=%p\n", zone->kasp);
+	isc_buffer_printf(text, "checkmx=%p\n", zone->checkmx);
+	isc_buffer_printf(text, "checksrv=%p\n", zone->checksrv);
+	isc_buffer_printf(text, "checkns=%p\n", zone->checkns);
+	isc_buffer_printf(text, "statelink.prev=%p, statelink.next=%p\n",
+			  ISC_LIST_PREV(zone, statelink),
+			  ISC_LIST_NEXT(zone, statelink));
+	isc_buffer_printf(text, "statelist=%p\n", zone->statelist);
+	isc_buffer_printf(text, "stats=%p\n", zone->stats);
+	isc_buffer_printf(text, "statlevel=%u\n", zone->statlevel);
+	isc_buffer_printf(text, "requeststats_on=%u\n", zone->requeststats_on);
+	isc_buffer_printf(text, "requeststats=%p\n", zone->requeststats);
+	isc_buffer_printf(text, "rcvquerystats=%p\n", zone->rcvquerystats);
+	isc_buffer_printf(text, "dnssecsignstats=%p\n", zone->dnssecsignstats);
+	isc_buffer_printf(text, "dnssecrefreshstats=%p\n",
+			  zone->dnssecrefreshstats);
+	isc_buffer_printf(text, "notifydelay=%u\n", zone->notifydelay);
+	isc_buffer_printf(text, "isself=%p\n", zone->isself);
+	isc_buffer_printf(text, "isselfarg=%p\n", zone->isselfarg);
+
+	isc_buffer_printf(text, "strnamerd=%s\n", MAYBENULL(zone->strnamerd));
+	isc_buffer_printf(text, "strname=%s\n", MAYBENULL(zone->strname));
+	isc_buffer_printf(text, "strrdclass=%s\n",
+			  MAYBENULL(zone->strrdclass));
+	isc_buffer_printf(text, "strviewname=%s\n",
+			  MAYBENULL(zone->strviewname));
+	isc_buffer_printf(text, "compact_serial=%u\n", zone->compact_serial);
+	isc_buffer_printf(text, "signing:\n");
+	for (signing = ISC_LIST_HEAD(zone->signing);
+	     signing != NULL;
+	     signing = ISC_LIST_NEXT(signing, link))
+	{
+		isc_buffer_printf(text,
+				  "\t=%p db=%p dbiterator=%p\n"
+				  "\talg=%u keyid=%u deleteit=%u done=%u\n",
+				  signing, signing->db, signing->dbiterator,
+				  signing->algorithm, signing->keyid,
+				  signing->deleteit, signing->done);
+	}
+	isc_buffer_printf(text, "nsec3chain:\n");
+	for (nsec3chain = ISC_LIST_HEAD(zone->nsec3chain);
+	     nsec3chain != NULL;
+	     nsec3chain = ISC_LIST_NEXT(nsec3chain, link))
+	{
+		namebuf[0] = 0;
+		for (i = 0;
+		     i < nsec3chain->nsec3param.salt_length &&
+		     i < sizeof(namebuf) / 2;
+		     i++)
+		{
+			snprintf(namebuf + i * 2, sizeof(namebuf) - 2 * i,
+				 "%02X", nsec3chain->salt[i]);
+		}
+		isc_buffer_printf(text,
+				  "\t=%p hash=%u iterations=%u flags=%u "
+				  "salt_length=%u\n\tsalt=%s\n"
+				  "\tseen_nsec=%u delete_nsec=%u "
+				  "save_delete_nsec=%u\n",
+				  nsec3chain, nsec3chain->nsec3param.hash,
+				  nsec3chain->nsec3param.iterations,
+				  nsec3chain->nsec3param.flags,
+				  nsec3chain->nsec3param.salt_length,
+				  namebuf, nsec3chain->seen_nsec,
+				  nsec3chain->delete_nsec,
+				  nsec3chain->save_delete_nsec);
+	}
+	isc_buffer_printf(text, "setnsec3param_queue:\n");
+	for (event = ISC_LIST_HEAD(zone->setnsec3param_queue);
+	     event != NULL;
+	     event = ISC_LIST_NEXT(event, ev_link))
+	{
+		isc_buffer_printf(text, "\t=%p\n", event);
+	}
+	isc_buffer_printf(text, "signatures=%u\n", zone->signatures);
+	isc_buffer_printf(text, "nodes=%u\n", zone->nodes);
+	isc_buffer_printf(text, "privatetype=%u\n", zone->privatetype);
+	isc_buffer_printf(text, "keyopts=%016" PRIxFAST64"\n",
+			  atomic_load(&zone->keyopts));
+	isc_buffer_printf(text, "added=%u\n", zone->added);
+	isc_buffer_printf(text, "automatic=%u\n", zone->automatic);
+	isc_buffer_printf(text, "rpzs=%p\n", zone->rpzs);
+	isc_buffer_printf(text, "rpz_num=%u\n", zone->rpz_num);
+	isc_buffer_printf(text, "catzs=%p\n", zone->catzs);
+	isc_buffer_printf(text, "parentcatz=%p\n", zone->parentcatz);
+	isc_buffer_printf(text, "updatemethod=%u\n", zone->updatemethod);
+	isc_buffer_printf(text, "requestixfr=%u\n", zone->requestixfr);
+	isc_buffer_printf(text, "requestexpire=%u\n", zone->requestexpire);
+	isc_buffer_printf(text, "forwards:\n");
+	for (forward = ISC_LIST_HEAD(zone->forwards);
+	     forward != NULL;
+	     forward = ISC_LIST_NEXT(forward, link))
+	{
+		isc_buffer_printf(text, "\t=%p\n", forward);
+	}
+	isc_buffer_printf(text, "raw=%p\n", zone->raw);
+	isc_buffer_printf(text, "secure=%p\n", zone->secure);
+	isc_buffer_printf(text, "sourceserialset=%u\n", zone->sourceserialset);
+	isc_buffer_printf(text, "sourceserial=%u\n", zone->sourceserial);
+	isc_buffer_printf(text, "maxttl=%u\n", zone->maxttl);
+	// dns_diff_t		rss_diff;
+	isc_buffer_printf(text, "rss_events:\n");
+	for (event = ISC_LIST_HEAD(zone->rss_events);
+	     event != NULL;
+	     event = ISC_LIST_NEXT(event, ev_link))
+	{
+		isc_buffer_printf(text, "\t=%p\n", event);
+	}
+	isc_buffer_printf(text, "rss_post:\n");
+	for (event = ISC_LIST_HEAD(zone->rss_post);
+	     event != NULL;
+	     event = ISC_LIST_NEXT(event, ev_link))
+	{
+		isc_buffer_printf(text, "\t=%p\n", event);
+	}
+	isc_buffer_printf(text, "rss_newver=%p\n", zone->rss_newver);
+	isc_buffer_printf(text, "rss_oldver=%p\n", zone->rss_oldver);
+	isc_buffer_printf(text, "rss_db=%p\n", zone->rss_db);
+	isc_buffer_printf(text, "rss_raw=%p\n", zone->rss_raw);
+	isc_buffer_printf(text, "rss_event=%p\n", zone->rss_event);
+	isc_buffer_printf(text, "rss_state=%p\n", zone->rss_state);
+	isc_buffer_printf(text, "gluecachestats=%p", zone->gluecachestats);
+
+	UNLOCK_ZONE(zone);
 }

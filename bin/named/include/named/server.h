@@ -333,6 +333,9 @@ isc_result_t
 named_server_signing(named_server_t *server, isc_lex_t *lex,
 		     isc_buffer_t **text);
 
+isc_result_t
+named_server_zonedebug(named_server_t *server, isc_lex_t *lex,
+		       isc_buffer_t **text);
 /*%
  * Lists status information for a given zone (e.g., name, type, files,
  * load time, expiry, etc).

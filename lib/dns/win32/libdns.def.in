@@ -1173,6 +1173,7 @@ dns_zone_clearqueryonacl
 dns_zone_clearupdateacl
 dns_zone_clearxfracl
 dns_zone_create
+dns_zone_debug
 dns_zone_detach
 dns_zone_dialup
 dns_zone_dlzpostload

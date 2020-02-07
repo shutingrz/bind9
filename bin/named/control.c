@@ -288,6 +288,8 @@ named_control_docommand(isccc_sexpr_t *message, bool readonly,
 		result = named_server_tsiglist(named_g_server, text);
 	} else if (command_compare(command, NAMED_COMMAND_VALIDATION)) {
 		result = named_server_validation(named_g_server, lex, text);
+	} else if (command_compare(command, "zonedebug")) {
+		result = named_server_zonedebug(named_g_server, lex, text);
 	} else if (command_compare(command, NAMED_COMMAND_ZONESTATUS)) {
 		result = named_server_zonestatus(named_g_server, lex, text);
 	} else {
