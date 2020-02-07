@@ -153,6 +153,7 @@ struct isc__taskqueue {
 	isc_thread_t			thread;
 	unsigned int			threadid;
 	isc__taskmgr_t			*manager;
+	uint64_t			eprocessed;
 };
 
 struct isc__taskmgr {
@@ -1124,6 +1125,7 @@ dispatch(isc__taskmgr_t *manager, unsigned int threadid) {
 			 * have a task to do.  We must reacquire the queue
 			 * lock before exiting the 'if (task != NULL)' block.
 			 */
+			manager->queues[threadid].eprocessed++;
 			UNLOCK(&manager->queues[threadid].lock);
 			RUNTIME_CHECK(
 			      atomic_fetch_sub_explicit(&manager->tasks_ready,
@@ -1443,6 +1445,7 @@ isc_taskmgr_create(isc_mem_t *mctx, unsigned int workers,
 
 		manager->queues[i].manager = manager;
 		manager->queues[i].threadid = i;
+		manager->queues[i].eprocessed = 0;
 		isc_thread_create(run, &manager->queues[i],
 				  &manager->queues[i].thread);
 		char name[21];
@@ -1538,7 +1541,11 @@ isc_taskmgr_destroy(isc_taskmgr_t **managerp) {
 	 */
 	wake_all_queues(manager);
 	UNLOCK(&manager->lock);
-
+	FILE * f = fopen("/tmp/foobar","w");
+	for (i=0; i< manager->workers; i++) {
+		fprintf(f, "%d: %lu\n", i, manager->queues[i].eprocessed);
+	}
+	fclose(f);
 	/*
 	 * Wait for all the worker threads to exit.
 	 */
