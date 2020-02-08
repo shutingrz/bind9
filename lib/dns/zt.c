@@ -88,10 +88,7 @@ dns_zt_create(isc_mem_t *mctx, dns_rdataclass_t rdclass, dns_zt_t **ztp) {
 		goto cleanup_zt;
 	}
 
-	result = isc_rwlock_init(&zt->rwlock, 0, 0);
-	if (result != ISC_R_SUCCESS) {
-		goto cleanup_rbt;
-	}
+	isc_rwlock_init(&zt->rwlock);
 
 	zt->mctx = NULL;
 	isc_mem_attach(mctx, &zt->mctx);
@@ -106,9 +103,6 @@ dns_zt_create(isc_mem_t *mctx, dns_rdataclass_t rdclass, dns_zt_t **ztp) {
 	*ztp = zt;
 
 	return (ISC_R_SUCCESS);
-
-cleanup_rbt:
-	dns_rbt_destroy(&zt->table);
 
 cleanup_zt:
 	isc_mem_put(mctx, zt, sizeof(*zt));

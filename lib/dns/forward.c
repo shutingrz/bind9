@@ -51,10 +51,7 @@ dns_fwdtable_create(isc_mem_t *mctx, dns_fwdtable_t **fwdtablep) {
 		goto cleanup_fwdtable;
 	}
 
-	result = isc_rwlock_init(&fwdtable->rwlock, 0, 0);
-	if (result != ISC_R_SUCCESS) {
-		goto cleanup_rbt;
-	}
+	isc_rwlock_init(&fwdtable->rwlock);
 
 	fwdtable->mctx = NULL;
 	isc_mem_attach(mctx, &fwdtable->mctx);
@@ -62,9 +59,6 @@ dns_fwdtable_create(isc_mem_t *mctx, dns_fwdtable_t **fwdtablep) {
 	*fwdtablep = fwdtable;
 
 	return (ISC_R_SUCCESS);
-
-cleanup_rbt:
-	dns_rbt_destroy(&fwdtable->table);
 
 cleanup_fwdtable:
 	isc_mem_put(mctx, fwdtable, sizeof(dns_fwdtable_t));

@@ -32,27 +32,21 @@ static isc_threadresult_t
 	run1(void *arg) {
 	char *message = arg;
 
-	RUNTIME_CHECK(isc_rwlock_lock(&lock, isc_rwlocktype_read) ==
-		      ISC_R_SUCCESS);
+	isc_rwlock_lock(&lock, isc_rwlocktype_read);
 	printf("%s got READ lock\n", message);
 	sleep(1);
 	printf("%s giving up READ lock\n", message);
-	RUNTIME_CHECK(isc_rwlock_unlock(&lock, isc_rwlocktype_read) ==
-		      ISC_R_SUCCESS);
-	RUNTIME_CHECK(isc_rwlock_lock(&lock, isc_rwlocktype_read) ==
-		      ISC_R_SUCCESS);
+	isc_rwlock_unlock(&lock, isc_rwlocktype_read);
+	isc_rwlock_lock(&lock, isc_rwlocktype_read);
 	printf("%s got READ lock\n", message);
 	sleep(1);
 	printf("%s giving up READ lock\n", message);
-	RUNTIME_CHECK(isc_rwlock_unlock(&lock, isc_rwlocktype_read) ==
-		      ISC_R_SUCCESS);
-	RUNTIME_CHECK(isc_rwlock_lock(&lock, isc_rwlocktype_write) ==
-		      ISC_R_SUCCESS);
+	isc_rwlock_unlock(&lock, isc_rwlocktype_read);
+	isc_rwlock_lock(&lock, isc_rwlocktype_write);
 	printf("%s got WRITE lock\n", message);
 	sleep(1);
 	printf("%s giving up WRITE lock\n", message);
-	RUNTIME_CHECK(isc_rwlock_unlock(&lock, isc_rwlocktype_write) ==
-		      ISC_R_SUCCESS);
+	isc_rwlock_unlock(&lock, isc_rwlocktype_write);
 	return ((isc_threadresult_t)0);
 }
 
@@ -63,27 +57,21 @@ static isc_threadresult_t
 	run2(void *arg) {
 	char *message = arg;
 
-	RUNTIME_CHECK(isc_rwlock_lock(&lock, isc_rwlocktype_write) ==
-		      ISC_R_SUCCESS);
+	isc_rwlock_lock(&lock, isc_rwlocktype_write);
 	printf("%s got WRITE lock\n", message);
 	sleep(1);
 	printf("%s giving up WRITE lock\n", message);
-	RUNTIME_CHECK(isc_rwlock_unlock(&lock, isc_rwlocktype_write) ==
-		      ISC_R_SUCCESS);
-	RUNTIME_CHECK(isc_rwlock_lock(&lock, isc_rwlocktype_write) ==
-		      ISC_R_SUCCESS);
+	isc_rwlock_unlock(&lock, isc_rwlocktype_write);
+	isc_rwlock_lock(&lock, isc_rwlocktype_write);
 	printf("%s got WRITE lock\n", message);
 	sleep(1);
 	printf("%s giving up WRITE lock\n", message);
-	RUNTIME_CHECK(isc_rwlock_unlock(&lock, isc_rwlocktype_write) ==
-		      ISC_R_SUCCESS);
-	RUNTIME_CHECK(isc_rwlock_lock(&lock, isc_rwlocktype_read) ==
-		      ISC_R_SUCCESS);
+	isc_rwlock_unlock(&lock, isc_rwlocktype_write);
+	isc_rwlock_lock(&lock, isc_rwlocktype_read);
 	printf("%s got READ lock\n", message);
 	sleep(1);
 	printf("%s giving up READ lock\n", message);
-	RUNTIME_CHECK(isc_rwlock_unlock(&lock, isc_rwlocktype_read) ==
-		      ISC_R_SUCCESS);
+	isc_rwlock_unlock(&lock, isc_rwlocktype_read);
 	return ((isc_threadresult_t)0);
 }
 
@@ -105,7 +93,7 @@ main(int argc, char *argv[]) {
 	}
 	printf("%u workers\n", nworkers);
 
-	RUNTIME_CHECK(isc_rwlock_init(&lock, 5, 10) == ISC_R_SUCCESS);
+	isc_rwlock_init(&lock);
 
 	for (i = 0; i < nworkers; i++) {
 		snprintf(name, sizeof(name), "%02u", i);

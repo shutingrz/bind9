@@ -122,10 +122,7 @@ dns_keytable_create(isc_mem_t *mctx, dns_keytable_t **keytablep) {
 		goto cleanup_keytable;
 	}
 
-	result = isc_rwlock_init(&keytable->rwlock, 0, 0);
-	if (result != ISC_R_SUCCESS) {
-		goto cleanup_rbt;
-	}
+	isc_rwlock_init(&keytable->rwlock);
 
 	isc_refcount_init(&keytable->references, 1);
 
@@ -135,9 +132,6 @@ dns_keytable_create(isc_mem_t *mctx, dns_keytable_t **keytablep) {
 	*keytablep = keytable;
 
 	return (ISC_R_SUCCESS);
-
-cleanup_rbt:
-	dns_rbt_destroy(&keytable->table);
 
 cleanup_keytable:
 	isc_mem_putanddetach(&mctx, keytable, sizeof(*keytable));
