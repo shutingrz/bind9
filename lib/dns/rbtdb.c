@@ -2016,18 +2016,14 @@ decrement_reference(dns_rbtdb_t *rbtdb, dns_rbtnode_t *node,
 		}
 	}
 
+	if (isc_refcount_decrement(&node->references) > 1) {
+		return (false);
+	}
+
 	/* Upgrade the lock? */
 	if (nlock == isc_rwlocktype_read) {
 		RWUNLOCK(&nodelock->lock, isc_rwlocktype_read);
 		RWLOCK(&nodelock->lock, isc_rwlocktype_write);
-	}
-
-	if (isc_refcount_decrement(&node->references) > 1) {
-		/* Restore the lock? */
-		if (nlock == isc_rwlocktype_read) {
-			isc_rwlock_downgrade(&nodelock->lock);
-		}
-		return (false);
 	}
 
 	if (node->dirty) {
