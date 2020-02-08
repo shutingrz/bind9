@@ -1,0 +1,140 @@
+@@
+@@
+
+- NODE_INITLOCK
++ isc_rwlock_init
+
+@@
+@@
+
+- NODE_DESTROYLOCK
++ isc_rwlock_destroy
+
+@@
+@@
+
+- NODE_LOCK
++ RWLOCK
+
+@@
+@@
+
+- NODE_UNLOCK
++ RWUNLOCK
+
+@@
+@@
+
+- NODE_DOWNGRADE
++ isc_rwlock_downgrade
+
+@@
+@@
+
+- RBTDB_INITLOCK
++ isc_rwlock_init
+
+@@
+@@
+
+- RBTDB_DESTROYLOCK
++ isc_rwlock_destroy
+
+@@
+@@
+
+- RBTDB_LOCK
++ RWLOCK
+
+@@
+@@
+
+- RBTDB_UNLOCK
++ RWUNLOCK
+
+@@
+@@
+
+- ZONEDB_INITLOCK
++ isc_rwlock_init
+
+@@
+@@
+
+- ZONEDB_DESTROYLOCK
++ isc_rwlock_destroy
+
+@@
+@@
+
+- ZONEDB_LOCK
++ RWLOCK
+
+@@
+@@
+
+- ZONEDB_UNLOCK
++ RWUNLOCK
+
+@@
+statement S;
+expression V;
+@@
+
+- V =
+  isc_rwlock_init(...);
+- if (V != ISC_R_SUCCESS) S
+
+@@
+statement S;
+expression V;
+@@
+
+- V =
+  isc_rwlock_init(...);
+- if (V == ISC_R_SUCCESS) {
+  S
+- }
+
+@@
+statement S, SE;
+expression V;
+@@
+
+- V =
+  isc_rwlock_init(...);
+- if (V != ISC_R_SUCCESS) S else {
+  SE
+- }
+
+@@
+@@
+
+- RUNTIME_CHECK(
+  isc_rwlock_init(...)
+- == ISC_R_SUCCESS)
+  ;
+
+@@
+expression V1, V2;
+@@
+
+  isc_rwlock_init(...
+-  , V1, V2
+  );
+
+@@
+@@
+
+- RUNTIME_CHECK(
+  isc_rwlock_lock(...)
+- == ISC_R_SUCCESS)
+  ;
+
+@@
+@@
+
+- RUNTIME_CHECK(
+  isc_rwlock_unlock(...)
+- == ISC_R_SUCCESS)
+  ;
