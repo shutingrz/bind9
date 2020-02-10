@@ -168,7 +168,7 @@ dequeue_input_entry(dns_lowac_t*lowac) {
 					    (sizeof(
 						     ck_fifo_mpmc_entry_t)));
 			oldentry->remq_enqueued = true;
-			isc_refcount_increment(&oldentry->rqrefcount);
+			isc_refcount_increment0(&oldentry->rqrefcount);
 			fprintf(stderr, "XXXenq %p %d\n", oldentry, __LINE__);
 			ck_fifo_mpmc_enqueue(&lowac->remq, qentry,
 						     oldentry);
@@ -198,7 +198,7 @@ expire_entries(dns_lowac_t *lowac) {
 				 * Very unlikely, but can happen when we're between generations.
 				 * TODO verify that it's ok at all, maybe we're using the iterator wrong?
 				 */
-				isc_refcount_increment(&entry->refcount);
+				isc_refcount_increment0(&entry->refcount);
 				fprintf(stderr, "INCREF %d %p\n", __LINE__, entry);
 			} else {
 				dns_lowac_entry_t *ent2 = ck_ht_entry_value(htitentry);
@@ -214,7 +214,7 @@ expire_entries(dns_lowac_t *lowac) {
 					    (sizeof(
 						     ck_fifo_mpmc_entry_t)));
 			entry->remq_enqueued = true;
-			isc_refcount_increment(&entry->rqrefcount);
+			isc_refcount_increment0(&entry->rqrefcount);
 			fprintf(stderr, "XXXenq %p %d\n", entry, __LINE__);
 			ck_fifo_mpmc_enqueue(&lowac->remq, qentry, entry);
 		}
@@ -261,7 +261,7 @@ cleanup_entries(dns_lowac_t *lowac) {
 							entry->hash,
 							&htentry) == true);
 			entry->inht = false;
-			isc_refcount_increment(&entry->rqrefcount);
+			isc_refcount_increment0(&entry->rqrefcount);
 			/* We don't increment refcount - it was at 2 (remq + ht), it stays at 1 (remq) */
 			fprintf(stderr, "INCREF %d %p\n", __LINE__, entry);
 			fprintf(stderr, "XXXenq %p %d\n", entry, __LINE__);
@@ -271,8 +271,8 @@ cleanup_entries(dns_lowac_t *lowac) {
 				/* Requeue if still in use and there's no other request in queue */
 				/* TODO that's completely wrong, if we have two instances in the queue they will always have rc > 1 !!! */
 				if (rqrc == 0) { 
-					int p1 = isc_refcount_increment(&entry->rqrefcount);
-					int p2 = isc_refcount_increment(&entry->refcount);
+					int p1 = isc_refcount_increment0(&entry->rqrefcount);
+					int p2 = isc_refcount_increment0(&entry->refcount);
 					(void) p1;
 					(void) p2;
 					fprintf(stderr, "INCREF %d %p %d %d\n", __LINE__, entry, p1, p2);
@@ -452,7 +452,7 @@ dns_lowac_get(dns_lowac_t *lowac, dns_name_t *name, unsigned char *blob,
 	} else {
 		dns_lowac_entry_t *entry = ck_ht_entry_value(&htentry);
 		REQUIRE(VALID_LENTRY(entry));
-		int oldrc = isc_refcount_increment(&entry->refcount);
+		int oldrc = isc_refcount_increment0(&entry->refcount);
 		fprintf(stderr, "INCREF %d %p\n", __LINE__, entry, oldrc);
 		RUNTIME_CHECK(oldrc > 0);
 		if (entry->remq_enqueued || !entry->inht) {
@@ -466,7 +466,7 @@ dns_lowac_get(dns_lowac_t *lowac, dns_name_t *name, unsigned char *blob,
 				isc_mem_get(lowac->mctx,
 					    (sizeof(ck_fifo_mpmc_entry_t)));
 			entry->remq_enqueued = true;
-			isc_refcount_increment(&entry->rqrefcount);
+			isc_refcount_increment0(&entry->rqrefcount);
 			fprintf(stderr, "XXXenq %p %d\n", entry, __LINE__);
 			ck_fifo_mpmc_enqueue(&lowac->remq, qentry, entry);
 			return (ISC_R_NOTFOUND);
