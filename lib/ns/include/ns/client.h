@@ -179,12 +179,7 @@ struct ns_client {
 	ns_server_t *	 sctx;
 	ns_clientmgr_t * manager;
 	ns_clientstate_t state;
-	int		 naccepts;
-	int		 nreads;
-	int		 nsends;
-	int		 nrecvs;
 	int		 nupdates;
-	int		 nctls;
 	bool		 shuttingdown;
 	unsigned int	 attributes;
 	isc_task_t *	 task;
@@ -193,8 +188,7 @@ struct ns_client {
 	isc_nmhandle_t * handle;
 	unsigned char *	 tcpbuf;
 	dns_message_t *	 message;
-	unsigned char *	 recvbuf;
-	unsigned char	 sendbuf[NS_CLIENT_SEND_BUFFER_SIZE];
+	unsigned char *	 sendbuf;
 	dns_rdataset_t * opt;
 	uint16_t	 udpsize;
 	uint16_t	 extflags;
