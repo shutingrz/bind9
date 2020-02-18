@@ -21220,8 +21220,7 @@ dns_zone_debug(dns_zone_t *zone, isc_buffer_t *text) {
 		namebuf[0] = 0;
 		for (i = 0;
 		     i < nsec3chain->nsec3param.salt_length &&
-		     i < (sizeof(namebuf) / 2) &&
-		     i < sizeof(nsec3chain->salt);
+		     i < (sizeof(namebuf) / 2) && i < sizeof(nsec3chain->salt);
 		     i++)
 		{
 			snprintf(namebuf + (i * 2), sizeof(namebuf) - (i * 2),
