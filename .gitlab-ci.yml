@@ -1271,8 +1271,8 @@ release:sid:amd64:
        | tee curl-response.txt
   grep -q 'Build successfully submitted' curl-response.txt
 
-build:coverity:sid:amd64:
-  <<: *debian_sid_amd64_image
+build:coverity:stretch:amd64:
+  <<: *debian_stretch_amd64_image
   stage: build
   variables:
     CC: gcc
@@ -1283,10 +1283,10 @@ build:coverity:sid:amd64:
     #- *configure
     - ./configure --enable-developer
     - *coverity_build
-  dependencies:
-    - autoreconf:sid:amd64
-  needs:
-    - autoreconf:sid:amd64
+  #dependencies:
+  #  - autoreconf:sid:amd64
+  #needs:
+  #  - autoreconf:sid:amd64
   artifacts:
     paths:
       - curl-response.txt
