@@ -1276,11 +1276,12 @@ build:coverity:sid:amd64:
   stage: build
   variables:
     CC: gcc
-    CFLAGS: "${CFLAGS_COMMON} -O3"
+    #CFLAGS: "${CFLAGS_COMMON} -O3"
     EXTRA_CONFIGURE: "--enable-dnstap --with-libidn2"
   script:
     - *coverity_cache_prep
-    - *configure
+    #- *configure
+    - ./configure
     - *coverity_build
   dependencies:
     - autoreconf:sid:amd64
