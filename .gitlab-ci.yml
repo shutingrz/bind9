@@ -1281,7 +1281,7 @@ build:coverity:sid:amd64:
   script:
     - *coverity_cache_prep
     #- *configure
-    - ./configure
+    - ./configure --enable-developer
     - *coverity_build
   dependencies:
     - autoreconf:sid:amd64
