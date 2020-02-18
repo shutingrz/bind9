@@ -11,7 +11,7 @@
 
 /*! \file */
 
-#include <isc/result_isccc.h>
+#include <isc/result.h>
 
 static const char *isccc_result_descriptions[ISCCC_R_NRESULTS] = {
 	"unknown version", /* 1 */

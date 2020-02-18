@@ -16,6 +16,7 @@
 #include <stdbool.h>
 
 #include <isc/mem.h>
+#include <isc/result.h>
 #include <isc/safe.h>
 #include <isc/string.h>
 #include <isc/util.h>
@@ -26,7 +27,6 @@
 #include "dst_parse.h"
 #include "dst_pkcs11.h"
 
-#include <dst/result.h>
 #include <pk11/constants.h>
 #include <pk11/internal.h>
 #include <pk11/pk11.h>

@@ -11,7 +11,7 @@
 
 /*! \file */
 
-#include <isc/result_dns.h>
+#include <isc/result.h>
 #include <isc/util.h>
 
 static const char *dns_result_descriptions[DNS_R_NRESULTS] = {

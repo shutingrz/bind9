@@ -15,11 +15,14 @@
 /*! \file isc/result.h */
 
 #include <isc/lang.h>
-#include <isc/result_dns.h>
-#include <isc/result_dst.h>
-#include <isc/result_isccc.h>
 #include <isc/resultclass.h>
 #include <isc/types.h>
+
+/*
+ * This file is generated at compile time from the result_*.c files
+ * found in sibling library source directories.
+ */
+#include <isc/result-ext.h>
 
 #define ISC_R_SUCCESS	   ISC_RESULTCODE_ISC(0)  /*%< success */
 #define ISC_R_NOMEMORY	   ISC_RESULTCODE_ISC(1)  /*%< out of memory */
@@ -69,8 +72,9 @@
 	ISC_RESULTCODE_ISC(40)		       /*%< socket is not connected */
 #define ISC_R_RANGE	ISC_RESULTCODE_ISC(41) /*%< out of range */
 #define ISC_R_NOENTROPY ISC_RESULTCODE_ISC(42) /*%< out of entropy */
-#define ISC_R_MULTICAST ISC_RESULTCODE_ISC(43) /*%< invalid use of multicast \
-						*/
+#define ISC_R_MULTICAST                                      \
+	ISC_RESULTCODE_ISC(43) /*%< invalid use of multicast \
+				*/
 #define ISC_R_NOTFILE	   ISC_RESULTCODE_ISC(44) /*%< not a file */
 #define ISC_R_NOTDIRECTORY ISC_RESULTCODE_ISC(45) /*%< not a directory */
 #define ISC_R_QUEUEFULL	   ISC_RESULTCODE_ISC(46) /*%< queue is full */
@@ -79,10 +83,11 @@
 #define ISC_R_FAMILYNOSUPPORT ISC_RESULTCODE_ISC(48) /*%< AF not supported */
 #define ISC_R_BADHEX	      ISC_RESULTCODE_ISC(49) /*%< bad hex encoding */
 #define ISC_R_TOOMANYOPENFILES \
-	ISC_RESULTCODE_ISC(50) /*%< too many open files */
-#define ISC_R_NOTBLOCKING      ISC_RESULTCODE_ISC(51) /*%< not blocking */
-#define ISC_R_UNBALANCEDQUOTES ISC_RESULTCODE_ISC(52) /*%< unbalanced quotes \
-						       */
+	ISC_RESULTCODE_ISC(50)			 /*%< too many open files */
+#define ISC_R_NOTBLOCKING ISC_RESULTCODE_ISC(51) /*%< not blocking */
+#define ISC_R_UNBALANCEDQUOTES                                              \
+	ISC_RESULTCODE_ISC(52)			     /*%< unbalanced quotes \
+						      */
 #define ISC_R_INPROGRESS      ISC_RESULTCODE_ISC(53) /*%< operation in progress */
 #define ISC_R_CONNECTIONRESET ISC_RESULTCODE_ISC(54) /*%< connection reset */
 #define ISC_R_SOFTQUOTA	      ISC_RESULTCODE_ISC(55) /*%< soft quota reached */

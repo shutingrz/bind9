@@ -9,7 +9,7 @@
  * information regarding copyright ownership.
  */
 
-#include <isc/result_dst.h>
+#include <isc/result.h>
 
 static const char *dst_result_descriptions[DST_R_NRESULTS] = {
 	"algorithm is unsupported",		 /*%< 0 */

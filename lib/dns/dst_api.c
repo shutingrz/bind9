@@ -41,6 +41,7 @@
 #include <isc/print.h>
 #include <isc/random.h>
 #include <isc/refcount.h>
+#include <isc/result.h>
 #include <isc/safe.h>
 #include <isc/string.h>
 #include <isc/time.h>
@@ -59,8 +60,6 @@
 #include <dns/types.h>
 
 #include "dst_internal.h"
-
-#include <dst/result.h>
 
 #define DST_AS_STR(t) ((t).value.as_textregion.base)
 

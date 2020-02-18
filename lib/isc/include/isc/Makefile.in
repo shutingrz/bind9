@@ -36,9 +36,15 @@ HEADERS =	aes.h app.h assertions.h astack.h atomic.h backtrace.h \
 		task.h taskpool.h timer.h tm.h types.h util.h version.h
 
 SUBDIRS =
-TARGETS =
+TARGETS = result-ext.h result-ext.c
 
 @BIND9_MAKE_RULES@
+
+result-ext.h:
+	cat ${top_srcdir}/lib/*/result_*.h > result-ext.h
+
+result-ext.c:
+	cat ${top_srcdir}/lib/*/result_*.c > result-ext.c
 
 installdirs:
 	$(SHELL) ${top_srcdir}/mkinstalldirs ${DESTDIR}${includedir}/isc
@@ -47,6 +53,7 @@ install:: installdirs
 	for i in ${HEADERS}; do \
 		${INSTALL_DATA} ${srcdir}/$$i ${DESTDIR}${includedir}/isc || exit 1; \
 	done
+	${INSTALL_DATA} result-ext.h ${DESTDIR}${includedir}/isc
 	${INSTALL_DATA} platform.h ${DESTDIR}${includedir}/isc
 
 uninstall::
@@ -54,6 +61,9 @@ uninstall::
 	for i in ${HEADERS}; do \
 		rm -f ${DESTDIR}${includedir}/isc/$$i || exit 1; \
 	done
+
+clean::
+	rm -f result-ext.c result-ext.h
 
 distclean::
 	rm -f platform.h

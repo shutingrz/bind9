@@ -475,7 +475,7 @@ copy InstallFiles ..\Build\Release\
     <ClCompile Include="..\tm.c" />
 @IF PKCS11
     <ClCompile Include="..\pk11.c" />
-    <ClCompile Include="..\pk11_result.c" />
+    <ClCompile Include="..\result_pk11.c" />
 @END PKCS11
     <ClCompile Include="condition.c" />
     <ClCompile Include="dir.c" />

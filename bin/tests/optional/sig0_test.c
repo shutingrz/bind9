@@ -23,6 +23,7 @@
 #include <isc/mutex.h>
 #include <isc/net.h>
 #include <isc/print.h>
+#include <isc/result.h>
 #include <isc/socket.h>
 #include <isc/task.h>
 #include <isc/timer.h>
@@ -41,7 +42,6 @@
 #include <dns/types.h>
 
 #include <dst/dst.h>
-#include <dst/result.h>
 
 #define CHECK(str, x)                                                    \
 	{                                                                \

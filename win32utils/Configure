@@ -23,6 +23,8 @@ use Cwd;
 
 my $configfile = "..\\config.h";
 my $platformfile = "..\\lib\\isc\\win32\\include\\isc\\platform.h";
+my $resultcfile = "..\\lib\\isc\\include\\isc\\result-ext.c";
+my $resulthfile = "..\\lib\\isc\\include\\isc\\result-ext.h";
 my $confshfile = "..\\bin\\tests\\system\\conf.sh";
 
 my @filelist = ("..\\bin\\python\\dnssec-checkds.py",
@@ -2758,6 +2760,25 @@ sub makeinstallfile {
     close LOUT;
 }
 
+
+sub makeresultfiles {
+    open OUT, '>', '$resultcfile' or die $!;
+    for (glob "..\\lib\\*\\result_*.c") {
+        open FH, '<', "$_" or next;
+        while (<FH>) {print OUT "$_"};
+        close FH;
+    }
+    close OUT;
+
+    open OUT, '>', '$resulthfile' or die $!;
+    for (glob "..\\lib\\*\\result_*.h") {
+        open FH, '<', "$_" or next;
+        while (<FH>) {print OUT "$_"};
+        close FH;
+    }
+    close OUT;
+}
+
 # Adjust system tests
 
 # dnstap not supported
@@ -2875,6 +2896,8 @@ if (($want_win32 eq "yes") || ($want_x64 eq "yes")) {
     makesrcid();
 
     makeinstallfile();
+
+    makeresultfiles();
 
     print "Configured.\n";
 } else {

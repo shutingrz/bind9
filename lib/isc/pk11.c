@@ -21,7 +21,7 @@
 #include <isc/once.h>
 #include <isc/platform.h>
 #include <isc/print.h>
-#include <isc/result_dst.h>
+#include <isc/result.h>
 #include <isc/stdio.h>
 #include <isc/strerr.h>
 #include <isc/string.h>

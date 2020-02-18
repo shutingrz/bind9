@@ -17,10 +17,11 @@
 #include <isc/lib.h>
 #include <isc/resultclass.h>
 
-#include "pk11_result.c"
-#include "result_dns.c"
-#include "result_dst.c"
-#include "result_isccc.c"
+/*
+ * This file is generated at compile time from the result_*.c files
+ * found in sibling library source directories.
+ */
+#include "isc/result-ext.c"
 
 #include <pk11/result.h>
 

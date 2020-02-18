@@ -17,7 +17,7 @@ VERSION=@BIND9_VERSION@
 
 @BIND9_MAKE_INCLUDES@
 
-CINCLUDES =	-I${srcdir}/unix/include \
+CINCLUDES =	-I${srcdir} -I${srcdir}/unix/include \
 		-I${srcdir}/pthreads/include \
 		-I./include \
 		-I${srcdir}/include ${DNS_INCLUDES} \
@@ -94,6 +94,11 @@ TESTDIRS =	@UNITTESTS@
 
 @BIND9_MAKE_RULES@
 
+result.@O@: result-ext.c result.c
+
+result-ext.c: result.c
+	cat ${top_srcdir}/lib/*/result_*.c > result-ext.c
+
 version.@O@: version.c
 	${LIBTOOL_MODE_COMPILE} ${CC} ${ALL_CFLAGS} \
 		-DVERSION=\"${VERSION}\" \
@@ -138,4 +143,4 @@ uninstall::
 
 clean distclean::
 	rm -f libisc.@A@ libisc-nosymtbl.@A@ libisc.la \
-	libisc-nosymtbl.la timestamp
+	libisc-nosymtbl.la result-ext.c timestamp

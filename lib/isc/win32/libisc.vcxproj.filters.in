@@ -621,7 +621,7 @@
     <ClCompile Include="..\pk11.c">
       <Filter>Library Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\pk11_result.c">
+    <ClCompile Include="..\result_pk11.c">
       <Filter>Library Source Files</Filter>
     </ClCompile>
 @END PKCS11
