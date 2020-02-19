@@ -20969,10 +20969,10 @@ dns_zone_debug(dns_zone_t *zone, isc_buffer_t *text) {
 
 #define P(x) (isprint((x)&0xff) ? ((x)&0xff) : '.')
 
-	isc_buffer_printf(text, "magic=%u(%08x/%c%c%c%c)\n",
-			  zone->magic, zone->magic,
-			  P(zone->magic >> 24), P(zone->magic>>16),
-			  P(zone->magic >> 8), P(zone->magic));
+	isc_buffer_printf(text, "magic=%u(%08x/%c%c%c%c)\n", zone->magic,
+			  zone->magic, P(zone->magic >> 24),
+			  P(zone->magic >> 16), P(zone->magic >> 8),
+			  P(zone->magic));
 #ifdef DNS_ZONE_CHECKLOCK
 	isc_buffer_printf(text, "locked=%u\n", zone->locked);
 #endif
@@ -20982,8 +20982,7 @@ dns_zone_debug(dns_zone_t *zone, isc_buffer_t *text) {
 	isc_buffer_printf(text, "db=%p\n", zone->db);
 	isc_buffer_printf(text, "zmgr=%p\n", zone->zmgr);
 	isc_buffer_printf(text, "link.prev=%p, link.next=%p\n",
-			  ISC_LIST_PREV(zone, link),
-			  ISC_LIST_NEXT(zone, link));
+			  ISC_LIST_PREV(zone, link), ISC_LIST_NEXT(zone, link));
 	isc_buffer_printf(text, "timer=%p\n", zone->timer);
 	isc_buffer_printf(text, "irefs=%" PRIuFAST32 "\n",
 			  isc_refcount_current(&zone->irefs));
@@ -20992,18 +20991,15 @@ dns_zone_debug(dns_zone_t *zone, isc_buffer_t *text) {
 
 #define MAYBENULL(x) (((x) != NULL) ? (x) : "<null>")
 
-	isc_buffer_printf(text, "masterfile=%s\n",
-			  MAYBENULL(zone->masterfile));
+	isc_buffer_printf(text, "masterfile=%s\n", MAYBENULL(zone->masterfile));
 	isc_buffer_printf(text, "includes:\n");
-	for (include = ISC_LIST_HEAD(zone->includes);
-	     include != NULL;
+	for (include = ISC_LIST_HEAD(zone->includes); include != NULL;
 	     include = ISC_LIST_NEXT(include, link))
 	{
 		isc_buffer_printf(text, "\t%s\n", include->name);
 	}
 	isc_buffer_printf(text, "newincludes:\n");
-	for (include = ISC_LIST_HEAD(zone->newincludes);
-	     include != NULL;
+	for (include = ISC_LIST_HEAD(zone->newincludes); include != NULL;
 	     include = ISC_LIST_NEXT(include, link))
 	{
 		isc_buffer_printf(text, "\t%s\n", include->name);
@@ -21026,15 +21022,15 @@ dns_zone_debug(dns_zone_t *zone, isc_buffer_t *text) {
 		isc_buffer_printf(text, "\t%s\n", zone->db_argv[i]);
 	}
 
-#define TIMESTAMP(v)							\
-	do {								\
-		if (isc_time_isepoch(&zone->v)) {			\
-			isc_buffer_printf(text, #v "=<epoch>\n");	\
-		} else {						\
-			isc_time_formattimestamp(&zone->v, namebuf,	\
-						 sizeof(namebuf));	\
-			isc_buffer_printf(text, #v "=%s\n", namebuf);	\
-		}							\
+#define TIMESTAMP(v)                                                  \
+	do {                                                          \
+		if (isc_time_isepoch(&zone->v)) {                     \
+			isc_buffer_printf(text, #v "=<epoch>\n");     \
+		} else {                                              \
+			isc_time_formattimestamp(&zone->v, namebuf,   \
+						 sizeof(namebuf));    \
+			isc_buffer_printf(text, #v "=%s\n", namebuf); \
+		}                                                     \
 	} while (0)
 
 	TIMESTAMP(expiretime);
@@ -21073,13 +21069,12 @@ dns_zone_debug(dns_zone_t *zone, isc_buffer_t *text) {
 		bool ok;
 		isc_dscp_t dscp;
 
-		isc_sockaddr_format(&zone->masters[i],
-				    sockaddrbuf, sizeof(sockaddrbuf));
+		isc_sockaddr_format(&zone->masters[i], sockaddrbuf,
+				    sizeof(sockaddrbuf));
 		if (zone->masterkeynames != NULL &&
-		    zone->masterkeynames[i] != NULL)
-		{
-			dns_name_format(zone->masterkeynames[i],
-					namebuf, sizeof(namebuf));
+		    zone->masterkeynames[i] != NULL) {
+			dns_name_format(zone->masterkeynames[i], namebuf,
+					sizeof(namebuf));
 		} else {
 			namebuf[0] = 0;
 		}
@@ -21090,11 +21085,11 @@ dns_zone_debug(dns_zone_t *zone, isc_buffer_t *text) {
 	}
 	isc_buffer_printf(text, "curmaster=%u\n", zone->curmaster);
 
-#define SOCKADDR(v)							\
-	do {								\
-		isc_sockaddr_format(&zone->v,				\
-				    sockaddrbuf, sizeof(sockaddrbuf));	\
-		isc_buffer_printf(text, #v "=%s\n", sockaddrbuf);	\
+#define SOCKADDR(v)                                               \
+	do {                                                      \
+		isc_sockaddr_format(&zone->v, sockaddrbuf,        \
+				    sizeof(sockaddrbuf));         \
+		isc_buffer_printf(text, #v "=%s\n", sockaddrbuf); \
 	} while (0)
 
 	SOCKADDR(masteraddr);
@@ -21105,13 +21100,12 @@ dns_zone_debug(dns_zone_t *zone, isc_buffer_t *text) {
 	isc_buffer_printf(text, "notifycnt=%u\n", zone->notifycnt);
 	for (i = 0; i < zone->notifycnt; i++) {
 		isc_dscp_t dscp;
-		isc_sockaddr_format(&zone->notify[i],
-				    sockaddrbuf, sizeof(sockaddrbuf));
+		isc_sockaddr_format(&zone->notify[i], sockaddrbuf,
+				    sizeof(sockaddrbuf));
 		if (zone->notifykeynames != NULL &&
-		    zone->notifykeynames[i] != NULL)
-		{
-			dns_name_format(zone->notifykeynames[i],
-					namebuf, sizeof(namebuf));
+		    zone->notifykeynames[i] != NULL) {
+			dns_name_format(zone->notifykeynames[i], namebuf,
+					sizeof(namebuf));
 		} else {
 			namebuf[0] = 0;
 		}
@@ -21148,8 +21142,7 @@ dns_zone_debug(dns_zone_t *zone, isc_buffer_t *text) {
 	isc_buffer_printf(text, "update_disabled=%u\n", zone->update_disabled);
 	isc_buffer_printf(text, "zero_no_soa_ttl=%u\n", zone->zero_no_soa_ttl);
 	isc_buffer_printf(text, "notify:\n");
-	for (notify = ISC_LIST_HEAD(zone->notifies);
-	     notify != NULL;
+	for (notify = ISC_LIST_HEAD(zone->notifies); notify != NULL;
 	     notify = ISC_LIST_NEXT(notify, link))
 	{
 		isc_buffer_printf(text, "\t%p\n", notify);
@@ -21195,14 +21188,12 @@ dns_zone_debug(dns_zone_t *zone, isc_buffer_t *text) {
 
 	isc_buffer_printf(text, "strnamerd=%s\n", MAYBENULL(zone->strnamerd));
 	isc_buffer_printf(text, "strname=%s\n", MAYBENULL(zone->strname));
-	isc_buffer_printf(text, "strrdclass=%s\n",
-			  MAYBENULL(zone->strrdclass));
+	isc_buffer_printf(text, "strrdclass=%s\n", MAYBENULL(zone->strrdclass));
 	isc_buffer_printf(text, "strviewname=%s\n",
 			  MAYBENULL(zone->strviewname));
 	isc_buffer_printf(text, "compact_serial=%u\n", zone->compact_serial);
 	isc_buffer_printf(text, "signing:\n");
-	for (signing = ISC_LIST_HEAD(zone->signing);
-	     signing != NULL;
+	for (signing = ISC_LIST_HEAD(zone->signing); signing != NULL;
 	     signing = ISC_LIST_NEXT(signing, link))
 	{
 		isc_buffer_printf(text,
@@ -21213,8 +21204,7 @@ dns_zone_debug(dns_zone_t *zone, isc_buffer_t *text) {
 				  signing->deleteit, signing->done);
 	}
 	isc_buffer_printf(text, "nsec3chain:\n");
-	for (nsec3chain = ISC_LIST_HEAD(zone->nsec3chain);
-	     nsec3chain != NULL;
+	for (nsec3chain = ISC_LIST_HEAD(zone->nsec3chain); nsec3chain != NULL;
 	     nsec3chain = ISC_LIST_NEXT(nsec3chain, link))
 	{
 		namebuf[0] = 0;
@@ -21234,14 +21224,13 @@ dns_zone_debug(dns_zone_t *zone, isc_buffer_t *text) {
 				  nsec3chain, nsec3chain->nsec3param.hash,
 				  nsec3chain->nsec3param.iterations,
 				  nsec3chain->nsec3param.flags,
-				  nsec3chain->nsec3param.salt_length,
-				  namebuf, nsec3chain->seen_nsec,
+				  nsec3chain->nsec3param.salt_length, namebuf,
+				  nsec3chain->seen_nsec,
 				  nsec3chain->delete_nsec,
 				  nsec3chain->save_delete_nsec);
 	}
 	isc_buffer_printf(text, "setnsec3param_queue:\n");
-	for (event = ISC_LIST_HEAD(zone->setnsec3param_queue);
-	     event != NULL;
+	for (event = ISC_LIST_HEAD(zone->setnsec3param_queue); event != NULL;
 	     event = ISC_LIST_NEXT(event, ev_link))
 	{
 		isc_buffer_printf(text, "\t=%p\n", event);
@@ -21249,7 +21238,7 @@ dns_zone_debug(dns_zone_t *zone, isc_buffer_t *text) {
 	isc_buffer_printf(text, "signatures=%u\n", zone->signatures);
 	isc_buffer_printf(text, "nodes=%u\n", zone->nodes);
 	isc_buffer_printf(text, "privatetype=%u\n", zone->privatetype);
-	isc_buffer_printf(text, "keyopts=%016" PRIxFAST64"\n",
+	isc_buffer_printf(text, "keyopts=%016" PRIxFAST64 "\n",
 			  atomic_load(&zone->keyopts));
 	isc_buffer_printf(text, "added=%u\n", zone->added);
 	isc_buffer_printf(text, "automatic=%u\n", zone->automatic);
@@ -21261,8 +21250,7 @@ dns_zone_debug(dns_zone_t *zone, isc_buffer_t *text) {
 	isc_buffer_printf(text, "requestixfr=%u\n", zone->requestixfr);
 	isc_buffer_printf(text, "requestexpire=%u\n", zone->requestexpire);
 	isc_buffer_printf(text, "forwards:\n");
-	for (forward = ISC_LIST_HEAD(zone->forwards);
-	     forward != NULL;
+	for (forward = ISC_LIST_HEAD(zone->forwards); forward != NULL;
 	     forward = ISC_LIST_NEXT(forward, link))
 	{
 		isc_buffer_printf(text, "\t=%p\n", forward);
@@ -21274,15 +21262,13 @@ dns_zone_debug(dns_zone_t *zone, isc_buffer_t *text) {
 	isc_buffer_printf(text, "maxttl=%u\n", zone->maxttl);
 	// dns_diff_t		rss_diff;
 	isc_buffer_printf(text, "rss_events:\n");
-	for (event = ISC_LIST_HEAD(zone->rss_events);
-	     event != NULL;
+	for (event = ISC_LIST_HEAD(zone->rss_events); event != NULL;
 	     event = ISC_LIST_NEXT(event, ev_link))
 	{
 		isc_buffer_printf(text, "\t=%p\n", event);
 	}
 	isc_buffer_printf(text, "rss_post:\n");
-	for (event = ISC_LIST_HEAD(zone->rss_post);
-	     event != NULL;
+	for (event = ISC_LIST_HEAD(zone->rss_post); event != NULL;
 	     event = ISC_LIST_NEXT(event, ev_link))
 	{
 		isc_buffer_printf(text, "\t=%p\n", event);
