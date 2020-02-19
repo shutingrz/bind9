@@ -236,6 +236,21 @@ dns_validator_destroy(dns_validator_t **validatorp);
  *\li	All resources used by the validator are freed.
  */
 
+void
+dns_validator_destroy_locked(dns_validator_t **validatorp);
+/*%<
+ * Destroy a DNSSEC validator.
+ *
+ * Requires:
+ *\li	'*validatorp' points to a valid DNSSEC validator.
+ *\li	The validator must have completed and sent its completion
+ * 	event.
+ *\li	'(*validatorp)->lock' must have been locked before the call.
+ *
+ * Ensures:
+ *\li	All resources used by the validator are freed.
+ */
+
 ISC_LANG_ENDDECLS
 
 #endif /* DNS_VALIDATOR_H */

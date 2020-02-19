@@ -5531,6 +5531,10 @@ validated(isc_task_t *task, isc_event_t *event) {
 	FCTXTRACE("received validation completion event");
 
 	bucketnum = fctx->bucketnum;
+	/* Don't need to pair LOCK(validator->lock) bellow with its respective
+	 * UNLOCK, since dns_validator_destroy_locked() will unlock the mutex
+	 * and destroy the validator object */
+	LOCK(&vevent->validator->lock);
 	LOCK(&res->buckets[bucketnum].lock);
 
 	ISC_LIST_UNLINK(fctx->validators, vevent->validator, link);
@@ -5545,7 +5549,7 @@ validated(isc_task_t *task, isc_event_t *event) {
 		dns_name_copynf(dns_fixedname_name(&vevent->validator->wild),
 				wild);
 	}
-	dns_validator_destroy(&vevent->validator);
+	dns_validator_destroy_locked(&vevent->validator);
 	isc_mem_put(fctx->mctx, valarg, sizeof(*valarg));
 
 	negative = (vevent->rdataset == NULL);
@@ -10721,16 +10725,16 @@ dns_resolver_createfetch(dns_resolver_t *res, const dns_name_t *name,
 
 	bucketnum = dns_name_fullhash(name, false) % res->nbuckets;
 
+	if (atomic_load(&res->buckets[bucketnum].exiting)) {
+		result = ISC_R_SHUTTINGDOWN;
+		goto done;
+	}
+
 	LOCK(&res->lock);
 	spillat = res->spillat;
 	spillatmin = res->spillatmin;
 	UNLOCK(&res->lock);
 	LOCK(&res->buckets[bucketnum].lock);
-
-	if (atomic_load(&res->buckets[bucketnum].exiting)) {
-		result = ISC_R_SHUTTINGDOWN;
-		goto unlock;
-	}
 
 	if ((options & DNS_FETCHOPT_UNSHARED) == 0) {
 		for (fctx = ISC_LIST_HEAD(res->buckets[bucketnum].fctxs);
@@ -10806,7 +10810,7 @@ dns_resolver_createfetch(dns_resolver_t *res, const dns_name_t *name,
 
 unlock:
 	UNLOCK(&res->buckets[bucketnum].lock);
-
+done:
 	if (dodestroy) {
 		fctx_destroy(fctx);
 	}

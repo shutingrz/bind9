@@ -3224,8 +3224,8 @@ destroy(dns_validator_t *val) {
 	isc_mem_put(mctx, val, sizeof(*val));
 }
 
-void
-dns_validator_destroy(dns_validator_t **validatorp) {
+static inline void
+dns_validator_destroy_internal(dns_validator_t **validatorp, bool is_locked) {
 	dns_validator_t *val;
 	bool want_destroy = false;
 
@@ -3234,16 +3234,30 @@ dns_validator_destroy(dns_validator_t **validatorp) {
 	*validatorp = NULL;
 	REQUIRE(VALID_VALIDATOR(val));
 
-	LOCK(&val->lock);
+	if (!is_locked) {
+		LOCK(&val->lock);
+	}
 
 	val->attributes |= VALATTR_SHUTDOWN;
 	validator_log(val, ISC_LOG_DEBUG(4), "dns_validator_destroy");
 
 	want_destroy = exit_check(val);
+
 	UNLOCK(&val->lock);
+
 	if (want_destroy) {
 		destroy(val);
 	}
+}
+
+void
+dns_validator_destroy(dns_validator_t **validatorp) {
+	dns_validator_destroy_internal(validatorp, false);
+}
+
+void
+dns_validator_destroy_locked(dns_validator_t **validatorp) {
+	dns_validator_destroy_internal(validatorp, true);
 }
 
 static void
