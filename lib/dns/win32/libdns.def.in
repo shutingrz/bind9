@@ -1090,6 +1090,7 @@ dns_update_soaserial
 dns_validator_cancel
 dns_validator_create
 dns_validator_destroy
+dns_validator_destroy_locked
 dns_validator_send
 dns_view_adddelegationonly
 dns_view_addzone
