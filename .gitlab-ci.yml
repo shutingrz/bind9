@@ -304,10 +304,6 @@ stages:
     untracked: true
     expire_in: "1 day"
     when: on_failure
-  only:
-    - schedules
-    - tags
-    - web
 
 .unit_test_common: &unit_test_common
   <<: *default_triggering_rules
@@ -1133,6 +1129,7 @@ msvc:windows:amd64:
 
 system:msvc:windows:amd64:
   <<: *windows_system_test_job
+  <<: *default_triggering_rules
   variables:
     VSCONF: Release
   needs:
@@ -1155,6 +1152,10 @@ system:msvc-debug:windows:amd64:
   needs:
     - job: msvc-debug:windows:amd64
       artifacts: true
+  only:
+    - schedules
+    - tags
+    - web
 
 # Job producing a release tarball
 
