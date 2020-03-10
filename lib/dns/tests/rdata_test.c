@@ -2327,9 +2327,9 @@ httpssvc(void **state) {
 		TEXT_VALID("2 svc.example.net. esniconfig=abcdefghijkl"),
 		/* bad base64 */
 		TEXT_INVALID("2 svc.example.net. esniconfig=abcdefghijklm"),
-		TEXT_VALID("2 svc.example.net. key5=\"2222\""),
-		TEXT_VALID_CHANGED("2 svc.example.net. key5=\"2222\" alpn=h2",
-				   "2 svc.example.net. key5=\"2222\" "
+		TEXT_VALID("2 svc.example.net. key7=\"2222\""),
+		TEXT_VALID_CHANGED("2 svc.example.net. key7=\"2222\" alpn=h2",
+				   "2 svc.example.net. key7=\"2222\" "
 				   "alpn=\"h2\""),
 		TEXT_VALID("2 svc.example.net. key65535=\"2222\""),
 		TEXT_INVALID("2 svc.example.net. key65536=\"2222\""),
@@ -2353,17 +2353,17 @@ httpssvc(void **state) {
 		 */
 		WIRE_INVALID(0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x01),
 		/*
-		 * Port (0x02) too small (zero and one octets).
+		 * Port (0x03) too small (zero and one octets).
 		 */
-		WIRE_INVALID(0x00, 0x01, 0x00, 0x00, 0x02, 0x00, 0x00),
-		WIRE_INVALID(0x00, 0x01, 0x00, 0x00, 0x02, 0x00, 0x01, 0x00),
+		WIRE_INVALID(0x00, 0x01, 0x00, 0x00, 0x03, 0x00, 0x00),
+		WIRE_INVALID(0x00, 0x01, 0x00, 0x00, 0x03, 0x00, 0x01, 0x00),
 		/* Valid port */
-		WIRE_VALID(0x00, 0x01, 0x00, 0x00, 0x02, 0x00, 0x02, 0x00,
+		WIRE_VALID(0x00, 0x01, 0x00, 0x00, 0x03, 0x00, 0x02, 0x00,
 			   0x00),
 		/*
-		 * Port (0x02) too big (three octets).
+		 * Port (0x03) too big (three octets).
 		 */
-		WIRE_INVALID(0x00, 0x01, 0x00, 0x00, 0x02, 0x00, 0x03, 0x00,
+		WIRE_INVALID(0x00, 0x01, 0x00, 0x00, 0x03, 0x00, 0x03, 0x00,
 			     0x00, 0x00),
 		WIRE_SENTINEL()
 	};

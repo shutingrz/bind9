@@ -9,7 +9,7 @@
  * information regarding copyright ownership.
  */
 
-/* draft-ietf-dnsop-svcb-httpssvc-01 */
+/* draft-ietf-dnsop-svcb-httpssvc-02 */
 
 #ifndef RDATA_IN_1_HTTPSSVC_65479_C
 #define RDATA_IN_1_HTTPSSVC_65479_C
@@ -19,7 +19,14 @@
 /*
  * Service Binding Parameter Registry
  */
-enum encoding { sbpr_text, sbpr_port, sbpr_ipv4s, sbpr_ipv6s, sbpr_base64 };
+enum encoding {
+	sbpr_text,
+	sbpr_port,
+	sbpr_ipv4s,
+	sbpr_ipv6s,
+	sbpr_base64,
+	sbpr_empty
+};
 static const struct {
 	const char *name;
 	unsigned int value;
@@ -28,9 +35,10 @@ static const struct {
 } sbpr[] = {
 	{ "key0=", 0, sbpr_text, true },
 	{ "alpn=", 1, sbpr_text, true },
-	{ "port=", 2, sbpr_port, true },
-	{ "esniconfig=", 3, sbpr_base64, true },
+	{ "no-default-alpn=", 2, sbpr_empty, true },
+	{ "port=", 3, sbpr_port, true },
 	{ "ipv4hint=", 4, sbpr_ipv4s, true },
+	{ "esniconfig=", 5, sbpr_base64, true },
 	{ "ipv6hint=", 6, sbpr_ipv6s, true },
 };
 
@@ -106,6 +114,11 @@ svc_fromtext(isc_textregion_t *region, isc_buffer_t *target) {
 			break;
 		case sbpr_base64:
 			RETERR(isc_base64_decodestring(region->base, target));
+			break;
+		case sbpr_empty:
+			if (region->length != 0) {
+				return (DNS_R_SYNTAX);
+			}
 			break;
 		default:
 			INSIST(0);
@@ -299,9 +312,11 @@ totext_in_httpssvc(ARGS_TOTEXT) {
 			break;
 		case sbpr_port:
 			num = uint16_fromregion(&r);
+			isc_region_consume(&r, 2);
 			n = snprintf(buf, sizeof(buf), "%u", num);
 			INSIST(n > 0 && (unsigned)n < sizeof(buf));
 			RETERR(str_totext(buf, target));
+			INSIST(r.length == 0U);
 			break;
 		case sbpr_ipv4s:
 			while (r.length > 0U) {
@@ -327,6 +342,9 @@ totext_in_httpssvc(ARGS_TOTEXT) {
 			break;
 		case sbpr_base64:
 			RETERR(isc_base64_totext(&r, 0, "", target));
+			break;
+		case sbpr_empty:
+			INSIST(r.length == 0U);
 			break;
 		default:
 			INSIST(0);
@@ -426,6 +444,11 @@ fromwire_in_httpssvc(ARGS_FROMWIRE) {
 					break;
 				case sbpr_text:
 				case sbpr_base64:
+					break;
+				case sbpr_empty:
+					if (len != 0) {
+						return (DNS_R_FORMERR);
+					}
 					break;
 				}
 			}

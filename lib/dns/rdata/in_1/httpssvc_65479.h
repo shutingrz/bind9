@@ -13,7 +13,8 @@
 #define IN_1_HTTPSSVC_65479_H 1
 
 /*!
- *  \brief Per draft-ietf-dnsop-svcb-httpssvc-01 */
+ *  \brief Per draft-ietf-dnsop-svcb-httpssvc-02
+ */
 
 typedef struct dns_rdata_in_httpssvc {
 	dns_rdatacommon_t common;
