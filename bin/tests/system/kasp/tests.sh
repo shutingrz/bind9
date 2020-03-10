@@ -445,6 +445,7 @@ dnssec_verify()
 {
 	n=$((n+1))
 	echo_i "dnssec-verify zone ${ZONE} ($n)"
+	echo_ic "$(date)"
 	ret=0
 	dig_with_opts "$ZONE" "@${SERVER}" AXFR > dig.out.axfr.test$n || log_error "dig ${ZONE} AXFR failed"
 	$VERIFY -z -o "$ZONE" dig.out.axfr.test$n > /dev/null || log_error "dnssec verify zone $ZONE failed"
@@ -468,6 +469,7 @@ set_server "keys" "10.53.0.1"
 
 n=$((n+1))
 echo_i "check that 'dnssec-keygen -k' (configured policy) creates valid files ($n)"
+echo_ic "$(date)"
 ret=0
 $KEYGEN -K keys -k "$POLICY" -l kasp.conf "$ZONE" > "keygen.out.$POLICY.test$n" 2>/dev/null || ret=1
 lines=$(wc -l < "keygen.out.$POLICY.test$n")
@@ -527,6 +529,7 @@ _log=1
 
 n=$((n+1))
 echo_i "check that 'dnssec-keygen -k' (default policy) creates valid files ($n)"
+echo_ic "$(date)"
 ret=0
 set_zone "kasp"
 set_policy "default" "1" "3600"
@@ -561,6 +564,7 @@ status=$((status+ret))
 CMP_FILE="${BASE_FILE}.cmp"
 n=$((n+1))
 echo_i "check that 'dnssec-settime' by default does not edit key state file ($n)"
+echo_ic "$(date)"
 ret=0
 cp "$STATE_FILE" "$CMP_FILE"
 $SETTIME -P +3600 "$BASE_FILE" > /dev/null || log_error "settime failed"
@@ -572,6 +576,7 @@ status=$((status+ret))
 
 n=$((n+1))
 echo_i "check that 'dnssec-settime -s' also sets publish time metadata and states in key state file ($n)"
+echo_ic "$(date)"
 ret=0
 cp "$STATE_FILE" "$CMP_FILE"
 now=$(date +%Y%m%d%H%M%S)
@@ -588,6 +593,7 @@ status=$((status+ret))
 
 n=$((n+1))
 echo_i "check that 'dnssec-settime -s' also unsets publish time metadata and states in key state file ($n)"
+echo_ic "$(date)"
 ret=0
 cp "$STATE_FILE" "$CMP_FILE"
 $SETTIME -s -P "none" -g "none" -k "none" "$now" -z "none" "$now" -r "none" "$now" -d "none" "$now" "$BASE_FILE" > /dev/null || log_error "settime failed"
@@ -603,6 +609,7 @@ status=$((status+ret))
 
 n=$((n+1))
 echo_i "check that 'dnssec-settime -s' also sets active time metadata and states in key state file (uppercase) ($n)"
+echo_ic "$(date)"
 ret=0
 cp "$STATE_FILE" "$CMP_FILE"
 now=$(date +%Y%m%d%H%M%S)
@@ -628,6 +635,7 @@ status=$((status+ret))
 #
 n=$((n+1))
 echo_i "waiting for kasp signing changes to take effect ($n)"
+echo_ic "$(date)"
 i=0
 while [ $i -lt 30 ]
 do
@@ -683,6 +691,7 @@ set_keystate "KEY1" "STATE_DS"     "hidden"
 
 n=$((n+1))
 echo_i "check key is created for zone ${ZONE} ($n)"
+echo_ic "$(date)"
 ret=0
 ids=$(get_keyids "$DIR" "$ZONE")
 for id in $ids; do
@@ -698,6 +707,7 @@ dnssec_verify "$ZONE"
 qtype="DNSKEY"
 n=$((n+1))
 echo_i "check ${qtype} rrset is signed correctly for zone ${ZONE} ($n)"
+echo_ic "$(date)"
 ret=0
 dig_with_opts "$ZONE" "@${SERVER}" $qtype > "dig.out.$DIR.test$n" || log_error "dig ${ZONE} ${qtype} failed"
 grep "status: NOERROR" "dig.out.$DIR.test$n" > /dev/null || log_error "mismatch status in DNS response"
@@ -712,6 +722,7 @@ status=$((status+ret))
 qtype="SOA"
 n=$((n+1))
 echo_i "check ${qtype} rrset is signed correctly for zone ${ZONE} ($n)"
+echo_ic "$(date)"
 ret=0
 dig_with_opts "$ZONE" "@${SERVER}" $qtype > "dig.out.$DIR.test$n" || log_error "dig ${ZONE} ${qtype} failed"
 grep "status: NOERROR" "dig.out.$DIR.test$n" > /dev/null || log_error "mismatch status in DNS response"
@@ -725,6 +736,7 @@ status=$((status+ret))
 # Update zone.
 n=$((n+1))
 echo_i "check that we can update unsigned zone file and new record gets signed for zone ${ZONE} ($n)"
+echo_ic "$(date)"
 ret=0
 cp "${DIR}/template2.db.in" "${DIR}/${ZONE}.db"
 rndccmd 10.53.0.3 reload "$ZONE" > /dev/null || log_error "rndc reload zone ${ZONE} failed"
@@ -824,10 +836,12 @@ check_keys()
 {
 	n=$((n+1))
 	echo_i "check keys are created for zone ${ZONE} ($n)"
+	echo_ic "$(date)"
 	ret=0
 
 	n=$((n+1))
 	echo_i "check number of keys for zone ${ZONE} in dir ${DIR} ($n)"
+	echo_ic "$(date)"
 	ret=0
 	_numkeys=$(get_keyids "$DIR" "$ZONE" | wc -l)
 	test "$_numkeys" -eq "$NUM_KEYS" || log_error "bad number ($_numkeys) of key files for zone $ZONE (expected $NUM_KEYS)"
@@ -968,6 +982,7 @@ check_cds() {
 
 	n=$((n+1))
 	echo_i "check CDS and CDNSKEY rrset are signed correctly for zone ${ZONE} ($n)"
+	echo_ic "$(date)"
 	ret=0
 
 	dig_with_opts "$ZONE" "@${SERVER}" "CDS" > "dig.out.$DIR.test$n.cds" || log_error "dig ${ZONE} CDS failed"
@@ -1039,6 +1054,7 @@ check_apex() {
 	_qtype="DNSKEY"
 	n=$((n+1))
 	echo_i "check ${_qtype} rrset is signed correctly for zone ${ZONE} ($n)"
+	echo_ic "$(date)"
 	ret=0
 	dig_with_opts "$ZONE" "@${SERVER}" $_qtype > "dig.out.$DIR.test$n" || log_error "dig ${ZONE} ${_qtype} failed"
 	grep "status: NOERROR" "dig.out.$DIR.test$n" > /dev/null || log_error "mismatch status in DNS response"
@@ -1085,6 +1101,7 @@ check_apex() {
 	_qtype="SOA"
 	n=$((n+1))
 	echo_i "check ${_qtype} rrset is signed correctly for zone ${ZONE} ($n)"
+	echo_ic "$(date)"
 	ret=0
 	dig_with_opts "$ZONE" "@${SERVER}" $_qtype > "dig.out.$DIR.test$n" || log_error "dig ${ZONE} ${_qtype} failed"
 	grep "status: NOERROR" "dig.out.$DIR.test$n" > /dev/null || log_error "mismatch status in DNS response"
@@ -1103,6 +1120,7 @@ check_subdomain() {
 	_qtype="A"
 	n=$((n+1))
 	echo_i "check ${_qtype} a.${ZONE} rrset is signed correctly for zone ${ZONE} ($n)"
+	echo_ic "$(date)"
 	ret=0
 	dig_with_opts "a.$ZONE" "@${SERVER}" $_qtype > "dig.out.$DIR.test$n" || log_error "dig a.${ZONE} ${_qtype} failed"
 	grep "status: NOERROR" "dig.out.$DIR.test$n" > /dev/null || log_error "mismatch status in DNS response"
@@ -1309,6 +1327,7 @@ dnssec_verify
 # Update zone.
 n=$((n+1))
 echo_i "check that we correctly sign the zone after IXFR for zone ${ZONE} ($n)"
+echo_ic "$(date)"
 ret=0
 cp ns2/secondary.kasp.db.in2 ns2/secondary.kasp.db
 rndccmd 10.53.0.2 reload "$ZONE" > /dev/null || log_error "rndc reload zone ${ZONE} failed"
@@ -1483,6 +1502,7 @@ check_rrsig_refresh() {
 	do
 		n=$((n+1))
 		echo_i "check ${_qtype} rrsig is refreshed correctly for zone ${ZONE} ($n)"
+		echo_ic "$(date)"
 		ret=0
 		dig_with_opts "$ZONE" "@${SERVER}" "$_qtype" > "dig.out.$DIR.test$n" || log_error "dig ${ZONE} ${_qtype} failed"
 		grep "status: NOERROR" "dig.out.$DIR.test$n" > /dev/null || log_error "mismatch status in DNS response"
@@ -1503,6 +1523,7 @@ check_rrsig_refresh() {
 		do
 			n=$((n+1))
 			echo_i "check ${_label} ${_qtype} rrsig is refreshed correctly for zone ${ZONE} ($n)"
+			echo_ic "$(date)"
 			ret=0
 			dig_with_opts "${_label}.${ZONE}" "@${SERVER}" "$_qtype" > "dig.out.$DIR.test$n" || log_error "dig ${_label}.${ZONE} ${_qtype} failed"
 			grep "status: NOERROR" "dig.out.$DIR.test$n" > /dev/null || log_error "mismatch status in DNS response"
@@ -1538,6 +1559,7 @@ check_rrsig_reuse() {
 	do
 		n=$((n+1))
 		echo_i "check ${_qtype} rrsig is reused correctly for zone ${ZONE} ($n)"
+		echo_ic "$(date)"
 		ret=0
 		dig_with_opts "$ZONE" "@${SERVER}" "$_qtype" > "dig.out.$DIR.test$n" || log_error "dig ${ZONE} ${_qtype} failed"
 		grep "status: NOERROR" "dig.out.$DIR.test$n" > /dev/null || log_error "mismatch status in DNS response"
@@ -1558,6 +1580,7 @@ check_rrsig_reuse() {
 		do
 			n=$((n+1))
 			echo_i "check ${_label} ${_qtype} rrsig is reused correctly for zone ${ZONE} ($n)"
+			echo_ic "$(date)"
 			ret=0
 			dig_with_opts "${_label}.${ZONE}" "@${SERVER}" "$_qtype" > "dig.out.$DIR.test$n" || log_error "dig ${_label}.${ZONE} ${_qtype} failed"
 			grep "status: NOERROR" "dig.out.$DIR.test$n" > /dev/null || log_error "mismatch status in DNS response"
@@ -1862,6 +1885,7 @@ dnssec_verify
 n=$((n+1))
 # check subdomain
 echo_i "check TXT example.net (view example1) rrset is signed correctly ($n)"
+echo_ic "$(date)"
 ret=0
 dig_with_opts "view.${ZONE}" "@${SERVER}" TXT > "dig.out.$DIR.test$n.txt" || log_error "dig view.${ZONE} TXT failed"
 grep "status: NOERROR" "dig.out.$DIR.test$n.txt" > /dev/null || log_error "mismatch status in DNS response"
@@ -1877,6 +1901,7 @@ dnssec_verify
 n=$((n+1))
 # check subdomain
 echo_i "check TXT example.net (view example2) rrset is signed correctly ($n)"
+echo_ic "$(date)"
 ret=0
 dig_with_opts "view.${ZONE}" "@${SERVER}" TXT > "dig.out.$DIR.test$n.txt" || log_error "dig view.${ZONE} TXT failed"
 grep "status: NOERROR" "dig.out.$DIR.test$n.txt" > /dev/null || log_error "mismatch status in DNS response"
@@ -1929,6 +1954,7 @@ check_next_key_event() {
 
 	n=$((n+1))
 	echo_i "check next key event for zone ${ZONE} ($n)"
+	echo_ic "$(date)"
 	ret=0
 	grep "zone ${ZONE}.*: next key event in .* seconds" "${DIR}/named.run" > "keyevent.out.$ZONE.test$n" || log_error "no next key event for zone ${ZONE}"
 
@@ -2833,6 +2859,7 @@ rndc_reconfig ns6 10.53.0.6
 #
 n=$((n+1))
 echo_i "waiting for reconfig signing changes to take effect ($n)"
+echo_ic "$(date)"
 i=0
 while [ $i -lt 30 ]
 do
