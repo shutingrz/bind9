@@ -52,7 +52,7 @@ SEQUENTIAL_COMMON=""
 # rpzrecurse are scheduled first, in order to get more benefit from
 # parallelism.
 #
-PARALLEL_COMMON="dnssec rpzrecurse serve-stale \
+PARALLEL_COMMON="kasp dnssec rpzrecurse serve-stale \
 	acl additional addzone allow-query auth autosign \
 	builtin cacheclean case catz cds chain \
 	checkconf checknames checkzone \
@@ -62,7 +62,7 @@ PARALLEL_COMMON="dnssec rpzrecurse serve-stale \
 	fetchlimit filter-aaaa formerr forward \
 	geoip2 glue idna include-multiplecfg \
 	inline integrity ixfr \
-	kasp keepalive legacy limits \
+	keepalive legacy limits \
 	masterfile masterformat metadata mirror mkeys \
 	names notify nslookup nsupdate nzd2nzf \
 	padding pending pipelined qmin \
