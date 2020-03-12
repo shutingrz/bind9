@@ -423,21 +423,36 @@ key_unused() {
 	[ "$ret" -eq 0 ] || return
 
 	# Check timing metadata.
-	grep "; Publish:" "$KEY_FILE" > /dev/null && log_error "unexpected publish comment in $KEY_FILE"
-	grep "Publish:" "$PRIVATE_FILE" > /dev/null && log_error "unexpected publish in $PRIVATE_FILE"
-	grep "Published: " "$STATE_FILE" > /dev/null && log_error "unexpected publish in $STATE_FILE"
-	grep "; Activate:" "$KEY_FILE" > /dev/null && log_error "unexpected active comment in $KEY_FILE"
-	grep "Activate:" "$PRIVATE_FILE" > /dev/null && log_error "unexpected active in $PRIVATE_FILE"
-	grep "Active: " "$STATE_FILE" > /dev/null && log_error "unexpected active in $STATE_FILE"
-	grep "; Inactive:" "$KEY_FILE" > /dev/null && log_error "unexpected retired comment in $KEY_FILE"
-	grep "Inactive:" "$PRIVATE_FILE" > /dev/null && log_error "unexpected retired in $PRIVATE_FILE"
-	grep "Retired: " "$STATE_FILE" > /dev/null && log_error "unexpected retired in $STATE_FILE"
-	grep "; Revoke:" "$KEY_FILE" > /dev/null && log_error "unexpected revoked comment in $KEY_FILE"
-	grep "Revoke:" "$PRIVATE_FILE" > /dev/null && log_error "unexpected revoked in $PRIVATE_FILE"
-	grep "Revoked: " "$STATE_FILE" > /dev/null && log_error "unexpected revoked in $STATE_FILE"
-	grep "; Delete:" "$KEY_FILE" > /dev/null && log_error "unexpected removed comment in $KEY_FILE"
-	grep "Delete:" "$PRIVATE_FILE" > /dev/null && log_error "unexpected removed in $PRIVATE_FILE"
-	grep "Removed: " "$STATE_FILE" > /dev/null && log_error "unexpected removed in $STATE_FILE"
+	awk -v logit=$_log '
+	    function unexpected(x) {
+		status += 1
+		if (logit) {
+		    print "I:kasp:error: unexpected", x, "comment in", FILENAME
+		}
+	    }
+            BEGIN { status=0 }
+		/; Publish:/ { unexpected("publish") }
+		/; Activate:/ { unexpected("activate") }
+		/; Inactive:/ { unexpected("retired") }
+		/; Revoke:/ { unexpected("revoked") }
+		/; Delete:/ { unexpected("removed") }
+	    END { exit($status) }
+	' "$KEY_FILE" "$PRIVATE_FILE" || ret=$((ret+$?))
+	awk -v logit=$_log '
+	    function unexpected(x) {
+		status += 1
+		if (logit) {
+		    print "I:kasp:error: unexpected", x, "comment in", FILENAME
+		}
+	    }
+            BEGIN { status=0 }
+		/Published:/ { unexpected("publish") }
+		/Active:/ { unexpected("active") }
+		/Inactive:/ { unexpected("retired") }
+		/Revoked:/ { unexpected("revoked") }
+		/Removed:/ { unexpected("removed") }
+	    END { exit($status) }
+	' "$STATE_FILE" || ret=$((ret+$?))
 }
 
 # Test: dnssec-verify zone $1.
