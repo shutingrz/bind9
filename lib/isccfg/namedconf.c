@@ -1518,6 +1518,7 @@ static cfg_tuplefielddef_t rpz_fields[] = {
 	{ "max-policy-ttl", &cfg_type_uint32, 0 },
 	{ "min-ns-dots", &cfg_type_uint32, 0 },
 	{ "nsip-wait-recurse", &cfg_type_boolean, 0 },
+	{ "nsdname-wait-recurse", &cfg_type_boolean, 0 },
 	{ "qname-wait-recurse", &cfg_type_boolean, 0 },
 	{ "recursive-only", &cfg_type_boolean, 0 },
 	{ NULL, NULL, 0 }

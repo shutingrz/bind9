@@ -2073,6 +2073,12 @@ configure_rpz(dns_view_t *view, const cfg_obj_t *rpz_obj,
 	else
 		new->p.nsip_wait_recurse = false;
 
+	sub_obj = cfg_tuple_get(rpz_obj, "nsdname-wait-recurse");
+	if (cfg_obj_isvoid(sub_obj) || cfg_obj_asboolean(sub_obj))
+		new->p.nsdname_wait_recurse = true;
+	else
+		new->p.nsdname_wait_recurse = false;
+
 	pview = NULL;
 	result = dns_viewlist_find(&ns_g_server->viewlist,
 				   view->name, view->rdclass, &pview);
