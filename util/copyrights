@@ -2110,6 +2110,7 @@
 ./bin/tests/system/rpzrecurse/ns3/example.db	ZONE	2016,2018,2019,2020
 ./bin/tests/system/rpzrecurse/ns3/named1.conf.in	CONF-C	2016,2018,2019,2020
 ./bin/tests/system/rpzrecurse/ns3/named2.conf.in	CONF-C	2016,2018,2019,2020
+./bin/tests/system/rpzrecurse/ns3/named3.conf.in	CONF-C	2020
 ./bin/tests/system/rpzrecurse/ns3/policy.db	ZONE	2016,2018,2019,2020
 ./bin/tests/system/rpzrecurse/ns3/root.db	ZONE	2016,2018,2019,2020
 ./bin/tests/system/rpzrecurse/ns4/child.example.db	ZONE	2016,2018,2019,2020
