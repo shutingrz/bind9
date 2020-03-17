@@ -20,6 +20,5 @@ rm -f ns2/*.local
 rm -f ns2/*.queries
 rm -f ns2/named.[0-9]*.conf
 rm -f ns2/named.conf.header
-rm -f ns3/named2.conf
 rm -f ans*/*.run
 rm -f ns*/session.key
