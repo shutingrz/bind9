@@ -386,6 +386,10 @@ t4=`$PERL -e 'print time()."\n";'`
 p2=`expr $t4 - $t3`
 echo_i "elapsed time $p2 seconds"
 
+if test $p1 -le $p2; then ret=1; fi
+if test $ret != 0; then echo_i "failed"; fi
+status=`expr $status + $ret`
+
 $RNDC  -c ../common/rndc.conf -s 10.53.0.3 -p ${CONTROLPORT} flush
 # restore original named.conf
 copy_setports ns3/named1.conf.in ns3/named.conf
