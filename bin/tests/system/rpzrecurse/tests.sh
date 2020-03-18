@@ -375,16 +375,36 @@ t2=`$PERL -e 'print time()."\n";'`
 p1=`expr $t2 - $t1`
 echo_i "elapsed time $p1 seconds"
 
-# Wait for <rndc ... reload> command to complete.
-reload_ns3_and_wait_completion() {
+# Executes rndc ... <command> and wait for a message in ns3/named.run
+# Arguments:
+# 	$1 = command to execute: flush, reload, etc...
+#	$2 = message to wait on named.run log file
+wait_command_completion() {
+	command="$1"
+	message="$2"
+
 	nextpart ns3/named.conf > /dev/null
-	$RNDC  -c ../common/rndc.conf -s 10.53.0.3 -p ${CONTROLPORT} reload > /dev/null
-	wait_for_log 10 "reloading configuration succeeded" ns3/named.run
+	$RNDC  -c ../common/rndc.conf -s 10.53.0.3 -p ${CONTROLPORT} "${command}" > /dev/null
+	wait_for_log 10 "${message}" ns3/named.run
 }
 
-$RNDC  -c ../common/rndc.conf -s 10.53.0.3 -p ${CONTROLPORT} flush
-copy_setports ns3/named2.conf.in ns3/named.conf
-reload_ns3_and_wait_completion
+wait_ns3_flush() {
+	wait_command_completion flush "flushing caches in all views succeeded"
+}
+
+wait_ns3_reload() {
+	wait_command_completion reload "reloading configuration succeeded"
+}
+
+# Flush ns3, copy named.conf from $1, reload ns3.
+set_ns3_config() {
+	wait_ns3_flush
+	copy_setports ns3/"$1" ns3/named.conf
+	wait_ns3_reload
+}
+
+# Use config with nsip-wait-recurse no
+set_ns3_config named2.conf.in
 
 echo_i "timing 'nsip-wait-recurse no'"
 t3=`$PERL -e 'print time()."\n";'`
@@ -397,11 +417,8 @@ if test $p1 -le $p2; then ret=1; fi
 if test $ret != 0; then echo_i "failed"; fi
 status=`expr $status + $ret`
 
-
-$RNDC  -c ../common/rndc.conf -s 10.53.0.3 -p ${CONTROLPORT} flush
 # restore original named.conf
-copy_setports ns3/named1.conf.in ns3/named.conf
-reload_ns3_and_wait_completion
+set_ns3_config named1.conf.in
 
 t=`expr $t + 1`
 echo_i "checking 'nsdname-wait-recurse no' is faster than 'nsdname-wait-recurse yes' ($t)"
@@ -413,9 +430,8 @@ t2=`$PERL -e 'print time()."\n";'`
 p1=`expr $t2 - $t1`
 echo_i "elapsed time $p1 seconds"
 
-$RNDC  -c ../common/rndc.conf -s 10.53.0.3 -p ${CONTROLPORT} flush
-copy_setports ns3/named3.conf.in ns3/named.conf
-reload_ns3_and_wait_completion
+# Use config with nsdname-wait-recurse no
+set_ns3_config named3.conf.in
 
 echo_i "timing 'nsdname-wait-recurse no'"
 t3=`$PERL -e 'print time()."\n";'`
