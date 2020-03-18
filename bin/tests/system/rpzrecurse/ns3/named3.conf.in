@@ -20,14 +20,11 @@ options {
 	notify-source 10.53.0.3;
 	transfer-source 10.53.0.3;
 	port @PORT@;
-	session-keyfile "session.key";
 	pid-file "named.pid";
 	listen-on { 10.53.0.3; };
 	listen-on-v6 { none; };
 	recursion yes;
 	response-policy { zone "policy"; } nsdname-wait-recurse no;
-
-#	include "../dnsrps.conf";
 };
 
 zone "policy" { type master; file "policy.db"; };
