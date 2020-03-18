@@ -375,9 +375,16 @@ t2=`$PERL -e 'print time()."\n";'`
 p1=`expr $t2 - $t1`
 echo_i "elapsed time $p1 seconds"
 
+# Wait for <rndc ... reload> command to complete.
+reload_ns3_and_wait_completion() {
+	nextpart ns3/named.conf > /dev/null
+	$RNDC  -c ../common/rndc.conf -s 10.53.0.3 -p ${CONTROLPORT} reload > /dev/null
+	wait_for_log 10 "reloading configuration succeeded" ns3/named.run
+}
+
 $RNDC  -c ../common/rndc.conf -s 10.53.0.3 -p ${CONTROLPORT} flush
 copy_setports ns3/named2.conf.in ns3/named.conf
-$RNDC  -c ../common/rndc.conf -s 10.53.0.3 -p ${CONTROLPORT} reload > /dev/null
+reload_ns3_and_wait_completion
 
 echo_i "timing 'nsip-wait-recurse no'"
 t3=`$PERL -e 'print time()."\n";'`
@@ -390,10 +397,11 @@ if test $p1 -le $p2; then ret=1; fi
 if test $ret != 0; then echo_i "failed"; fi
 status=`expr $status + $ret`
 
+
 $RNDC  -c ../common/rndc.conf -s 10.53.0.3 -p ${CONTROLPORT} flush
 # restore original named.conf
 copy_setports ns3/named1.conf.in ns3/named.conf
-$RNDC  -c ../common/rndc.conf -s 10.53.0.3 -p ${CONTROLPORT} reload > /dev/null
+reload_ns3_and_wait_completion
 
 t=`expr $t + 1`
 echo_i "checking 'nsdname-wait-recurse no' is faster than 'nsdname-wait-recurse yes' ($t)"
@@ -407,7 +415,7 @@ echo_i "elapsed time $p1 seconds"
 
 $RNDC  -c ../common/rndc.conf -s 10.53.0.3 -p ${CONTROLPORT} flush
 copy_setports ns3/named3.conf.in ns3/named.conf
-$RNDC  -c ../common/rndc.conf -s 10.53.0.3 -p ${CONTROLPORT} reload > /dev/null
+reload_ns3_and_wait_completion
 
 echo_i "timing 'nsdname-wait-recurse no'"
 t3=`$PERL -e 'print time()."\n";'`
