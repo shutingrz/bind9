@@ -18,6 +18,7 @@ IndentCaseLabels: false
 AlwaysBreakAfterReturnType: All
 Cpp11BracedListStyle: false
 ColumnLimit: 80
+CommentPragmas:  '^ IWYU pragma:'
 AlignAfterOpenBracket: Align
 AlignConsecutiveDeclarations: false
 AlignConsecutiveMacros: true
