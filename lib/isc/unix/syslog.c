@@ -12,11 +12,12 @@
 /*! \file */
 
 #include <stdlib.h>
+#include <strings.h>
 #include <syslog.h>
 
 #include <isc/result.h>
-#include <isc/string.h>
 #include <isc/syslog.h>
+#include <isc/types.h>
 #include <isc/util.h>
 
 static struct dsn_c_pvt_sfnt {

@@ -16,20 +16,19 @@
 #include <inttypes.h>
 #include <stdbool.h>
 #include <stddef.h>
+#include <string.h>
 #if defined(WIN32) || defined(WIN64)
 #include <malloc.h>
 #endif /* if defined(WIN32) || defined(WIN64) */
 
+#include <isc/hash.h> /* IWYU pragma: keep */
+#include <isc/likely.h>
+#include <isc/once.h>
+#include <isc/result.h>
+#include <isc/siphash.h>
+#include <isc/util.h>
+
 #include "entropy_private.h"
-#include "isc/hash.h" /* IWYU pragma: keep */
-#include "isc/likely.h"
-#include "isc/once.h"
-#include "isc/random.h"
-#include "isc/result.h"
-#include "isc/siphash.h"
-#include "isc/string.h"
-#include "isc/types.h"
-#include "isc/util.h"
 
 static uint8_t isc_hash_key[16];
 static bool hash_initialized = false;

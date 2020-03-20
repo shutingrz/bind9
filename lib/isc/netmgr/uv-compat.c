@@ -9,10 +9,11 @@
  * information regarding copyright ownership.
  */
 
-#include "uv-compat.h"
+#include <errno.h>
 #include <unistd.h>
+#include <uv/unix.h>
 
-#include <isc/util.h>
+#include "uv-compat.h"
 
 #ifndef HAVE_UV_IMPORT
 /*
@@ -89,8 +90,6 @@ isc_uv_import(uv_stream_t *stream, isc_uv_stream_info_t *info) {
 			.socket_info = info->socket_info }));
 }
 #else /* WIN32 */
-/* Adapted from libuv/src/unix/internal.h */
-#include <fcntl.h>
 #include <sys/ioctl.h>
 
 static int

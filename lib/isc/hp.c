@@ -44,13 +44,15 @@
  */
 
 #include <inttypes.h>
+#include <stdatomic.h>
+#include <stdbool.h>
+#include <string.h>
 
 #include <isc/atomic.h>
 #include <isc/hp.h>
 #include <isc/mem.h>
-#include <isc/once.h>
-#include <isc/string.h>
 #include <isc/thread.h>
+#include <isc/types.h>
 #include <isc/util.h>
 
 #define HP_MAX_THREADS 128

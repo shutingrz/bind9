@@ -9,20 +9,15 @@
  * information regarding copyright ownership.
  */
 
-#include <inttypes.h>
+#include <errno.h>
+#include <limits.h>
 #include <stdbool.h>
 #include <sys/resource.h>
-#include <sys/time.h> /* Required on some systems for <sys/resource.h>. */
-#include <sys/types.h>
 
-#include <isc/platform.h>
 #include <isc/resource.h>
 #include <isc/result.h>
+#include <isc/types.h>
 #include <isc/util.h>
-
-#ifdef __linux__
-#include <linux/fs.h> /* To get the large NR_OPEN. */
-#endif		      /* ifdef __linux__ */
 
 #include "errno2result.h"
 

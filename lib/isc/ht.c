@@ -10,6 +10,8 @@
  */
 
 #include <inttypes.h>
+#include <stdbool.h>
+#include <stddef.h>
 #include <string.h>
 
 #include <isc/hash.h>
@@ -19,6 +21,8 @@
 #include <isc/result.h>
 #include <isc/types.h>
 #include <isc/util.h>
+
+struct isc_ht_node;
 
 typedef struct isc_ht_node isc_ht_node_t;
 

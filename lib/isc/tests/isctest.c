@@ -12,17 +12,16 @@
 /*! \file */
 
 #include "isctest.h"
-#include <inttypes.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <time.h>
 
-#include <isc/buffer.h>
-#include <isc/hash.h>
+#include <isc/log.h>
 #include <isc/mem.h>
+#include <isc/netmgr.h>
 #include <isc/os.h>
+#include <isc/result.h>
 #include <isc/socket.h>
-#include <isc/string.h>
 #include <isc/task.h>
 #include <isc/timer.h>
 #include <isc/util.h>

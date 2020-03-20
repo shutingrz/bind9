@@ -12,11 +12,13 @@
 /*! \file */
 
 #include <inttypes.h>
+#include <netinet/in.h>
 #include <stdbool.h>
+#include <string.h>
 
 #include <isc/mem.h>
 #include <isc/portset.h>
-#include <isc/string.h>
+#include <isc/result.h>
 #include <isc/types.h>
 #include <isc/util.h>
 

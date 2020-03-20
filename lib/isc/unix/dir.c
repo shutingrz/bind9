@@ -12,16 +12,18 @@
 /*! \file */
 
 #include <ctype.h>
+#include <dirent.h>
 #include <errno.h>
+#include <netdb.h>
+#include <string.h>
 #include <sys/stat.h>
-#include <sys/types.h>
 #include <unistd.h>
 
 #include <isc/dir.h>
 #include <isc/magic.h>
-#include <isc/netdb.h>
-#include <isc/print.h>
+#include <isc/result.h>
 #include <isc/string.h>
+#include <isc/types.h>
 #include <isc/util.h>
 
 #include "errno2result.h"

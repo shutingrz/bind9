@@ -11,22 +11,24 @@
 
 /*! \file */
 
+#include <bits/types/struct_tm.h>
 #include <errno.h>
 #include <inttypes.h>
 #include <limits.h>
 #include <stdbool.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <sys/time.h> /* Required for struct timeval on some platforms. */
-#include <syslog.h>
+#include <sys/types.h>
 #include <time.h>
 
-#include <isc/log.h>
 #include <isc/platform.h>
-#include <isc/print.h>
+#include <isc/result.h>
 #include <isc/strerr.h>
 #include <isc/string.h>
 #include <isc/time.h>
 #include <isc/tm.h>
+#include <isc/types.h>
 #include <isc/util.h>
 
 #define NS_PER_S  1000000000 /*%< Nanoseconds per second. */

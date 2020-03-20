@@ -15,6 +15,8 @@
 
 #include <isc/buffer.h>
 #include <isc/bufferlist.h>
+#include <isc/list.h>
+#include <isc/types.h>
 #include <isc/util.h>
 
 unsigned int

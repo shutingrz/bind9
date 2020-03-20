@@ -12,11 +12,17 @@
 /*! \file */
 
 #include <errno.h>
+#include <limits.h>
+#include <pthread.h>
+#include <time.h>
 
 #include <isc/condition.h>
+#include <isc/mutex.h>
+#include <isc/platform.h>
+#include <isc/result.h>
 #include <isc/strerr.h>
-#include <isc/string.h>
 #include <isc/time.h>
+#include <isc/types.h>
 #include <isc/util.h>
 
 isc_result_t

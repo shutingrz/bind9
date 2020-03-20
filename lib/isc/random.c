@@ -29,16 +29,14 @@
  */
 
 #include <inttypes.h>
+#include <limits.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
 
 #include <isc/once.h>
-#include <isc/platform.h>
 #include <isc/random.h>
 #include <isc/result.h>
 #include <isc/thread.h>
-#include <isc/types.h>
 #include <isc/util.h>
 
 #include "entropy_private.h"

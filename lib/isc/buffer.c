@@ -12,14 +12,19 @@
 /*! \file */
 
 #include <inttypes.h>
+#include <limits.h>
 #include <stdarg.h>
 #include <stdbool.h>
+#include <stdio.h>
+#include <string.h>
 
 #include <isc/buffer.h>
+#include <isc/likely.h>
+#include <isc/list.h>
 #include <isc/mem.h>
-#include <isc/print.h>
 #include <isc/region.h>
-#include <isc/string.h>
+#include <isc/result.h>
+#include <isc/types.h>
 #include <isc/util.h>
 
 void

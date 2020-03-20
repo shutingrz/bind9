@@ -35,7 +35,7 @@
 #define strtoull _strtoui64
 #endif
 
-#include <stdint.h>
+#include <inttypes.h>
 #if _MSC_VER < 1914
 typedef uint32_t socklen_t;
 #endif

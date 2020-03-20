@@ -11,8 +11,8 @@
 
 /*! \file */
 
+#include <isc/mutex.h>
 #include <isc/mutexblock.h>
-#include <isc/util.h>
 
 void
 isc_mutexblock_init(isc_mutex_t *block, unsigned int count) {

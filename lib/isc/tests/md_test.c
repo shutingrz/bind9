@@ -10,14 +10,12 @@
  */
 
 #if HAVE_CMOCKA
-
-#include <setjmp.h>
-#include <stdarg.h>
-#include <stddef.h>
+#include <sched.h>  /* IWYU pragma: keep */
+#include <setjmp.h> /* IWYU pragma: keep */
+#include <stdarg.h> /* IWYU pragma: keep */
+#include <stddef.h> /* IWYU pragma: keep */
+#include <stdlib.h>
 #include <string.h>
-
-/* For FIPS_mode() */
-#include <openssl/crypto.h>
 
 #define UNIT_TESTING
 #include <cmocka.h>
@@ -27,6 +25,8 @@
 #include <isc/md.h>
 #include <isc/region.h>
 #include <isc/result.h>
+#include <isc/types.h>
+#include <isc/util.h>
 
 #include "../md.c"
 

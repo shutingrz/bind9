@@ -10,13 +10,14 @@
  */
 
 #if HAVE_CMOCKA
-
-#include <fcntl.h>
-#include <sched.h> /* IWYU pragma: keep */
-#include <setjmp.h>
-#include <stdarg.h>
-#include <stddef.h>
+#include <sched.h>  /* IWYU pragma: keep */
+#include <setjmp.h> /* IWYU pragma: keep */
+#include <stdarg.h> /* IWYU pragma: keep */
+#include <stdbool.h>
+#include <stddef.h> /* IWYU pragma: keep */
+#include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 
 #define UNIT_TESTING
@@ -26,11 +27,11 @@
 #include <isc/mem.h>
 #include <isc/mutex.h>
 #include <isc/os.h>
-#include <isc/print.h>
 #include <isc/result.h>
 #include <isc/stdio.h>
 #include <isc/thread.h>
 #include <isc/time.h>
+#include <isc/types.h>
 #include <isc/util.h>
 
 #include "../mem_p.h"

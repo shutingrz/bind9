@@ -11,9 +11,7 @@
 
 #include <inttypes.h>
 #include <string.h>
-#include <unistd.h>
 
-#include <isc/endian.h>
 #include <isc/siphash.h>
 #include <isc/util.h>
 

@@ -15,8 +15,8 @@
 #include <inttypes.h>
 #include <stdbool.h>
 
-#include "isc/lang.h"
-#include "isc/types.h"
+#include <isc/lang.h>
+#include <isc/types.h>
 
 /***
  *** Functions

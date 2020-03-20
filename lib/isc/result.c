@@ -14,10 +14,12 @@
 #include <stddef.h>
 #include <stdlib.h>
 
-#include <isc/lib.h>
+#include <isc/list.h>
 #include <isc/once.h>
+#include <isc/result.h>
 #include <isc/resultclass.h>
 #include <isc/rwlock.h>
+#include <isc/types.h>
 #include <isc/util.h>
 
 typedef struct resulttable {

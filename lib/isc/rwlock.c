@@ -11,7 +11,7 @@
 
 /*! \file */
 
-#include <inttypes.h>
+#include <stdatomic.h>
 #include <stdbool.h>
 #include <stddef.h>
 
@@ -20,10 +20,9 @@
 #endif /* if defined(sun) && (defined(__sparc) || defined(__sparc__)) */
 
 #include <isc/atomic.h>
-#include <isc/magic.h>
-#include <isc/platform.h>
-#include <isc/print.h>
+#include <isc/result.h>
 #include <isc/rwlock.h>
+#include <isc/types.h>
 #include <isc/util.h>
 
 #if USE_PTHREAD_RWLOCK
@@ -144,9 +143,11 @@ isc_rwlock_destroy(isc_rwlock_t *rwl) {
 
 #if defined(_MSC_VER)
 #include <intrin.h>
+
 #define isc_rwlock_pause() YieldProcessor()
 #elif defined(__x86_64__)
 #include <immintrin.h>
+
 #define isc_rwlock_pause() _mm_pause()
 #elif defined(__i386__)
 #define isc_rwlock_pause() __asm__ __volatile__("rep; nop")
@@ -170,7 +171,6 @@ isc__rwlock_lock(isc_rwlock_t *rwl, isc_rwlocktype_t type);
 
 #ifdef ISC_RWLOCK_TRACE
 #include <stdio.h> /* Required for fprintf/stderr. */
-
 #include <isc/thread.h> /* Required for isc_thread_self(). */
 
 static void

@@ -19,6 +19,7 @@
 
 #include <isc/parseint.h>
 #include <isc/result.h>
+#include <isc/types.h>
 
 isc_result_t
 isc_parse_uint32(uint32_t *uip, const char *string, int base) {

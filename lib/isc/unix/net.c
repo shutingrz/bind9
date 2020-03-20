@@ -9,8 +9,12 @@
  * information regarding copyright ownership.
  */
 
+#include <netdb.h>
+#include <netinet/in.h>
 #include <stdbool.h>
-#include <sys/types.h>
+#include <stdio.h>
+#include <string.h>
+#include <sys/socket.h>
 
 #if defined(HAVE_SYS_SYSCTL_H) && !defined(__linux__)
 #if defined(HAVE_SYS_PARAM_H)
@@ -20,15 +24,15 @@
 #endif /* if defined(HAVE_SYS_SYSCTL_H) && !defined(__linux__) */
 #include <errno.h>
 #include <fcntl.h>
-#include <sys/uio.h>
 #include <unistd.h>
 
 #include <isc/log.h>
 #include <isc/net.h>
-#include <isc/netdb.h>
 #include <isc/once.h>
+#include <isc/platform.h>
+#include <isc/result.h>
 #include <isc/strerr.h>
-#include <isc/string.h>
+#include <isc/types.h>
 #include <isc/util.h>
 
 #ifndef socklen_t

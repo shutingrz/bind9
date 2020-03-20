@@ -11,6 +11,8 @@
 
 /*! \file */
 
+#include <stdbool.h>
+
 #include <isc/bind9.h>
 #include <isc/lib.h>
 

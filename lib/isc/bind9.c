@@ -13,7 +13,7 @@
 
 #include <stdbool.h>
 
-#include <isc/bind9.h>
+#include <isc/platform.h>
 
 /*
  * This determines whether we are using the libisc/libdns libraries

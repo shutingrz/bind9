@@ -13,6 +13,8 @@
 
 #include <isc/iterated_hash.h>
 #include <isc/md.h>
+#include <isc/result.h>
+#include <isc/types.h>
 #include <isc/util.h>
 
 int

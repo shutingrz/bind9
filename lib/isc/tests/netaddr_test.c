@@ -10,20 +10,19 @@
  */
 
 #if HAVE_CMOCKA
-
-#include <setjmp.h>
-#include <stdarg.h>
+#include <arpa/inet.h>
+#include <netinet/in.h>
+#include <sched.h>  /* IWYU pragma: keep */
+#include <setjmp.h> /* IWYU pragma: keep */
+#include <stdarg.h> /* IWYU pragma: keep */
 #include <stdbool.h>
-#include <stddef.h>
-#include <stdio.h>
+#include <stddef.h> /* IWYU pragma: keep */
 #include <stdlib.h>
-#include <string.h>
+#include <sys/socket.h>
 
 #define UNIT_TESTING
 #include <cmocka.h>
-
 #include <isc/netaddr.h>
-#include <isc/sockaddr.h>
 #include <isc/util.h>
 
 /* test isc_netaddr_isnetzero() */
@@ -147,6 +146,9 @@ main(void) {
 #else /* HAVE_CMOCKA */
 
 #include <stdio.h>
+
+#include <isc/result.h>
+#include <isc/types.h>
 
 int
 main(void) {

@@ -10,13 +10,17 @@
  */
 
 #include <inttypes.h>
+#include <stdalign.h>
+#include <stdatomic.h>
+#include <stdbool.h>
+#include <stddef.h>
 
-#include <isc/align.h>
 #include <isc/atomic.h>
 #include <isc/hp.h>
 #include <isc/mem.h>
 #include <isc/queue.h>
-#include <isc/string.h>
+#include <isc/types.h>
+#include <isc/util.h>
 
 #define BUFFER_SIZE 1024
 

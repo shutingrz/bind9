@@ -15,6 +15,7 @@
 
 #include <isc/event.h>
 #include <isc/mem.h>
+#include <isc/types.h>
 #include <isc/util.h>
 
 /***

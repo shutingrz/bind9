@@ -19,7 +19,7 @@
 
 #include <isc/backtrace.h>
 #include <isc/result.h>
-#include <isc/util.h>
+#include <isc/types.h>
 
 #ifdef HAVE_BACKTRACE
 isc_result_t

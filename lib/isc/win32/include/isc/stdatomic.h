@@ -13,9 +13,9 @@
 
 #define WIN32_LEAN_AND_MEAN
 #include <intrin.h>
+#include <inttypes.h>
 #include <stdbool.h>
 #include <stddef.h>
-#include <stdint.h>
 #include <windows.h>
 
 #define InterlockedExchangeAdd8	    _InterlockedExchangeAdd8

@@ -18,7 +18,6 @@
 
 #include <errno.h> /* Provides errno. */
 #include <stdbool.h>
-
 #include <isc/lang.h>
 #include <isc/types.h>
 

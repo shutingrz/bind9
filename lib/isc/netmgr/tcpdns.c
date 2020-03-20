@@ -9,25 +9,21 @@
  * information regarding copyright ownership.
  */
 
-#include <unistd.h>
+#include <inttypes.h>
+#include <netinet/in.h>
+#include <stdatomic.h>
+#include <stdbool.h>
+#include <string.h>
 #include <uv.h>
 
-#include <isc/atomic.h>
-#include <isc/buffer.h>
-#include <isc/condition.h>
-#include <isc/magic.h>
 #include <isc/mem.h>
 #include <isc/netmgr.h>
-#include <isc/random.h>
-#include <isc/refcount.h>
 #include <isc/region.h>
 #include <isc/result.h>
-#include <isc/sockaddr.h>
-#include <isc/thread.h>
+#include <isc/types.h>
 #include <isc/util.h>
 
 #include "netmgr-int.h"
-#include "uv-compat.h"
 
 #define TCPDNS_CLIENTS_PER_CONN 23
 /*%<

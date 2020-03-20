@@ -15,17 +15,15 @@
 #include <inttypes.h>
 #include <limits.h>
 #include <stdbool.h>
-#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
-#include <isc/bind9.h>
 #include <isc/hash.h>
 #include <isc/magic.h>
 #include <isc/mem.h>
 #include <isc/mutex.h>
 #include <isc/once.h>
-#include <isc/print.h>
 #include <isc/refcount.h>
 #include <isc/strerr.h>
 #include <isc/string.h>
@@ -33,6 +31,7 @@
 
 #ifdef HAVE_LIBXML2
 #include <libxml/xmlwriter.h>
+
 #define ISC_XMLCHAR (const xmlChar *)
 #endif /* HAVE_LIBXML2 */
 
@@ -40,7 +39,21 @@
 #include <json_object.h>
 #endif /* HAVE_JSON_C */
 
+#include <libxml/xmlstring.h>
+
+#include <isc/error.h>
+#include <isc/likely.h>
+#include <isc/list.h>
+#include <isc/platform.h>
+#include <isc/result.h>
+#include <isc/types.h>
+
 #include "mem_p.h"
+
+struct debuglink;
+struct element;
+struct isc__mem;
+struct isc__mempool;
 
 #define MCTXLOCK(m)   LOCK(&m->lock)
 #define MCTXUNLOCK(m) UNLOCK(&m->lock)

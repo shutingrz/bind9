@@ -11,13 +11,14 @@
 
 /*! \file */
 
+#include <execinfo.h>
 #include <stdio.h>
 #include <stdlib.h>
 
 #include <isc/assertions.h>
 #include <isc/backtrace.h>
-#include <isc/print.h>
 #include <isc/result.h>
+#include <isc/types.h>
 
 /*
  * The maximum number of stack frames to dump on assertion failure.

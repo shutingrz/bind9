@@ -12,12 +12,14 @@
 /*! \file */
 
 #include <stdbool.h>
+#include <string.h>
 
 #include <isc/base32.h>
 #include <isc/buffer.h>
 #include <isc/lex.h>
 #include <isc/region.h>
-#include <isc/string.h>
+#include <isc/result.h>
+#include <isc/types.h>
 #include <isc/util.h>
 
 #define RETERR(x)                        \

@@ -12,19 +12,18 @@
 /* ! \file */
 
 #if HAVE_CMOCKA
-
-#include <setjmp.h>
-#include <stdarg.h>
-#include <stddef.h>
+#include <inttypes.h>
+#include <sched.h>  /* IWYU pragma: keep */
+#include <setjmp.h> /* IWYU pragma: keep */
+#include <stdarg.h> /* IWYU pragma: keep */
+#include <stddef.h> /* IWYU pragma: keep */
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #define UNIT_TESTING
 #include <cmocka.h>
-
 #include <isc/crc64.h>
-#include <isc/print.h>
-#include <isc/result.h>
 #include <isc/util.h>
 
 #define TEST_INPUT(x) (x), sizeof(x) - 1

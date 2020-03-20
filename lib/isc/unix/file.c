@@ -45,9 +45,12 @@
 #include <inttypes.h>
 #include <limits.h>
 #include <stdbool.h>
+#include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/stat.h>
 #include <sys/time.h>
+#include <sys/types.h>
 #include <time.h>   /* Required for utimes on some platforms. */
 #include <unistd.h> /* Required for mkstemp on NetBSD. */
 
@@ -55,16 +58,16 @@
 #include <sys/mman.h>
 #endif /* ifdef HAVE_SYS_MMAN_H */
 
-#include <isc/dir.h>
 #include <isc/file.h>
 #include <isc/log.h>
 #include <isc/md.h>
 #include <isc/mem.h>
-#include <isc/platform.h>
-#include <isc/print.h>
+#include <isc/offset.h>
 #include <isc/random.h>
+#include <isc/result.h>
 #include <isc/string.h>
 #include <isc/time.h>
+#include <isc/types.h>
 #include <isc/util.h>
 
 #include "errno2result.h"

@@ -48,11 +48,13 @@
 
 #include <stdbool.h>
 #include <stdio.h>
+#include <string.h>
 
 #include <isc/commandline.h>
 #include <isc/mem.h>
-#include <isc/print.h>
-#include <isc/string.h>
+#include <isc/platform.h>
+#include <isc/result.h>
+#include <isc/types.h>
 #include <isc/util.h>
 
 /*% Index into parent argv vector. */

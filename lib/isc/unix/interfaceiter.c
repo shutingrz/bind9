@@ -11,26 +11,20 @@
 
 /*! \file */
 
-#include <sys/ioctl.h>
-#include <sys/types.h>
 #ifdef HAVE_SYS_SOCKIO_H
 #include <sys/sockio.h> /* Required for ifiter_ioctl.c. */
 #endif			/* ifdef HAVE_SYS_SOCKIO_H */
 
-#include <errno.h>
 #include <inttypes.h>
+#include <netinet/in.h>
 #include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
+#include <string.h>
+#include <sys/socket.h>
 
 #include <isc/interfaceiter.h>
 #include <isc/log.h>
-#include <isc/magic.h>
 #include <isc/mem.h>
-#include <isc/net.h>
-#include <isc/print.h>
 #include <isc/result.h>
-#include <isc/strerr.h>
 #include <isc/string.h>
 #include <isc/types.h>
 #include <isc/util.h>
@@ -141,6 +135,8 @@ linux_if_inet6_current(isc_interfaceiter_t *);
 static void
 linux_if_inet6_first(isc_interfaceiter_t *iter);
 #endif /* ifdef __linux */
+
+#include <isc/netaddr.h>
 
 #include "ifiter_getifaddrs.c"
 

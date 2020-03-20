@@ -10,11 +10,9 @@
  */
 
 #include <stdbool.h>
+#include <string.h>
 
-#include <isc/file.h>
-#include <isc/print.h>
 #include <isc/regex.h>
-#include <isc/string.h>
 
 #if VALREGEX_REPORT_REASON
 #define FAIL(x)               \

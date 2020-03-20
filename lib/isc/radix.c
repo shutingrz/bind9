@@ -16,9 +16,14 @@
  */
 
 #include <inttypes.h>
+#include <string.h>
+#include <sys/socket.h>
+#include <sys/types.h>
 
 #include <isc/mem.h>
 #include <isc/radix.h>
+#include <isc/refcount.h>
+#include <isc/result.h>
 #include <isc/types.h>
 #include <isc/util.h>
 

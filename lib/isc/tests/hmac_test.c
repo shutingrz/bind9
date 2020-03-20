@@ -12,11 +12,10 @@
 /* ! \file */
 
 #if HAVE_CMOCKA
-
-#include <sched.h> /* IWYU pragma: keep */
-#include <setjmp.h>
-#include <stdarg.h>
-#include <stddef.h>
+#include <sched.h>  /* IWYU pragma: keep */
+#include <setjmp.h> /* IWYU pragma: keep */
+#include <stdarg.h> /* IWYU pragma: keep */
+#include <stddef.h> /* IWYU pragma: keep */
 #include <stdlib.h>
 #include <string.h>
 
@@ -26,8 +25,11 @@
 #include <isc/buffer.h>
 #include <isc/hex.h>
 #include <isc/hmac.h>
+#include <isc/md.h>
 #include <isc/region.h>
 #include <isc/result.h>
+#include <isc/types.h>
+#include <isc/util.h>
 
 #include "../hmac.c"
 

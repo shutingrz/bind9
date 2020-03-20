@@ -13,13 +13,20 @@
 
 #include <inttypes.h>
 #include <stdbool.h>
+#include <stddef.h>
 
+#include <isc/event.h>
+#include <isc/eventclass.h>
+#include <isc/list.h>
 #include <isc/mem.h>
+#include <isc/mutex.h>
 #include <isc/ratelimiter.h>
 #include <isc/refcount.h>
+#include <isc/result.h>
 #include <isc/task.h>
 #include <isc/time.h>
 #include <isc/timer.h>
+#include <isc/types.h>
 #include <isc/util.h>
 
 typedef enum {

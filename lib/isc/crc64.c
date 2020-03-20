@@ -10,11 +10,9 @@
  */
 
 #include <inttypes.h>
+#include <stddef.h>
 
-#include <isc/assertions.h>
 #include <isc/crc64.h>
-#include <isc/string.h>
-#include <isc/types.h>
 #include <isc/util.h>
 
 /*%<

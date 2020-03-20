@@ -10,28 +10,17 @@
  */
 
 #if HAVE_CMOCKA
-
-#include <inttypes.h>
-#include <setjmp.h>
-#include <stdarg.h>
-#include <stddef.h>
-#include <stdio.h>
+#include <sched.h>  /* IWYU pragma: keep */
+#include <setjmp.h> /* IWYU pragma: keep */
+#include <stdarg.h> /* IWYU pragma: keep */
+#include <stdbool.h>
+#include <stddef.h> /* IWYU pragma: keep */
 #include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
 
 #define UNIT_TESTING
 #include <cmocka.h>
-
-#include <isc/buffer.h>
 #include <isc/hash.h>
-#include <isc/hex.h>
-#include <isc/print.h>
-#include <isc/region.h>
-#include <isc/string.h>
 #include <isc/util.h>
-
-#include <pk11/site.h>
 
 #define TEST_INPUT(x) (x), sizeof(x) - 1
 

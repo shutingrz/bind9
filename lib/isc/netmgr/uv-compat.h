@@ -10,7 +10,10 @@
  */
 
 #pragma once
+
 #include <uv.h>
+
+struct isc_uv_stream_info_s;
 
 /*
  * These functions were introduced in newer libuv, but we still

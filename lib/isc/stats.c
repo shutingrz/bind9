@@ -12,16 +12,16 @@
 /*! \file */
 
 #include <inttypes.h>
+#include <stdatomic.h>
 #include <string.h>
 
 #include <isc/atomic.h>
-#include <isc/buffer.h>
 #include <isc/magic.h>
 #include <isc/mem.h>
-#include <isc/platform.h>
-#include <isc/print.h>
 #include <isc/refcount.h>
+#include <isc/result.h>
 #include <isc/stats.h>
+#include <isc/types.h>
 #include <isc/util.h>
 
 #define ISC_STATS_MAGIC	   ISC_MAGIC('S', 't', 'a', 't')

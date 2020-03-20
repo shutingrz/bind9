@@ -19,6 +19,7 @@
 
 #include <isc/lang.h>
 #include <isc/result.h> /* for ISC_R_ codes */
+#include <isc/util.h>
 
 ISC_LANG_BEGINDECLS
 

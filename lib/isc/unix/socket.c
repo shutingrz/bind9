@@ -12,16 +12,17 @@
 /*! \file */
 
 #include <inttypes.h>
+#include <netinet/in.h>
+#include <stdarg.h>
 #include <stdbool.h>
-#include <sys/param.h>
+#include <stdio.h>
+#include <string.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
-#include <sys/types.h>
 #if defined(HAVE_SYS_SYSCTL_H) && !defined(__linux__)
 #include <sys/sysctl.h>
 #endif /* if defined(HAVE_SYS_SYSCTL_H) && !defined(__linux__) */
 #include <sys/time.h>
-#include <sys/uio.h>
 
 #if defined(HAVE_LINUX_NETLINK_H) && defined(HAVE_LINUX_RTNETLINK_H)
 #include <linux/netlink.h>
@@ -34,9 +35,6 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <unistd.h>
-
-#include <isc/app.h>
-#include <isc/buffer.h>
 #include <isc/condition.h>
 #include <isc/formatcheck.h>
 #include <isc/list.h>
@@ -46,10 +44,8 @@
 #include <isc/net.h>
 #include <isc/once.h>
 #include <isc/platform.h>
-#include <isc/print.h>
 #include <isc/refcount.h>
 #include <isc/region.h>
-#include <isc/resource.h>
 #include <isc/socket.h>
 #include <isc/stats.h>
 #include <isc/strerr.h>
@@ -73,13 +69,21 @@
 #include <devpoll.h>
 #endif /* if defined(HAVE_SYS_DEVPOLL_H) */
 
+#include <libxml/xmlstring.h>
 #include <netinet/tcp.h>
+
+#include <isc/event.h>
+#include <isc/magic.h>
+#include <isc/result.h>
+#include <isc/sockaddr.h>
+#include <isc/time.h>
+#include <isc/types.h>
 
 #include "errno2result.h"
 
-#ifdef ENABLE_TCP_FASTOPEN
-#include <netinet/tcp.h>
-#endif /* ifdef ENABLE_TCP_FASTOPEN */
+struct isc__socket;
+struct isc__socketmgr;
+struct isc__socketthread;
 
 #ifdef HAVE_JSON_C
 #include <json_object.h>
@@ -87,6 +91,7 @@
 
 #ifdef HAVE_LIBXML2
 #include <libxml/xmlwriter.h>
+
 #define ISC_XMLCHAR (const xmlChar *)
 #endif /* HAVE_LIBXML2 */
 

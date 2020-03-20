@@ -10,9 +10,11 @@
  */
 
 #include <inttypes.h>
+#include <stddef.h>
 #include <unistd.h>
 
 #include <isc/meminfo.h>
+
 #if defined(HAVE_SYS_SYSCTL_H) && !defined(__linux__)
 #include <sys/sysctl.h>
 #endif /* if defined(HAVE_SYS_SYSCTL_H) && !defined(__linux__) */

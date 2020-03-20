@@ -11,11 +11,8 @@
 
 #include <errno.h>
 #include <stdio.h>
-#include <string.h>
-
 #include <isc/errno.h>
 #include <isc/glob.h>
-#include <isc/print.h>
 #include <isc/result.h>
 #include <isc/types.h>
 #include <isc/util.h>
@@ -24,10 +21,11 @@
 #include <glob.h>
 #elif defined(_WIN32) || defined(_WIN64)
 #include <stdlib.h>
+
 #define WIN32_LEAN_AND_MEAN 1
 #include <windows.h>
-
 #include <isc/list.h>
+
 #define GLOB_WIN_IMPL 1
 #define GLOB_ERR      0x0004 /* Return on error. */
 #define GLOB_NOSPACE  (-1)

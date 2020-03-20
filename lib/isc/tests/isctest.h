@@ -13,6 +13,7 @@
 
 #include <inttypes.h>
 #include <stdbool.h>
+#include <stdio.h>
 
 #include <isc/buffer.h>
 #include <isc/hash.h>
@@ -24,6 +25,7 @@
 #include <isc/string.h>
 #include <isc/task.h>
 #include <isc/timer.h>
+#include <isc/types.h>
 #include <isc/util.h>
 
 #define CHECK(r)                             \

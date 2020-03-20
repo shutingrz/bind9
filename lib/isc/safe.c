@@ -9,6 +9,8 @@
  * information regarding copyright ownership.
  */
 
+#include <stddef.h>
+
 #include <openssl/crypto.h>
 
 #include <isc/safe.h>

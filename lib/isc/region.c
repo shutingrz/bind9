@@ -15,6 +15,7 @@
 #include <string.h>
 
 #include <isc/region.h>
+#include <isc/types.h>
 #include <isc/util.h>
 
 int

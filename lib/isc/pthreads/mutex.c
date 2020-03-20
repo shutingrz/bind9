@@ -11,17 +11,16 @@
 
 /*! \file */
 
-#include <errno.h>
+#include <pthread.h>
 #include <stdbool.h>
-#include <stdio.h>
-#include <sys/time.h>
-#include <time.h>
 
+#include <isc/error.h>
 #include <isc/mutex.h>
 #include <isc/once.h>
-#include <isc/print.h>
+#include <isc/platform.h>
+#include <isc/result.h>
 #include <isc/strerr.h>
-#include <isc/string.h>
+#include <isc/types.h>
 #include <isc/util.h>
 
 #if ISC_MUTEX_PROFILE

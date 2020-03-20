@@ -12,22 +12,26 @@
 /*! \file */
 
 #include <stdbool.h>
+#include <stddef.h>
 
-#include <isc/app.h>
 #include <isc/condition.h>
+#include <isc/event.h>
 #include <isc/heap.h>
-#include <isc/log.h>
+#include <isc/list.h>
 #include <isc/magic.h>
 #include <isc/mem.h>
-#include <isc/once.h>
-#include <isc/platform.h>
-#include <isc/print.h>
+#include <isc/mutex.h>
 #include <isc/refcount.h>
+#include <isc/result.h>
 #include <isc/task.h>
 #include <isc/thread.h>
 #include <isc/time.h>
 #include <isc/timer.h>
+#include <isc/types.h>
 #include <isc/util.h>
+
+struct isc__timer;
+struct isc__timermgr;
 
 #ifdef OPENSSL_LEAKS
 #include <openssl/err.h>

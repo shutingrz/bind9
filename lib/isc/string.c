@@ -44,7 +44,6 @@
 #undef _GNU_SOURCE
 #endif /* ifdef _GNU_SOURCE */
 #include <string.h>
-
 #include <isc/string.h> /* IWYU pragma: keep */
 
 #if !defined(HAVE_STRLCPY)

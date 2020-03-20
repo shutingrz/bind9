@@ -12,12 +12,12 @@
 /*! \file */
 
 #include <errno.h>
-#include <stdbool.h>
-#include <stddef.h> /* NULL */
-#include <stdlib.h> /* NULL */
-#include <syslog.h>
+#include <stddef.h>
+#include <sys/time.h>
 #include <time.h>
 
+#include <isc/error.h>
+#include <isc/platform.h>
 #include <isc/stdtime.h>
 #include <isc/strerr.h>
 #include <isc/util.h>

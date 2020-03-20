@@ -16,27 +16,38 @@
  * for changing states.
  */
 
+#include <inttypes.h>
+#include <libxml/xmlstring.h>
+#include <stdatomic.h>
 #include <stdbool.h>
+#include <stdio.h>
+#include <string.h>
 
-#include <isc/app.h>
 #include <isc/atomic.h>
 #include <isc/condition.h>
 #include <isc/event.h>
+#include <isc/list.h>
 #include <isc/magic.h>
 #include <isc/mem.h>
-#include <isc/once.h>
-#include <isc/platform.h>
-#include <isc/print.h>
-#include <isc/random.h>
+#include <isc/mutex.h>
+#include <isc/netmgr.h>
 #include <isc/refcount.h>
+#include <isc/result.h>
+#include <isc/stdtime.h>
 #include <isc/string.h>
 #include <isc/task.h>
 #include <isc/thread.h>
 #include <isc/time.h>
+#include <isc/types.h>
 #include <isc/util.h>
+
+struct isc__task;
+struct isc__taskmgr;
+struct isc__taskqueue;
 
 #ifdef HAVE_LIBXML2
 #include <libxml/xmlwriter.h>
+
 #define ISC_XMLCHAR (const xmlChar *)
 #endif /* HAVE_LIBXML2 */
 

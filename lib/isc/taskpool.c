@@ -12,10 +12,14 @@
 /*! \file */
 
 #include <stdbool.h>
+#include <stddef.h>
 
 #include <isc/mem.h>
 #include <isc/random.h>
+#include <isc/result.h>
+#include <isc/task.h>
 #include <isc/taskpool.h>
+#include <isc/types.h>
 #include <isc/util.h>
 
 /***

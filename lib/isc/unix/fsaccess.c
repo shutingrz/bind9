@@ -12,14 +12,17 @@
 #include <errno.h>
 #include <stdbool.h>
 #include <sys/stat.h>
-#include <sys/types.h>
 
 #include "errno2result.h"
-
 /*! \file
  * \brief
  * The OS-independent part of the API is in lib/isc.
  */
+#include <isc/fsaccess.h>
+#include <isc/result.h>
+#include <isc/types.h>
+#include <isc/util.h>
+
 #include "../fsaccess.c"
 
 isc_result_t

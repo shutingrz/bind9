@@ -14,6 +14,7 @@
 
 /*! \file isc/file.h */
 
+#include <isc/lang.h>
 #include <isc/types.h>
 
 ISC_LANG_BEGINDECLS

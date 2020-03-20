@@ -10,18 +10,17 @@
  */
 
 #if HAVE_CMOCKA
-
 #include <fcntl.h>
-#include <setjmp.h>
-#include <stdarg.h>
-#include <stddef.h>
+#include <sched.h>  /* IWYU pragma: keep */
+#include <setjmp.h> /* IWYU pragma: keep */
+#include <stdarg.h> /* IWYU pragma: keep */
+#include <stddef.h> /* IWYU pragma: keep */
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 
 #define UNIT_TESTING
 #include <cmocka.h>
-
 #include <isc/file.h>
 #include <isc/result.h>
 #include <isc/util.h>
@@ -142,6 +141,8 @@ main(void) {
 #else /* HAVE_CMOCKA */
 
 #include <stdio.h>
+
+#include <isc/types.h>
 
 int
 main(void) {

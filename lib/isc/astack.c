@@ -10,10 +10,10 @@
  */
 
 #include <inttypes.h>
+#include <stdbool.h>
 #include <string.h>
 
 #include <isc/astack.h>
-#include <isc/atomic.h>
 #include <isc/mem.h>
 #include <isc/mutex.h>
 #include <isc/types.h>

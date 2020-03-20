@@ -11,8 +11,10 @@
 
 /*! \file */
 
+#include <stdbool.h>
+
 #include <isc/errno.h>
-#include <isc/util.h>
+#include <isc/types.h>
 
 #include "errno2result.h"
 

@@ -12,12 +12,13 @@
 /*! \file */
 
 #include "errno2result.h"
+#include <errno.h>
 #include <stdbool.h>
 
 #include <isc/platform.h>
 #include <isc/result.h>
 #include <isc/strerr.h>
-#include <isc/string.h>
+#include <isc/types.h>
 #include <isc/util.h>
 
 /*%

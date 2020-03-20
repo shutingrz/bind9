@@ -11,7 +11,8 @@
 
 /*! \file */
 
-#include <stdbool.h>
+#include <inttypes.h>
+#include <stdatomic.h>
 #include <stddef.h>
 
 #include <isc/atomic.h>
@@ -19,6 +20,8 @@
 #include <isc/magic.h>
 #include <isc/mem.h>
 #include <isc/refcount.h>
+#include <isc/result.h>
+#include <isc/types.h>
 #include <isc/util.h>
 
 #define COUNTER_MAGIC	 ISC_MAGIC('C', 'n', 't', 'r')

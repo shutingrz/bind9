@@ -13,8 +13,7 @@
 #include <uv.h>
 
 #include <isc/result.h>
-#include <isc/strerr.h>
-#include <isc/string.h>
+#include <isc/types.h>
 #include <isc/util.h>
 
 #include "netmgr-int.h"

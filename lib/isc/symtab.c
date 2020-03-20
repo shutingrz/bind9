@@ -13,11 +13,15 @@
 
 #include <ctype.h>
 #include <stdbool.h>
+#include <string.h>
+#include <strings.h>
 
+#include <isc/list.h>
 #include <isc/magic.h>
 #include <isc/mem.h>
-#include <isc/string.h>
+#include <isc/result.h>
 #include <isc/symtab.h>
+#include <isc/types.h>
 #include <isc/util.h>
 
 typedef struct elt {

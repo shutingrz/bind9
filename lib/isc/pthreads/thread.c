@@ -26,9 +26,15 @@
 #include <sys/types.h>
 #endif /* if defined(HAVE_SYS_PROCSET_H) */
 
+#include <pthread.h>
+#include <stddef.h>
+
+#include <isc/error.h>
+#include <isc/platform.h>
+#include <isc/result.h>
 #include <isc/strerr.h>
 #include <isc/thread.h>
-#include <isc/util.h>
+#include <isc/types.h>
 
 #ifndef THREAD_MINSTACKSIZE
 #define THREAD_MINSTACKSIZE (1024U * 1024)

@@ -11,11 +11,12 @@
 
 /*! \file */
 
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 
 #include <isc/error.h>
-#include <isc/print.h>
+#include <isc/formatcheck.h>
 
 /*% Default unexpected callback. */
 static void

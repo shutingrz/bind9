@@ -12,30 +12,33 @@
 /*! \file */
 
 #include <errno.h>
+#include <stdatomic.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdlib.h>
-#include <sys/types.h>
+#include <string.h>
 #include <unistd.h>
 
 #ifndef WIN32
-#include <inttypes.h>
 #include <signal.h>
-#include <sys/time.h>
 #endif /* WIN32 */
 
 #include <isc/app.h>
 #include <isc/atomic.h>
+#include <isc/bind9.h>
 #include <isc/condition.h>
+#include <isc/error.h>
 #include <isc/event.h>
+#include <isc/list.h>
+#include <isc/magic.h>
 #include <isc/mem.h>
 #include <isc/mutex.h>
 #include <isc/platform.h>
+#include <isc/result.h>
 #include <isc/strerr.h>
-#include <isc/string.h>
 #include <isc/task.h>
 #include <isc/thread.h>
-#include <isc/time.h>
+#include <isc/types.h>
 #include <isc/util.h>
 
 #ifdef WIN32

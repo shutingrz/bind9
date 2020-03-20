@@ -13,9 +13,7 @@
 
 #include <inttypes.h>
 #include <stddef.h>
-#include <stdlib.h>
 
-#include <isc/assertions.h>
 #include <isc/lfsr.h>
 #include <isc/util.h>
 

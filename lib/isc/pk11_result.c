@@ -9,9 +9,10 @@
  * information regarding copyright ownership.
  */
 
-#include <stddef.h>
-
 #include <isc/once.h>
+#include <isc/result.h>
+#include <isc/resultclass.h>
+#include <isc/types.h>
 #include <isc/util.h>
 
 #include <pk11/result.h>

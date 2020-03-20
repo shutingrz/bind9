@@ -12,12 +12,14 @@
 /*! \file */
 
 #include <inttypes.h>
+#include <net/if.h>
+#include <netinet/in.h>
 #include <stdlib.h>
+#include <sys/socket.h>
 
-#include <isc/net.h>
 #include <isc/netscope.h>
 #include <isc/result.h>
-#include <isc/string.h>
+#include <isc/types.h>
 
 isc_result_t
 isc_netscope_pton(int af, char *scopename, void *addr, uint32_t *zoneid) {

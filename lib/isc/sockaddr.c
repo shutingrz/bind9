@@ -11,19 +11,27 @@
 
 /*! \file */
 
+#include <inttypes.h>
+#include <netinet/in.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <string.h>
+#include <sys/socket.h>
+#include <sys/un.h>
 #if defined(WIN32) || defined(WIN64)
 #include <malloc.h>
 #endif /* if defined(WIN32) || defined(WIN64) */
 
 #include <isc/buffer.h>
 #include <isc/hash.h>
+#include <isc/list.h>
 #include <isc/netaddr.h>
-#include <isc/print.h>
+#include <isc/platform.h>
 #include <isc/region.h>
+#include <isc/result.h>
 #include <isc/sockaddr.h>
 #include <isc/string.h>
+#include <isc/types.h>
 #include <isc/util.h>
 
 bool

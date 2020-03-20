@@ -10,23 +10,17 @@
  */
 
 #if HAVE_CMOCKA
-
-#include <setjmp.h>
-#include <stdarg.h>
-#include <stddef.h>
-#include <stdio.h>
+#include <setjmp.h> /* IWYU pragma: keep */
+#include <stdarg.h> /* IWYU pragma: keep */
+#include <stddef.h> /* IWYU pragma: keep */
 #include <stdlib.h>
-#include <string.h>
 
 #define UNIT_TESTING
 #include <cmocka.h>
-
 #include <isc/aes.h>
 #include <isc/buffer.h>
 #include <isc/hex.h>
-#include <isc/platform.h>
 #include <isc/region.h>
-#include <isc/string.h>
 #include <isc/util.h>
 
 /*
@@ -237,6 +231,9 @@ main(void) {
 #else /* HAVE_CMOCKA */
 
 #include <stdio.h>
+
+#include <isc/result.h>
+#include <isc/types.h>
 
 int
 main(void) {

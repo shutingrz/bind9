@@ -16,23 +16,26 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <isc/log.h>
+#include <isc/error.h>
+#include <isc/list.h>
 #include <isc/mem.h>
+#include <isc/mutex.h>
 #include <isc/once.h>
 #include <isc/platform.h>
-#include <isc/print.h>
+#include <isc/result.h>
 #include <isc/stdio.h>
 #include <isc/strerr.h>
 #include <isc/string.h>
-#include <isc/thread.h>
+#include <isc/types.h>
 #include <isc/util.h>
 
 #include <pk11/internal.h>
 #include <pk11/pk11.h>
 #include <pk11/result.h>
-#include <pk11/site.h>
-#include <pkcs11/eddsa.h>
 #include <pkcs11/pkcs11.h>
+
+struct pk11_session;
+struct pk11_token;
 
 /* was 32 octets, Petr Spacek suggested 1024, SoftHSMv2 uses 256... */
 #ifndef PINLEN

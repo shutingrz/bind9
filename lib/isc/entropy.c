@@ -9,10 +9,11 @@
  * information regarding copyright ownership.
  */
 
+#include <stddef.h>
+
 #include <openssl/err.h>
 #include <openssl/rand.h>
 
-#include <isc/types.h>
 #include <isc/util.h>
 
 #include "entropy_private.h"

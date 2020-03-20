@@ -12,25 +12,32 @@
 /*! \file */
 
 #if HAVE_CMOCKA
-#include <sched.h> /* IWYU pragma: keep */
-#include <setjmp.h>
-#include <stdarg.h>
+#include <arpa/inet.h>
+#include <netinet/in.h>
+#include <sched.h>  /* IWYU pragma: keep */
+#include <setjmp.h> /* IWYU pragma: keep */
+#include <stdarg.h> /* IWYU pragma: keep */
+#include <stdatomic.h>
 #include <stdbool.h>
-#include <stddef.h>
+#include <stddef.h> /* IWYU pragma: keep */
+#include <stdio.h>
 #include <stdlib.h>
-#include <time.h>
-#include <unistd.h>
+#include <string.h>
+#include <sys/socket.h>
 
 #define UNIT_TESTING
 #include <cmocka.h>
 
-#include <isc/atomic.h>
-#include <isc/platform.h>
-#include <isc/print.h>
+#include <isc/event.h>
+#include <isc/net.h>
+#include <isc/region.h>
+#include <isc/result.h>
+#include <isc/sockaddr.h>
 #include <isc/socket.h>
 #include <isc/task.h>
+#include <isc/types.h>
+#include <isc/util.h>
 
-#include "../unix/socket_p.h"
 #include "isctest.h"
 
 static bool recv_dscp;

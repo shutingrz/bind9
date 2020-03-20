@@ -11,10 +11,15 @@
 
 /*! \file */
 
+#include <inttypes.h>
+#include <stdatomic.h>
+#include <stdbool.h>
 #include <stddef.h>
 
 #include <isc/atomic.h>
 #include <isc/quota.h>
+#include <isc/result.h>
+#include <isc/types.h>
 #include <isc/util.h>
 
 void

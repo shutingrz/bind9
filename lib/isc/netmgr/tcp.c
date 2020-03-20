@@ -9,25 +9,26 @@
  * information regarding copyright ownership.
  */
 
-#include <libgen.h>
+#include <stdatomic.h>
+#include <stdbool.h>
+#include <string.h>
+#include <sys/socket.h>
 #include <unistd.h>
 #include <uv.h>
+#include <uv/unix.h>
 
 #include <isc/atomic.h>
-#include <isc/buffer.h>
-#include <isc/condition.h>
 #include <isc/log.h>
-#include <isc/magic.h>
 #include <isc/mem.h>
+#include <isc/mutex.h>
 #include <isc/netmgr.h>
 #include <isc/quota.h>
 #include <isc/random.h>
-#include <isc/refcount.h>
 #include <isc/region.h>
 #include <isc/result.h>
 #include <isc/sockaddr.h>
 #include <isc/stdtime.h>
-#include <isc/thread.h>
+#include <isc/types.h>
 #include <isc/util.h>
 
 #include "netmgr-int.h"

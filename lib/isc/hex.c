@@ -13,11 +13,14 @@
 
 #include <ctype.h>
 #include <stdbool.h>
+#include <string.h>
 
 #include <isc/buffer.h>
 #include <isc/hex.h>
 #include <isc/lex.h>
-#include <isc/string.h>
+#include <isc/region.h>
+#include <isc/result.h>
+#include <isc/types.h>
 #include <isc/util.h>
 
 #define RETERR(x)                        \

@@ -10,17 +10,15 @@
  */
 
 #if HAVE_CMOCKA
-
-#include <sched.h>
-#include <setjmp.h>
-#include <stdarg.h>
-#include <stddef.h>
+#include <inttypes.h>
+#include <sched.h>  /* IWYU pragma: keep */
+#include <setjmp.h> /* IWYU pragma: keep */
+#include <stdarg.h> /* IWYU pragma: keep */
+#include <stddef.h> /* IWYU pragma: keep */
 #include <stdlib.h>
 
 #define UNIT_TESTING
 #include <cmocka.h>
-
-#include <isc/siphash.h>
 
 void
 native_isc_siphash24(const uint8_t *, const uint8_t *, const size_t, uint8_t *);
@@ -34,17 +32,20 @@ openssl_isc_siphash24(const uint8_t *, const uint8_t *, const size_t,
 #undef HAVE_OPENSSL_SIPHASH
 #define isc_siphash24 native_isc_siphash24
 #include "../siphash.c"
+
 #undef isc_siphash24
 
 #define HAVE_OPENSSL_SIPHASH 1
 #define isc_siphash24	     openssl_isc_siphash24
 #include "../siphash.c"
+
 #undef isc_siphash24
 
 #else /* if HAVE_OPENSSL_SIPHASH */
 
 #define isc_siphash24 native_isc_siphash24
 #include "../siphash.c"
+
 #undef isc_siphash24
 
 #endif /* if HAVE_OPENSSL_SIPHASH */
@@ -741,6 +742,8 @@ main(void) {
 #else /* HAVE_CMOCKA */
 
 #include <stdio.h>
+
+#include <isc/util.h>
 
 int
 main(void) {

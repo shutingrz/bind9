@@ -14,25 +14,34 @@
 #include <errno.h>
 #include <inttypes.h>
 #include <limits.h>
+#include <stdarg.h>
 #include <stdbool.h>
+#include <stdio.h>
 #include <stdlib.h>
-#include <sys/types.h> /* dev_t FreeBSD 2.1 */
-#include <time.h>
+#include <string.h>
+#include <sys/stat.h>
+#include <syslog.h>
 
-#include <isc/atomic.h>
 #include <isc/dir.h>
 #include <isc/file.h>
+#include <isc/formatcheck.h>
+#include <isc/list.h>
 #include <isc/log.h>
 #include <isc/magic.h>
 #include <isc/mem.h>
+#include <isc/mutex.h>
 #include <isc/platform.h>
-#include <isc/print.h>
+#include <isc/result.h>
 #include <isc/rwlock.h>
-#include <isc/stat.h>
 #include <isc/stdio.h>
 #include <isc/string.h>
 #include <isc/time.h>
+#include <isc/types.h>
 #include <isc/util.h>
+
+struct isc_logchannel;
+struct isc_logchannellist;
+struct isc_logmessage;
 
 #define LCTX_MAGIC	    ISC_MAGIC('L', 'c', 't', 'x')
 #define VALID_CONTEXT(lctx) ISC_MAGIC_VALID(lctx, LCTX_MAGIC)

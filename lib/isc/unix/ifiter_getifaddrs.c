@@ -14,9 +14,11 @@
  * Obtain the list of network interfaces using the getifaddrs(3) library.
  */
 
+#include <errno.h>
 #include <ifaddrs.h>
 #include <stdbool.h>
 
+#include <isc/magic.h>
 #include <isc/strerr.h>
 
 /*% Iterator Magic */

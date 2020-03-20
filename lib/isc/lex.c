@@ -12,19 +12,22 @@
 /*! \file */
 
 #include <ctype.h>
-#include <errno.h>
 #include <inttypes.h>
 #include <stdbool.h>
+#include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include <isc/buffer.h>
-#include <isc/file.h>
 #include <isc/lex.h>
+#include <isc/list.h>
+#include <isc/magic.h>
 #include <isc/mem.h>
 #include <isc/parseint.h>
-#include <isc/print.h>
+#include <isc/region.h>
+#include <isc/result.h>
 #include <isc/stdio.h>
-#include <isc/string.h>
+#include <isc/types.h>
 #include <isc/util.h>
 
 typedef struct inputsource {

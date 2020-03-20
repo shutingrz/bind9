@@ -13,17 +13,26 @@
 
 #include <inttypes.h>
 #include <stdbool.h>
+#include <stdio.h>
 #include <string.h>
+#include <strings.h>
+#include <sys/socket.h>
 
 #include <isc/buffer.h>
+#include <isc/event.h>
 #include <isc/httpd.h>
+#include <isc/list.h>
+#include <isc/magic.h>
 #include <isc/mem.h>
-#include <isc/print.h>
+#include <isc/mutex.h>
 #include <isc/refcount.h>
+#include <isc/region.h>
+#include <isc/result.h>
+#include <isc/sockaddr.h>
 #include <isc/socket.h>
-#include <isc/string.h>
 #include <isc/task.h>
 #include <isc/time.h>
+#include <isc/types.h>
 #include <isc/util.h>
 
 #ifdef HAVE_ZLIB
