@@ -44,7 +44,7 @@ extern pthread_mutexattr_t isc__mutex_attrs;
  * waiting to obtain the lock.
  */
 #ifndef ISC_MUTEX_PROFILE
-#define ISC_MUTEX_PROFILE 0
+#define ISC_MUTEX_PROFILE 1
 #endif
 
 #if ISC_MUTEX_PROFILE

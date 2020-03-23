@@ -53,7 +53,7 @@
 
 /*@}*/
 
-#define ISC_MUTEX_MAX_LOCKERS 32
+#define ISC_MUTEX_MAX_LOCKERS 64
 
 typedef struct {
 	const char *		file;
@@ -75,7 +75,7 @@ struct isc_mutexstats {
 };
 
 #ifndef ISC_MUTEX_PROFTABLESIZE
-#define ISC_MUTEX_PROFTABLESIZE (1024 * 1024)
+#define ISC_MUTEX_PROFTABLESIZE (512 * 1024)
 #endif
 static isc_mutexstats_t stats[ISC_MUTEX_PROFTABLESIZE];
 static int stats_next = 0;
@@ -85,6 +85,7 @@ static pthread_mutex_t statslock = PTHREAD_MUTEX_INITIALIZER;
 
 void
 isc_mutex_init_profile(isc_mutex_t *mp, const char *file, int line) {
+	char strbuf[ISC_STRERRORSIZE];
 	int i, err;
 
 	err = pthread_mutex_init(&mp->mutex, NULL);
@@ -235,6 +236,7 @@ initialize_errcheck(void) {
 
 void
 isc_mutex_init_errcheck(isc_mutex_t *mp) {
+	char strbuf[ISC_STRERRORSIZE];
 	isc_result_t result;
 	int err;
 

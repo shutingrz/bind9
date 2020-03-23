@@ -9063,8 +9063,7 @@ load_configuration(const char *filename, named_server_t *server,
 	{
 		named_g_memstatistics = cfg_obj_asboolean(obj);
 	} else {
-		named_g_memstatistics =
-			((isc_mem_debugging & ISC_MEM_DEBUGRECORD) != 0);
+		named_g_memstatistics = true;
 	}
 
 	obj = NULL;
