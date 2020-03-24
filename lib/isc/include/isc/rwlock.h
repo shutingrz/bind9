@@ -79,8 +79,11 @@ struct isc_rwlock {
 #endif /* USE_PTHREAD_RWLOCK */
 
 isc_result_t
-isc_rwlock_init(isc_rwlock_t *rwl, unsigned int read_quota,
-		unsigned int write_quota);
+isc__rwlock_init(isc_rwlock_t *rwl, unsigned int read_quota,
+		 unsigned int write_quota, const char *file,
+		 unsigned int line);
+#define isc_rwlock_init(l, rq, wq) isc__rwlock_init((l), (rq), (wq),\
+						    __FILE__, __LINE__)
 
 isc_result_t
 isc_rwlock_lock(isc_rwlock_t *rwl, isc_rwlocktype_t type);

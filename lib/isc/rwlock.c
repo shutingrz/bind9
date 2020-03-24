@@ -20,6 +20,7 @@
 #endif /* if defined(sun) && (defined(__sparc) || defined(__sparc__)) */
 
 #include <isc/atomic.h>
+#include <isc/log.h>
 #include <isc/magic.h>
 #include <isc/platform.h>
 #include <isc/print.h>
@@ -32,11 +33,16 @@
 #include <pthread.h>
 
 isc_result_t
-isc_rwlock_init(isc_rwlock_t *rwl, unsigned int read_quota,
-		unsigned int write_quota) {
+isc__rwlock_init(isc_rwlock_t *rwl, unsigned int read_quota,
+		 unsigned int write_quota, const char *file,
+		 unsigned int line) {
 	UNUSED(read_quota);
 	UNUSED(write_quota);
 	REQUIRE(pthread_rwlock_init(&rwl->rwlock, NULL) == 0);
+	isc_log_write(isc_lctx, ISC_LOGCATEGORY_GENERAL,
+		      ISC_LOGMODULE_OTHER, ISC_LOG_INFO,
+		       "Initialized rwlock %p at %s:%d",
+		       &rwl->rwlock, file, line);
 	atomic_init(&rwl->downgrade, false);
 	return (ISC_R_SUCCESS);
 }
@@ -190,9 +196,13 @@ print_lock(const char *operation, isc_rwlock_t *rwl, isc_rwlocktype_t type) {
 #endif			/* ISC_RWLOCK_TRACE */
 
 isc_result_t
-isc_rwlock_init(isc_rwlock_t *rwl, unsigned int read_quota,
-		unsigned int write_quota) {
+isc__rwlock_init(isc_rwlock_t *rwl, unsigned int read_quota,
+		 unsigned int write_quota, const char *file,
+		 unsigned int line) {
 	REQUIRE(rwl != NULL);
+
+	UNUSED(file);
+	UNUSED(line);
 
 	/*
 	 * In case there's trouble initializing, we zero magic now.  If all

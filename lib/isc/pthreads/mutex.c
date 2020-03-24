@@ -17,6 +17,7 @@
 #include <sys/time.h>
 #include <time.h>
 
+#include <isc/log.h>
 #include <isc/mutex.h>
 #include <isc/once.h>
 #include <isc/print.h>
@@ -294,6 +295,11 @@ isc__mutex_init(isc_mutex_t *mp, const char *file, unsigned int line) {
 		strerror_r(err, strbuf, sizeof(strbuf));
 		isc_error_fatal(file, line, "pthread_mutex_init failed: %s",
 				strbuf);
+	} else {
+		isc_log_write(isc_lctx, ISC_LOGCATEGORY_GENERAL,
+			      ISC_LOGMODULE_OTHER, ISC_LOG_INFO,
+			       "Initialized mutex %p at %s:%d",
+			       mp, file, line);
 	}
 }
 #endif /* if !(ISC_MUTEX_DEBUG && defined(PTHREAD_MUTEX_ERRORCHECK)) && \
