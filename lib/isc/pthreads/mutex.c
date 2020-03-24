@@ -20,6 +20,7 @@
 #include <sys/time.h>
 #include <errno.h>
 
+#include <isc/log.h>
 #include <isc/mutex.h>
 #include <isc/util.h>
 #include <isc/print.h>
@@ -290,7 +291,13 @@ isc__mutex_init(isc_mutex_t *mp, const char *file, unsigned int line) {
 	if (err != 0) {
 		char strbuf[ISC_STRERRORSIZE];
 		strerror_r(err, strbuf, sizeof(strbuf));
-		isc_error_fatal(file, line, "pthread_mutex_init failed: %s", strbuf);
+		isc_error_fatal(file, line, "pthread_mutex_init failed: %s",
+				strbuf);
+	} else {
+		isc_log_write(isc_lctx, ISC_LOGCATEGORY_GENERAL,
+			      ISC_LOGMODULE_OTHER, ISC_LOG_INFO,
+			       "Initialized mutex %p at %s:%d",
+			       mp, file, line);
 	}
 }
 #endif
