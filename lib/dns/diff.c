@@ -414,7 +414,8 @@ diff_apply(dns_diff_t *diff, dns_db_t *db, dns_dbversion_t *ver, bool warn) {
 				}
 				if (rds.type == dns_rdatatype_timeout &&
 				    (op == DNS_DIFFOP_DELRESIGN ||
-				     op == DNS_DIFFOP_ADDRESIGN)) {
+				     op == DNS_DIFFOP_ADDRESIGN))
+				{
 					isc_stdtime_t when;
 					when = settimeouttime(&ardataset);
 					dns_db_settimeouttime(db, &ardataset,
