@@ -2146,7 +2146,7 @@ ns__client_request(isc_nmhandle_t *handle, isc_region_t *region, void *arg) {
 	 * cache there is no point in setting RA.
 	 */
 	ra = false;
-	if (client->view->resolver != NULL && client->view->recursion == true &&
+	if (client->view->resolver != NULL && client->view->recursion &&
 	    ns_client_checkaclsilent(client, NULL, client->view->recursionacl,
 				     true) == ISC_R_SUCCESS &&
 	    ns_client_checkaclsilent(client, NULL, client->view->cacheacl,
@@ -2161,7 +2161,7 @@ ns__client_request(isc_nmhandle_t *handle, isc_region_t *region, void *arg) {
 		ra = true;
 	}
 
-	if (ra == true) {
+	if (ra) {
 		client->attributes |= NS_CLIENTATTR_RA;
 	}
 

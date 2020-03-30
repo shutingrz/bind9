@@ -913,7 +913,7 @@ ssu_checkrule(void *data, dns_rdataset_t *rrset) {
 	result = dns_ssutable_checkrules(
 		ssuinfo->table, ssuinfo->signer, ssuinfo->name, ssuinfo->addr,
 		ssuinfo->tcp, ssuinfo->aclenv, rrset->type, ssuinfo->key);
-	return (result == true ? ISC_R_SUCCESS : ISC_R_FAILURE);
+	return (result ? ISC_R_SUCCESS : ISC_R_FAILURE);
 }
 
 static bool
