@@ -979,7 +979,7 @@ got_soa:
 				(void)dns_peer_getprovideixfr(peer,
 							      &provide_ixfr);
 			}
-			if (provide_ixfr == false) {
+			if (!provide_ixfr) {
 				goto axfr_fallback;
 			}
 		}
@@ -1689,7 +1689,7 @@ xfrout_senddone(isc_nmhandle_t *handle, isc_result_t result, void *arg) {
 		xfrout_maybe_destroy(xfr);
 	} else if (result != ISC_R_SUCCESS) {
 		xfrout_fail(xfr, result, "send");
-	} else if (xfr->end_of_stream == false) {
+	} else if (!xfr->end_of_stream) {
 		sendstream(xfr);
 	} else {
 		/* End of zone transfer stream. */

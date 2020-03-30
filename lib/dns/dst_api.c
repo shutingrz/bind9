@@ -186,7 +186,7 @@ dst_lib_init(isc_mem_t *mctx, const char *engine) {
 	isc_result_t result;
 
 	REQUIRE(mctx != NULL);
-	REQUIRE(dst_initialized == false);
+	REQUIRE(!dst_initialized);
 
 	UNUSED(engine);
 
@@ -370,8 +370,7 @@ dst_context_sign(dst_context_t *dctx, isc_buffer_t *sig) {
 	if (key->func->sign == NULL) {
 		return (DST_R_NOTPRIVATEKEY);
 	}
-	if (key->func->isprivate == NULL || key->func->isprivate(key) == false)
-	{
+	if (key->func->isprivate == NULL || !key->func->isprivate(key)) {
 		return (DST_R_NOTPRIVATEKEY);
 	}
 
@@ -434,7 +433,7 @@ dst_key_computesecret(const dst_key_t *pub, const dst_key_t *priv,
 		return (DST_R_KEYCANNOTCOMPUTESECRET);
 	}
 
-	if (dst_key_isprivate(priv) == false) {
+	if (!dst_key_isprivate(priv)) {
 		return (DST_R_NOTPRIVATEKEY);
 	}
 
