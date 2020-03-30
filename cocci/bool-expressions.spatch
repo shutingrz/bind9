@@ -1,0 +1,15 @@
+@@
+symbol true;
+expression E;
+@@
+
+- E == true
++ E
+
+@@
+symbol false;
+expression E;
+@@
+
+- E == false
++ !E
