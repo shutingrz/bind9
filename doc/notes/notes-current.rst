@@ -88,6 +88,9 @@ Feature Changes
    consistency. Log messages are emitted for streams with inconsistent
    message IDs. [GL #1674]
 
+-  The question section is now checked when processing AXFR, IXFR
+   and SOA replies while transferring a zone in. [GL #1683]
+
 Bug Fixes
 ~~~~~~~~~
 
