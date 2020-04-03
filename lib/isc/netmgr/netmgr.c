@@ -1246,7 +1246,7 @@ isc__nm_uvreq_get(isc_nm_t *mgr, isc_nmsocket_t *sock) {
 	isc__nm_uvreq_t *req = NULL;
 
 	REQUIRE(VALID_NM(mgr));
-	REQUIRE(VALID_NMSOCK(sock));
+	REQUIRE(sock == NULL || VALID_NMSOCK(sock));
 
 	if (sock != NULL && atomic_load(&sock->active)) {
 		/* Try to reuse one */
@@ -1259,24 +1259,28 @@ isc__nm_uvreq_get(isc_nm_t *mgr, isc_nmsocket_t *sock) {
 
 	*req = (isc__nm_uvreq_t){ .magic = 0 };
 	req->uv_req.req.data = req;
-	isc_nmsocket_attach(sock, &req->sock);
+	isc_nm_attach(mgr, &req->mgr);
+	if (sock != NULL) {
+		isc_nmsocket_attach(sock, &req->sock);
+	}
 	req->magic = UVREQ_MAGIC;
 
 	return (req);
 }
 
 void
-isc__nm_uvreq_put(isc__nm_uvreq_t **req0, isc_nmsocket_t *sock) {
+isc__nm_uvreq_put(isc__nm_uvreq_t **req0) {
 	isc__nm_uvreq_t *req = NULL;
 	isc_nmhandle_t *handle = NULL;
+	isc_nmsocket_t *sock;
+	isc_nm_t *mgr;
+	bool reuse = false;
 
 	REQUIRE(req0 != NULL);
 	REQUIRE(VALID_UVREQ(*req0));
 
 	req = *req0;
 	*req0 = NULL;
-
-	INSIST(sock == req->sock);
 
 	req->magic = 0;
 
@@ -1285,18 +1289,25 @@ isc__nm_uvreq_put(isc__nm_uvreq_t **req0, isc_nmsocket_t *sock) {
 	 * sock, and the netmgr won't all disappear.
 	 */
 	handle = req->handle;
-	req->handle = NULL;
-
-	if (!atomic_load(&sock->active) ||
-	    !isc_astack_trypush(sock->inactivereqs, req)) {
-		isc_mempool_put(sock->mgr->reqpool, req);
+	sock = req->sock;
+	mgr = req->mgr;
+	
+	*req = (isc__nm_uvreq_t){ .magic = 0 };
+	
+	if (sock != NULL && atomic_load(&sock->active)) {
+		reuse = isc_astack_trypush(sock->inactivereqs, req);
+	}
+	if (!reuse) {
+		isc_mempool_put(mgr->reqpool, req);
 	}
 
 	if (handle != NULL) {
 		isc_nmhandle_unref(handle);
 	}
-
-	isc_nmsocket_detach(&sock);
+	if (sock != NULL) {
+		isc_nmsocket_detach(&sock);
+	}
+	isc_nm_detach(&mgr);
 }
 
 isc_result_t

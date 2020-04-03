@@ -439,7 +439,7 @@ isc__nm_async_udpsend(isc__networker_t *worker, isc__netievent_t *ev0) {
 	} else {
 		ievent->req->cb.send(ievent->req->handle, ISC_R_CANCELED,
 				     ievent->req->cbarg);
-		isc__nm_uvreq_put(&ievent->req, ievent->req->sock);
+		isc__nm_uvreq_put(&ievent->req);
 	}
 }
 
@@ -462,7 +462,7 @@ udp_send_cb(uv_udp_send_t *req, int status) {
 
 	uvreq->cb.send(uvreq->handle, result, uvreq->cbarg);
 	isc_nmhandle_unref(uvreq->handle);
-	isc__nm_uvreq_put(&uvreq, uvreq->sock);
+	isc__nm_uvreq_put(&uvreq);
 }
 
 /*

@@ -181,6 +181,7 @@ typedef union {
 
 typedef struct isc__nm_uvreq {
 	int magic;
+	isc_nm_t       *mgr;
 	isc_nmsocket_t *sock;
 	isc_nmhandle_t *handle;
 	uv_buf_t uvbuf;	      /* translated isc_region_t, to be
@@ -599,11 +600,11 @@ isc__nm_uvreq_get(isc_nm_t *mgr, isc_nmsocket_t *sock);
  */
 
 void
-isc__nm_uvreq_put(isc__nm_uvreq_t **req, isc_nmsocket_t *sock);
+isc__nm_uvreq_put(isc__nm_uvreq_t **req);
 /*%<
  * Completes the use of a UV request structure, setting '*req' to NULL.
  *
- * The UV request is pushed onto the 'sock->inactivereqs' stack or,
+ * The UV request is pushed onto the 'req->sock->inactivereqs' stack or,
  * if that doesn't work, freed.
  */
 

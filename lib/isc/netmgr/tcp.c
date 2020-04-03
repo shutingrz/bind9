@@ -153,7 +153,7 @@ tcp_connect_cb(uv_connect_t *uvreq, int status) {
 		req->cb.connect(NULL, isc__nm_uverr2result(status), req->cbarg);
 	}
 
-	isc__nm_uvreq_put(&req, sock);
+	isc__nm_uvreq_put(&req);
 }
 
 isc_result_t
@@ -832,7 +832,7 @@ tcp_send_cb(uv_write_t *req, int status) {
 
 	uvreq->cb.send(uvreq->handle, result, uvreq->cbarg);
 	isc_nmhandle_unref(uvreq->handle);
-	isc__nm_uvreq_put(&uvreq, uvreq->handle->sock);
+	isc__nm_uvreq_put(&uvreq);
 }
 
 /*
@@ -853,7 +853,7 @@ isc__nm_async_tcpsend(isc__networker_t *worker, isc__netievent_t *ev0) {
 	if (result != ISC_R_SUCCESS) {
 		ievent->req->cb.send(ievent->req->handle, result,
 				     ievent->req->cbarg);
-		isc__nm_uvreq_put(&ievent->req, ievent->req->handle->sock);
+		isc__nm_uvreq_put(&ievent->req);
 	}
 }
 
@@ -870,7 +870,7 @@ tcp_send_direct(isc_nmsocket_t *sock, isc__nm_uvreq_t *req) {
 	if (r < 0) {
 		isc__nm_incstats(sock->mgr, sock->statsindex[STATID_SENDFAIL]);
 		req->cb.send(NULL, isc__nm_uverr2result(r), req->cbarg);
-		isc__nm_uvreq_put(&req, sock);
+		isc__nm_uvreq_put(&req);
 		return (isc__nm_uverr2result(r));
 	}
 
