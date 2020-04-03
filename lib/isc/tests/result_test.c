@@ -46,6 +46,7 @@ isc_result_totext_test(void **state) {
 
 	UNUSED(state);
 
+	abort();
 	str = isc_result_totext(ISC_R_SUCCESS);
 	assert_string_equal("success", str);
 
