@@ -1408,7 +1408,7 @@ isc_taskmgr_create(isc_mem_t *mctx, unsigned int workers,
 	isc_condition_init(&manager->halt_cond);
 
 	manager->bound_workers = workers;
-	manager->loose_workers = 3; /* XXXWPK choosen by a random dice roll */
+	manager->loose_workers = 2; /* XXXWPK choosen by a random dice roll */
 
 	if (default_quantum == 0) {
 		default_quantum = DEFAULT_DEFAULT_QUANTUM;
