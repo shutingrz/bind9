@@ -980,6 +980,7 @@ push_readyq(isc__taskmgr_t *manager, isc__task_t *task, int c) {
 static void
 dispatch(isc__taskmgr_t *manager, unsigned int threadid) {
 	isc__task_t *task;
+	isc__task_t *last_task = NULL;
 
 	REQUIRE(VALID_MANAGER(manager));
 
@@ -1125,7 +1126,14 @@ dispatch(isc__taskmgr_t *manager, unsigned int threadid) {
 					      memory_order_release) > 0);
 			atomic_fetch_add_explicit(&manager->tasks_running, 1,
 						  memory_order_acquire);
-
+			if (!manager->queues[threadid].bound && task == last_task) {
+				/*
+				 * XXXWPK don't let an unbound worker run one
+				 * task continously. This is so, SO wrong...
+				 */
+				usleep(10000);
+			}
+			last_task = task;
 			LOCK(&task->lock);
 			/*
 			 * It is possible because that we have a paused task
