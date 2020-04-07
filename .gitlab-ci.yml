@@ -289,6 +289,11 @@ stages:
     - windows
     - amd64
   script:
+    - 'mkdir CrashDumps'
+    - 'REG ADD "HKLM\SOFTWARE\Microsoft\Windows\Windows Error Reporting\LocalDumps" /v DumpFolder /t REG_EXPAND_SZ /d "%CI_PROJECT_DIR%\CrashDumps" /f'
+    - 'REG ADD "HKLM\SOFTWARE\Microsoft\Windows\Windows Error Reporting\LocalDumps" /v DumpCount /t REG_DWORD /d 1000 /f'
+    - 'REG ADD "HKLM\SOFTWARE\Microsoft\Windows\Windows Error Reporting\LocalDumps" /v DumpType /t REG_DWORD /d 2 /f'
+    - 'REG QUERY "HKLM\SOFTWARE\Microsoft\Windows\Windows Error Reporting\LocalDumps"'
     - 'Push-Location bin/tests/system'
     - '$ifIndex = Get-NetIPInterface -AddressFamily IPv4 -InterfaceMetric 75 | Select-Object -ExpandProperty ifIndex'
     - '& C:/tools/cygwin/bin/sed.exe -i "s/^exit.*/netsh interface ipv4 set dnsservers $ifIndex dhcp/; s/\(name\|interface\)=Loopback/$ifIndex/;" ifconfig.bat'
@@ -297,7 +302,7 @@ stages:
     - 'Start-Sleep 2'
     - '$Env:Path = "C:/tools/cygwin/bin;$Env:Path"'
     - '& sh.exe runall.sh $TEST_PARALLEL_JOBS'
-    - 'If (Test-Path C:/CrashDumps/*) { dir C:/CrashDumps; Throw }'
+    - 'If (Test-Path "%CI_PROJECT_DIR%/CrashDumps/*") { dir "%CI_PROJECT_DIR%/CrashDumps"; Throw }'
   artifacts:
     untracked: true
     expire_in: "1 day"
