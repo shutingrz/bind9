@@ -761,9 +761,11 @@ isc_log_usechannel(isc_logconfig_t *lcfg, const char *name,
 	/*
 	 * Update the highest logging level, if the current lcfg is in use.
 	 */
+	RDLOCK(&lctx->lcfg_rwl);
 	if (lcfg->lctx->logconfig == lcfg) {
 		sync_highest_level(lctx, lcfg);
 	}
+	RDUNLOCK(&lctx->lcfg_rwl);
 
 	return (ISC_R_SUCCESS);
 }
@@ -1010,8 +1012,8 @@ sync_channellist(isc_logconfig_t *lcfg) {
 
 static void
 sync_highest_level(isc_log_t *lctx, isc_logconfig_t *lcfg) {
-	atomic_store(&lctx->highest_level, lcfg->highest_level);
-	atomic_store(&lctx->dynamic, lcfg->dynamic);
+	atomic_store_release(&lctx->highest_level, lcfg->highest_level);
+	atomic_store_release(&lctx->dynamic, lcfg->dynamic);
 }
 
 static isc_result_t
