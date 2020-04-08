@@ -49,7 +49,7 @@ can_log_tcp_quota() {
 }
 
 static int
-tcp_connect_direct(isc_nmsocket_t *sock, isc__nm_uvreq_t *req);
+tcp_connect_direct(isc__nm_uvreq_t *req);
 
 static void
 tcp_close_direct(isc_nmsocket_t *sock);
@@ -74,15 +74,21 @@ static isc_result_t
 accept_connection(isc_nmsocket_t *ssock, isc_quota_t *quota);
 
 static int
-tcp_connect_direct(isc_nmsocket_t *sock, isc__nm_uvreq_t *req) {
-	isc__networker_t *worker = NULL;
+tcp_connect_direct(isc__nm_uvreq_t *req) {
+	isc_nmsocket_t *sock;
+	isc__networker_t *worker;
 	int r;
 
 	REQUIRE(isc__nm_in_netthread());
+	worker = &req->mgr->workers[isc_nm_tid()];
 
-	worker = &sock->mgr->workers[isc_nm_tid()];
+	sock = isc_mem_get(req->mgr->mctx, sizeof(isc_nmsocket_t));
+	isc__nmsocket_init(sock, req->mgr, isc_nm_tcpsocket, NULL);
+	sock->tid = isc_nm_tid();
+	sock->extrahandlesize = 0;
 
 	r = uv_tcp_init(&worker->loop, &sock->uv_handle.tcp);
+
 	if (r != 0) {
 		isc__nm_incstats(sock->mgr, sock->statsindex[STATID_OPENFAIL]);
 		return (r);
@@ -97,9 +103,13 @@ tcp_connect_direct(isc_nmsocket_t *sock, isc__nm_uvreq_t *req) {
 			return (r);
 		}
 	}
+
 	uv_handle_set_data(&sock->uv_handle.handle, sock);
 	r = uv_tcp_connect(&req->uv_req.connect, &sock->uv_handle.tcp,
 			   &req->peer.type.sa, tcp_connect_cb);
+	if (r != 0) {
+		tcp_close_direct(sock);
+	}
 	return (r);
 }
 
@@ -107,14 +117,11 @@ void
 isc__nm_async_tcpconnect(isc__networker_t *worker, isc__netievent_t *ev0) {
 	isc__netievent_tcpconnect_t *ievent =
 		(isc__netievent_tcpconnect_t *)ev0;
-	isc_nmsocket_t *sock = ievent->sock;
 	isc__nm_uvreq_t *req = ievent->req;
+	UNUSED(worker);
 	int r;
 
-	REQUIRE(sock->type == isc_nm_tcpsocket);
-	REQUIRE(worker->id == ievent->req->sock->mgr->workers[isc_nm_tid()].id);
-
-	r = tcp_connect_direct(sock, req);
+	r = tcp_connect_direct(req);
 	if (r != 0) {
 		/* We need to issue callbacks ourselves */
 		tcp_connect_cb(&req->uv_req.connect, r);
@@ -155,6 +162,36 @@ tcp_connect_cb(uv_connect_t *uvreq, int status) {
 
 	isc__nm_uvreq_put(&req);
 }
+
+isc_result_t
+isc_nm_connecttcp(isc_nm_t *mgr, isc_sockaddr_t *local, isc_sockaddr_t *remote, isc_nm_cb_t cb) {
+	isc__nm_uvreq_t *req;
+	isc__netievent_tcpconnect_t *ievent;
+	
+	REQUIRE(VALID_NM(mgr));
+	req = isc__nm_uvreq_get(mgr, NULL);
+	if (local != NULL) {
+		req->local = *local;
+	}
+	req->peer = *remote;
+ 	req->cb.connect = cb;
+	ievent = isc__nm_get_ievent(mgr, netievent_tcpconnect);
+	ievent->req = req;
+	/*
+	 * XXXWPK maybe we should always use random() and call connect
+	 * directly if random value == isc_nm_tid()?
+	 */
+	if (isc__nm_in_netthread()) {
+		isc__nm_async_tcpconnect(&mgr->workers[isc_nm_tid()],
+					(isc__netievent_t *)ievent);
+		isc__nm_put_ievent(mgr, ievent);
+	} else {
+		int w = isc_random_uniform(mgr->nworkers);
+		isc__nm_enqueue_ievent(&mgr->workers[w],
+				       (isc__netievent_t *)ievent);
+	}
+	return (ISC_R_SUCCESS);
+}	
 
 isc_result_t
 isc_nm_listentcp(isc_nm_t *mgr, isc_nmiface_t *iface, isc_nm_cb_t cb,

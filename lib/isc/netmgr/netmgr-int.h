@@ -190,8 +190,7 @@ typedef struct isc__nm_uvreq {
 	isc_sockaddr_t peer;  /* peer address */
 	isc__nm_cb_t cb;      /* callback */
 	void *cbarg;	      /* callback argument */
-	uv_pipe_t ipc;	      /* used for sending socket
-			       * uv_handles to other threads */
+
 	union {
 		uv_req_t req;
 		uv_getaddrinfo_t getaddrinfo;

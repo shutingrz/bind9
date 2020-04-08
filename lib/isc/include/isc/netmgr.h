@@ -227,6 +227,10 @@ isc_nm_send(isc_nmhandle_t *handle, isc_region_t *region, isc_nm_cb_t cb,
  */
 
 isc_result_t
+isc_nm_connecttcp(isc_nm_t *mgr, isc_sockaddr_t *local, isc_sockaddr_t *remote, isc_nm_cb_t cb);   
+
+
+isc_result_t
 isc_nm_listentcp(isc_nm_t *mgr, isc_nmiface_t *iface, isc_nm_cb_t cb,
 		 void *cbarg, size_t extrahandlesize, int backlog,
 		 isc_quota_t *quota, isc_nmsocket_t **sockp);
