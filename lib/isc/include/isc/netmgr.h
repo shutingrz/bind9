@@ -12,17 +12,19 @@
 #pragma once
 
 #include <isc/mem.h>
+#include <isc/region.h>
 #include <isc/result.h>
 #include <isc/types.h>
 
+/*
+ * Replacement for isc_sockettype_t provided by socket.h.
+ */
 typedef enum {
-	NMEV_READ,
-	NMEV_WRITE,
-	NMEV_ACCEPT,
-	NMEV_CONNECTED,
-	NMEV_CANCELLED,
-	NMEV_SHUTDOWN
-} isc_nm_eventtype;
+	isc_socktype_tcp = 1,
+	isc_socktype_udp = 2,
+	isc_socktype_unix = 3,
+	isc_socktype_raw = 4
+} isc_socktype_t;
 
 isc_nm_t *
 isc_nm_start(isc_mem_t *mctx, uint32_t workers);
@@ -94,6 +96,12 @@ isc_nmhandle_unref(isc_nmhandle_t *handle);
  * it's passed to an isc_task event handler. The libuv code would not
  * otherwise know that the handle was in use and might free it, along
  * with the client.)
+ */
+
+isc_nmsocket_t *
+isc_nmhandle_socket(isc_nmhandle_t *handle);
+/*%<
+ * Returns the socket associated with 'handle'.
  */
 
 void *

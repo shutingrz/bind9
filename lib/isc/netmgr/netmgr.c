@@ -1236,6 +1236,13 @@ isc_nmhandle_netmgr(isc_nmhandle_t *handle) {
 	return (handle->sock->mgr);
 }
 
+isc_nmsocket_t *
+isc_nmhandle_socket(isc_nmhandle_t *handle) {
+	REQUIRE(VALID_NMHANDLE(handle));
+
+	return (handle->sock);
+}
+
 isc__nm_uvreq_t *
 isc__nm_uvreq_get(isc_nm_t *mgr, isc_nmsocket_t *sock) {
 	isc__nm_uvreq_t *req = NULL;

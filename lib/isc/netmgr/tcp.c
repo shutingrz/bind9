@@ -1008,7 +1008,9 @@ timer_close_cb(uv_handle_t *uvhandle) {
 
 	REQUIRE(VALID_NMSOCK(sock));
 
-	isc_nmsocket_detach(&sock->server);
+	if (sock->server != NULL) {
+		isc_nmsocket_detach(&sock->server);
+	}
 	uv_close(&sock->uv_handle.handle, tcp_close_cb);
 }
 
