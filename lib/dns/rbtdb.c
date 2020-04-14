@@ -8400,7 +8400,7 @@ dns_rbtdb_create(isc_mem_t *mctx, const dns_name_t *origin, dns_dbtype_t type,
 		goto cleanup_rbtdb;
 	}
 
-	result = isc_rwlock_init(&rbtdb->tree_lock, 0, 0);
+	result = isc_rwlock_init(&rbtdb->tree_lock, 0, 154123);
 	if (result != ISC_R_SUCCESS) {
 		goto cleanup_lock;
 	}
