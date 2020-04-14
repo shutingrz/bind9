@@ -146,6 +146,10 @@ isc__nm_async_udplisten(isc__networker_t *worker, isc__netievent_t *ev0) {
 		isc__nm_incstats(sock->mgr, sock->statsindex[STATID_BINDFAIL]);
 	}
 
+	uv_recv_buffer_size(&sock->uv_handle.handle,
+			    &(int){ 16 * 1024 * 1024 });
+	uv_send_buffer_size(&sock->uv_handle.handle,
+			    &(int){ 16 * 1024 * 1024 });
 	uv_udp_recv_start(&sock->uv_handle.udp, isc__nm_alloc_cb, udp_recv_cb);
 }
 
