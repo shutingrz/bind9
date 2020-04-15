@@ -38,7 +38,7 @@ isc_rwlock_init(isc_rwlock_t *rwl, unsigned int read_quota,
 	UNUSED(write_quota);
 	if (1) {
 		pthread_rwlockattr_t attr;
-		pthread_rwlockattr_setkind_np(&attr, PTHREAD_RWLOCK_PREFER_WRITER_NONRECURSIVE_NP);
+		pthread_rwlockattr_setkind_np(&attr, PTHREAD_RWLOCK_PREFER_READER_NP);
 		REQUIRE(pthread_rwlock_init(&rwl->rwlock, &attr) == 0);
 	} else {
 		REQUIRE(pthread_rwlock_init(&rwl->rwlock, NULL) == 0);
@@ -141,7 +141,7 @@ isc_rwlock_destroy(isc_rwlock_t *rwl) {
 #endif /* ifndef RWLOCK_DEFAULT_WRITE_QUOTA */
 
 #ifndef RWLOCK_MAX_ADAPTIVE_COUNT
-#define RWLOCK_MAX_ADAPTIVE_COUNT 200
+#define RWLOCK_MAX_ADAPTIVE_COUNT 100
 #endif /* ifndef RWLOCK_MAX_ADAPTIVE_COUNT */
 
 #if defined(_MSC_VER)
