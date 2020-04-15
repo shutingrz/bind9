@@ -141,7 +141,7 @@ isc_rwlock_destroy(isc_rwlock_t *rwl) {
 #endif /* ifndef RWLOCK_DEFAULT_WRITE_QUOTA */
 
 #ifndef RWLOCK_MAX_ADAPTIVE_COUNT
-#define RWLOCK_MAX_ADAPTIVE_COUNT 500
+#define RWLOCK_MAX_ADAPTIVE_COUNT 30
 #endif /* ifndef RWLOCK_MAX_ADAPTIVE_COUNT */
 
 #if defined(_MSC_VER)
