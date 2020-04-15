@@ -137,7 +137,7 @@ isc_rwlock_destroy(isc_rwlock_t *rwl) {
 #define VALID_RWLOCK(rwl) ISC_MAGIC_VALID(rwl, RWLOCK_MAGIC)
 
 #ifndef RWLOCK_DEFAULT_WRITE_QUOTA
-#define RWLOCK_DEFAULT_WRITE_QUOTA 1
+#define RWLOCK_DEFAULT_WRITE_QUOTA 8
 #endif /* ifndef RWLOCK_DEFAULT_WRITE_QUOTA */
 
 #ifndef RWLOCK_MAX_ADAPTIVE_COUNT
