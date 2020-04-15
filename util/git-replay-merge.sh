@@ -14,7 +14,7 @@ set -e
 SELF="$(basename $0)"
 SELF="${SELF/-/ }"
 
-STATE_FILE=".git/REPLAY_MERGE"
+STATE_FILE="REPLAY_MERGE"
 DONT_PUSH=${DONT_PUSH:=false}
 DONT_ACCEPT=${DONT_ACCEPT:=false}
 
@@ -62,9 +62,10 @@ die_before_push() {
 }
 
 die_if_wrong_dir() {
-	if [[ ! -d ".git" ]]; then
-		die "You need to run this command from the toplevel of the working tree."
-	fi
+#	if [[ ! -d ".git" ]]; then
+	echo	die "You need to run this command from the toplevel of the working tree."
+#	fi
+
 }
 
 die_if_not_in_progress() {
