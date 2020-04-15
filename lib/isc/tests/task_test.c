@@ -35,7 +35,6 @@
 #include <isc/timer.h>
 #include <isc/util.h>
 
-#include "../task_p.h"
 #include "isctest.h"
 
 /* Set to true (or use -v option) for verbose output */
@@ -212,7 +211,7 @@ privileged_events(void **state) {
 	 * Pause the task manager so we can fill up the work queue
 	 * without things happening while we do it.
 	 */
-	isc__taskmgr_pause(taskmgr);
+	isc_taskmgr_pause(taskmgr);
 
 	result = isc_task_create(taskmgr, 0, &task1);
 	assert_int_equal(result, ISC_R_SUCCESS);
@@ -270,7 +269,7 @@ privileged_events(void **state) {
 	isc_taskmgr_setprivilegedmode(taskmgr);
 	assert_int_equal(isc_taskmgr_mode(taskmgr), isc_taskmgrmode_privileged);
 
-	isc__taskmgr_resume(taskmgr);
+	isc_taskmgr_resume(taskmgr);
 
 	/* We're waiting for *all* variables to be set */
 	while ((atomic_load(&a) == 0 || atomic_load(&b) == 0 ||
@@ -332,7 +331,7 @@ privilege_drop(void **state) {
 	 * Pause the task manager so we can fill up the work queue
 	 * without things happening while we do it.
 	 */
-	isc__taskmgr_pause(taskmgr);
+	isc_taskmgr_pause(taskmgr);
 
 	result = isc_task_create(taskmgr, 0, &task1);
 	assert_int_equal(result, ISC_R_SUCCESS);
@@ -390,7 +389,7 @@ privilege_drop(void **state) {
 	isc_taskmgr_setprivilegedmode(taskmgr);
 	assert_int_equal(isc_taskmgr_mode(taskmgr), isc_taskmgrmode_privileged);
 
-	isc__taskmgr_resume(taskmgr);
+	isc_taskmgr_resume(taskmgr);
 
 	/* We're waiting for all variables to be set. */
 	while ((atomic_load(&a) == -1 || atomic_load(&b) == -1 ||

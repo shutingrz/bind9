@@ -351,6 +351,77 @@ isc_nm_resume(isc_nm_t *mgr) {
 }
 
 void
+isc_nm_settaskmgr(isc_nm_t *mgr, isc_taskmgr_t *taskmgr) {
+	REQUIRE(VALID_NM(mgr));
+
+	mgr->taskmgr = taskmgr;
+}
+
+void
+isc_nm_beginexclusive(isc_nm_t *mgr) {
+	REQUIRE(VALID_NM(mgr));
+
+	atomic_store(&mgr->paused, true);
+	isc__nm_acquire_interlocked_force(mgr);
+
+	if (mgr->taskmgr != NULL) {
+		isc_taskmgr_pause(mgr->taskmgr);
+	}
+
+	for (size_t i = 0; i < mgr->nworkers; i++) {
+		isc__netievent_t *event = NULL;
+
+		if ((int)i == isc_nm_tid()) {
+			mgr->workers[i].exclusive = true;
+			continue;
+		}
+
+		LOCK(&mgr->workers[i].lock);
+		mgr->workers[i].paused = true;
+		UNLOCK(&mgr->workers[i].lock);
+
+		event = isc__nm_get_ievent(mgr, netievent_stop);
+		isc__nm_enqueue_ievent(&mgr->workers[i], event);
+	}
+
+	LOCK(&mgr->lock);
+	while (atomic_load_relaxed(&mgr->workers_running) -
+		       atomic_load_relaxed(&mgr->workers_paused) >
+	       1)
+	{
+		WAIT(&mgr->wkstatecond, &mgr->lock);
+	}
+	UNLOCK(&mgr->lock);
+}
+
+void
+isc_nm_endexclusive(isc_nm_t *mgr) {
+	REQUIRE(VALID_NM(mgr));
+
+	if (mgr->taskmgr != NULL) {
+		isc_taskmgr_resume(mgr->taskmgr);
+	}
+
+	for (size_t i = 0; i < mgr->nworkers; i++) {
+		if ((int)i == isc_nm_tid()) {
+			mgr->workers[i].exclusive = false;
+			continue;
+		}
+
+		LOCK(&mgr->workers[i].lock);
+		mgr->workers[i].paused = false;
+		SIGNAL(&mgr->workers[i].cond);
+		UNLOCK(&mgr->workers[i].lock);
+	}
+	isc__nm_drop_interlocked(mgr);
+
+	/*
+	 * We're not waiting for all the workers to come back to life;
+	 * they eventually will, we don't care.
+	 */
+}
+
+void
 isc_nm_attach(isc_nm_t *mgr, isc_nm_t **dst) {
 	REQUIRE(VALID_NM(mgr));
 	REQUIRE(dst != NULL && *dst == NULL);
@@ -473,6 +544,7 @@ isc_nm_tcp_gettimeouts(isc_nm_t *mgr, uint32_t *initial, uint32_t *idle,
 static isc_threadresult_t
 nm_thread(isc_threadarg_t worker0) {
 	isc__networker_t *worker = (isc__networker_t *)worker0;
+	bool finished;
 
 	isc__nm_tid_v = worker->id;
 	isc_thread_setaffinity(isc__nm_tid_v);
@@ -498,10 +570,13 @@ nm_thread(isc_threadarg_t worker0) {
 			SIGNAL(&worker->mgr->wkstatecond);
 			UNLOCK(&worker->mgr->lock);
 
-			WAIT(&worker->cond, &worker->lock);
+			if (!worker->exclusive) {
+				WAIT(&worker->cond, &worker->lock);
+			}
 
 			/* Process priority events */
 			process_queue(worker, worker->ievents_prio);
+			INSIST(!worker->exclusive);
 		}
 		if (pausing) {
 			uint32_t wp = atomic_fetch_sub_explicit(
@@ -511,7 +586,7 @@ nm_thread(isc_threadarg_t worker0) {
 				atomic_store(&worker->mgr->paused, false);
 			}
 		}
-		bool finished = worker->finished;
+		finished = worker->finished;
 		UNLOCK(&worker->lock);
 
 		if (finished) {

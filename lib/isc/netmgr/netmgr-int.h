@@ -28,6 +28,7 @@
 #include <isc/result.h>
 #include <isc/sockaddr.h>
 #include <isc/stats.h>
+#include <isc/task.h>
 #include <isc/thread.h>
 #include <isc/util.h>
 
@@ -60,6 +61,7 @@ typedef struct isc__networker {
 	isc_mutex_t lock;
 	isc_condition_t cond;
 	bool paused;
+	bool exclusive;
 	bool finished;
 	isc_thread_t thread;
 	isc_queue_t *ievents;	   /* incoming async events */
@@ -274,6 +276,7 @@ struct isc_nm {
 	int magic;
 	isc_refcount_t references;
 	isc_mem_t *mctx;
+	isc_taskmgr_t *taskmgr;
 	uint32_t nworkers;
 	isc_mutex_t lock;
 	isc_condition_t wkstatecond;

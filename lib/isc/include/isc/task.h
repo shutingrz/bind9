@@ -784,6 +784,11 @@ isc_result_t
 isc_taskmgr_renderjson(isc_taskmgr_t *mgr, void *tasksobj0);
 #endif /* HAVE_JSON_C */
 
+void
+isc_taskmgr_pause(isc_taskmgr_t *taskmgr);
+void
+isc_taskmgr_resume(isc_taskmgr_t *taskmgr);
+
 ISC_LANG_ENDDECLS
 
 #endif /* ISC_TASK_H */

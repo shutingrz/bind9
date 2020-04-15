@@ -106,8 +106,8 @@ isc_task_getname
 isc_task_gettag
 isc_task_unsendrange
 isc_taskmgr_mode
-isc__taskmgr_pause
-isc__taskmgr_resume
+isc_taskmgr_pause
+isc_taskmgr_resume
 isc_aes128_crypt
 isc_aes192_crypt
 isc_aes256_crypt
@@ -453,9 +453,11 @@ isc_nmhandle_ref
 isc_nmhandle_setdata
 isc_nmhandle_socket
 isc_nmhandle_unref
+isc_nm_beginexclusive
 isc_nm_closedown
 isc_nm_destroy
 isc_nm_detach
+isc_nm_endexclusive
 isc_nm_listentcpdns
 isc_nm_listentcp
 isc_nm_listenudp
@@ -463,6 +465,7 @@ isc_nm_maxudp
 isc_nm_read
 isc_nm_send
 isc_nm_setstats
+isc_nm_settaskmgr
 isc_nm_start
 isc_nm_stoplistening
 isc_nm_tcpconnect

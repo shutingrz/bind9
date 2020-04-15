@@ -373,3 +373,11 @@ isc_nm_setstats(isc_nm_t *mgr, isc_stats_t *stats);
  *\li	stats is a valid set of statistics counters supporting the
  *	full range of socket-related stats counter numbers.
  */
+
+void
+isc_nm_settaskmgr(isc_nm_t *mgr, isc_taskmgr_t *taskmgr);
+
+void
+isc_nm_beginexclusive(isc_nm_t *mgr);
+void
+isc_nm_endexclusive(isc_nm_t *mgr);

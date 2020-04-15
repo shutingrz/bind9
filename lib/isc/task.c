@@ -189,11 +189,6 @@ struct isc__taskmgr {
 	isc__task_t *excl;
 };
 
-void
-isc__taskmgr_pause(isc_taskmgr_t *manager0);
-void
-isc__taskmgr_resume(isc_taskmgr_t *manager0);
-
 #define DEFAULT_DEFAULT_QUANTUM 25
 #define FINISHED(m)                                      \
 	(atomic_load_relaxed(&((m)->exiting)) == true && \
@@ -1557,7 +1552,7 @@ isc_taskmgr_mode(isc_taskmgr_t *manager0) {
 }
 
 void
-isc__taskmgr_pause(isc_taskmgr_t *manager0) {
+isc_taskmgr_pause(isc_taskmgr_t *manager0) {
 	isc__taskmgr_t *manager = (isc__taskmgr_t *)manager0;
 
 	LOCK(&manager->halt_lock);
@@ -1579,7 +1574,7 @@ isc__taskmgr_pause(isc_taskmgr_t *manager0) {
 }
 
 void
-isc__taskmgr_resume(isc_taskmgr_t *manager0) {
+isc_taskmgr_resume(isc_taskmgr_t *manager0) {
 	isc__taskmgr_t *manager = (isc__taskmgr_t *)manager0;
 	LOCK(&manager->halt_lock);
 	if (atomic_load(&manager->pause_req)) {

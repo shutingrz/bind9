@@ -906,6 +906,10 @@ create_managers(void) {
 		return (ISC_R_UNEXPECTED);
 	}
 
+	/*
+	 * The netmgr and taskmgr need to know each other so that either
+	 * one can pause the other when going exclusive.
+	 */
 	result = isc_taskmgr_create(named_g_mctx, named_g_cpus, 0, named_g_nm,
 				    &named_g_taskmgr);
 	if (result != ISC_R_SUCCESS) {
@@ -914,6 +918,7 @@ create_managers(void) {
 				 isc_result_totext(result));
 		return (ISC_R_UNEXPECTED);
 	}
+	isc_nm_settaskmgr(named_g_nm, named_g_taskmgr);
 
 	result = isc_timermgr_create(named_g_mctx, &named_g_timermgr);
 	if (result != ISC_R_SUCCESS) {
