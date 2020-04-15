@@ -93,10 +93,9 @@ n=$((n+1))
 echo_i "checking that named refuses to reconfigure if working directory is not writable ($n)"
 ret=0
 copy_setports ns2/named-alt4.conf.in ns2/named.conf
-$RNDCCMD 10.53.0.2 reconfig > rndc.out.$n 2>&1 && ret=1
-grep "failed: permission denied" rndc.out.$n > /dev/null 2>&1 || ret=1
-sleep 1
-grep "[^-]directory './nope' is not writable" ns2/named.run > /dev/null 2>&1 || ret=1
+nextpart ns2/named.run > /dev/null
+$RNDCCMD 10.53.0.2 reconfig > /dev/null 2>&1
+wait_for_log 5 "directory './nope' is not writable" ns2/named.run > /dev/null 2>&1 || ret=1
 if [ $ret -ne 0 ]; then echo_i "failed"; fi
 status=$((status+ret))
 
@@ -104,10 +103,9 @@ n=$((n+1))
 echo_i "checking that named refuses to reconfigure if managed-keys-directory is not writable ($n)"
 ret=0
 copy_setports ns2/named-alt5.conf.in ns2/named.conf
-$RNDCCMD 10.53.0.2 reconfig > rndc.out.$n 2>&1 && ret=1
-grep "failed: permission denied" rndc.out.$n > /dev/null 2>&1 || ret=1
-sleep 1
-grep "managed-keys-directory './nope' is not writable" ns2/named.run > /dev/null 2>&1 || ret=1
+nextpart ns2/named.run > /dev/null
+$RNDCCMD 10.53.0.2 reconfig > /dev/null 2>&1
+wait_for_log 5 "managed-keys-directory './nope' is not writable" ns2/named.run > /dev/null 2>&1 || ret=1
 if [ $ret -ne 0 ]; then echo_i "failed"; fi
 status=$((status+ret))
 
@@ -115,10 +113,9 @@ n=$((n+1))
 echo_i "checking that named refuses to reconfigure if new-zones-directory is not writable ($n)"
 ret=0
 copy_setports ns2/named-alt6.conf.in ns2/named.conf
-$RNDCCMD 10.53.0.2 reconfig > rndc.out.$n 2>&1 && ret=1
-grep "failed: permission denied" rndc.out.$n > /dev/null 2>&1 || ret=1
-sleep 1
-grep "new-zones-directory './nope' is not writable" ns2/named.run > /dev/null 2>&1 || ret=1
+nextpart ns2/named.run > /dev/null
+$RNDCCMD 10.53.0.2 reconfig > /dev/null 2>&1
+wait_for_log 5 "new-zones-directory './nope' is not writable" ns2/named.run > /dev/null 2>&1 || ret=1
 if [ $ret -ne 0 ]; then echo_i "failed"; fi
 status=$((status+ret))
 

@@ -135,26 +135,34 @@ test $count -eq $lines -a $count -eq 99 || {
 }
 if [ $ret != 0 ] ; then status=`expr $status + $ret`; fi
 
+check_reconf () {
+    grep "automatic empty zone" ns1/named.run > /dev/null || return 1
+    grep "received control channel command 'reconfig'" ns1/named.run > /dev/null || return 1
+    grep "reloading configuration succeeded" ns1/named.run > /dev/null || return 1
+    grep "zone serial (0) unchanged." ns1/named.run > /dev/null && return 1
+    return 0
+}
+
 n=`expr $n + 1`
 echo_i "Checking that reconfiguring empty zones is silent ($n)"
 $RNDCCMD 10.53.0.1 reconfig
 ret=0
-grep "automatic empty zone" ns1/named.run > /dev/null || ret=1
-grep "received control channel command 'reconfig'" ns1/named.run > /dev/null || ret=1
-grep "reloading configuration succeeded" ns1/named.run > /dev/null || ret=1
-sleep 1
-grep "zone serial (0) unchanged." ns1/named.run > /dev/null && ret=1
+retry_quiet 5 check_reconf || ret=1
 if [ $ret != 0 ] ; then echo_i "failed"; status=`expr $status + $ret`; fi
+
+check_reload () {
+    grep "automatic empty zone" ns1/named.run > /dev/null || return 1
+    grep "received control channel command 'reload'" ns1/named.run > /dev/null || return 1
+    grep "reloading configuration succeeded" ns1/named.run > /dev/null || return 1
+    grep "zone serial (0) unchanged." ns1/named.run > /dev/null && return 1
+    return 0
+}
 
 n=`expr $n + 1`
 echo_i "Checking that reloading empty zones is silent ($n)"
-rndc_reload ns1 10.53.0.1
 ret=0
-grep "automatic empty zone" ns1/named.run > /dev/null || ret=1
-grep "received control channel command 'reload'" ns1/named.run > /dev/null || ret=1
-grep "reloading configuration succeeded" ns1/named.run > /dev/null || ret=1
-sleep 1
-grep "zone serial (0) unchanged." ns1/named.run > /dev/null && ret=1
+rndc_reload ns1 10.53.0.1
+retry_quiet 5 check_reload || ret=1
 if [ $ret != 0 ] ; then echo_i "failed"; status=`expr $status + $ret`; fi
 
 HOSTNAME=`$FEATURETEST --gethostname`

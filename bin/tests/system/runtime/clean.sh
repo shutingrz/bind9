@@ -11,7 +11,7 @@
 
 rm -f ns2/named.conf ns2/named-alt*.conf
 rm -f */named.memstats
-rm -f */named*.run
+rm -f */named*.run */named.run.prev
 rm -f ns*/named.lock ns*/named*.pid ns*/other.lock
 rm -f *.pid
 rm -f rndc.out*

@@ -72,9 +72,10 @@ echo_i "testing plain file (named -g) ($n)"
 # First run with a known good config.
 echo > $PLAINFILE
 copy_setports $PLAINCONF named.conf
+nextpart named.run > /dev/null
 $myRNDC reconfig > rndc.out.test$n 2>&1
-grep "reloading configuration failed" named.run > /dev/null 2>&1
-if [ $? -ne 0 ]
+wait_for_log 10  "reloading configuration succeeded" named.run
+if [ $? -eq 0 ]
 then
 	echo_i "testing plain file succeeded"
 else
@@ -86,15 +87,14 @@ fi
 # Now try directory, expect failure
 n=`expr $n + 1`
 echo_i "testing directory as log file (named -g) ($n)"
-echo > named.run
 rm -rf $DIRFILE
 mkdir -p $DIRFILE >/dev/null 2>&1
 if [ $? -eq 0 ]
 then
 	copy_setports $DIRCONF named.conf
-	echo > named.run
+        nextpart named.run > /dev/null
 	$myRNDC reconfig > rndc.out.test$n 2>&1
-	grep "checking logging configuration failed: invalid file" named.run > /dev/null 2>&1
+	wait_for_log 10 "checking logging configuration failed: invalid file" named.run
 	if [ $? -ne 0 ]
 	then
 		echo_i "testing directory as file succeeded (UNEXPECTED)"
@@ -110,15 +110,14 @@ fi
 # Now try pipe file, expect failure
 n=`expr $n + 1`
 echo_i "testing pipe file as log file (named -g) ($n)"
-echo > named.run
 rm -f $PIPEFILE
 mkfifo $PIPEFILE >/dev/null 2>&1
 if [ $? -eq 0 ]
 then
 	copy_setports $PIPECONF named.conf
-	echo > named.run
+	nextpart named.run > /dev/null
 	$myRNDC reconfig > rndc.out.test$n 2>&1
-	grep "checking logging configuration failed: invalid file" named.run  > /dev/null 2>&1
+	wait_for_log 10 "checking logging configuration failed: invalid file" named.run
 	if [ $? -ne 0 ]
 	then
 		echo_i "testing pipe file as log file succeeded (UNEXPECTED)"
@@ -135,17 +134,16 @@ fi
 n=`expr $n + 1`
 echo_i "testing symlink to plain file as log file (named -g) ($n)"
 # Assume success
-echo > named.run
 echo > $PLAINFILE
 rm -f  $SYMFILE  $SYMFILE
 ln -s $PLAINFILE $SYMFILE >/dev/null 2>&1
 if [ $? -eq 0 ]
 then
 	copy_setports $SYMCONF named.conf
+	nextpart named.run > /dev/null
 	$myRNDC reconfig > rndc.out.test$n 2>&1
-	echo > named.run
-	grep "reloading configuration failed" named.run > /dev/null 2>&1
-	if [ $? -ne 0 ]
+	wait_for_log 10 "reloading configuration succeeded" named.run
+	if [ $? -eq 0 ]
 	then
 		echo_i "testing symlink to plain file succeeded"
 	else
@@ -181,8 +179,8 @@ echo_i "testing plain file (named -g) ($n)"
 echo > $PLAINFILE
 copy_setports $PLAINCONF named.conf
 $myRNDC reconfig > rndc.out.test$n 2>&1
-grep "reloading configuration failed" named.run > /dev/null 2>&1
-if [ $? -ne 0 ]
+wait_for_log 10 "reloading configuration succeeded" named.run
+if [ $? -eq 0 ]
 then
 	echo_i "testing plain file succeeded"
 else
@@ -194,15 +192,14 @@ fi
 # Now try directory, expect failure
 n=`expr $n + 1`
 echo_i "testing directory as log file ($n)"
-echo > named.run
 rm -rf $DIRFILE
 mkdir -p $DIRFILE >/dev/null 2>&1
 if [ $? -eq 0 ]
 then
 	copy_setports $DIRCONF named.conf
-	echo > named.run
+	nextpart named.run > /dev/null
 	$myRNDC reconfig > rndc.out.test$n 2>&1
-	grep "configuring logging: invalid file" named.run > /dev/null 2>&1
+	wait_for_log 10 "configuring logging: invalid file" named.run
 	if [ $? -ne 0 ]
 	then
 		echo_i "testing directory as file succeeded (UNEXPECTED)"
@@ -218,15 +215,14 @@ fi
 # Now try pipe file, expect failure
 n=`expr $n + 1`
 echo_i "testing pipe file as log file ($n)"
-echo > named.run
 rm -f $PIPEFILE
 mkfifo $PIPEFILE >/dev/null 2>&1
 if [ $? -eq 0 ]
 then
 	copy_setports $PIPECONF named.conf
-	echo > named.run
+        nextpart named.run > /dev/null
 	$myRNDC reconfig > rndc.out.test$n 2>&1
-	grep "configuring logging: invalid file" named.run  > /dev/null 2>&1
+	wait_for_log 10 "configuring logging: invalid file" named.run
 	if [ $? -ne 0 ]
 	then
 		echo_i "testing pipe file as log file succeeded (UNEXPECTED)"
@@ -244,17 +240,16 @@ n=`expr $n + 1`
 echo_i "testing symlink to plain file as log file ($n)"
 # Assume success
 status=0
-echo > named.run
 echo > $PLAINFILE
 rm -f $SYMFILE
 ln -s $PLAINFILE $SYMFILE >/dev/null 2>&1
 if [ $? -eq 0 ]
 then
 	copy_setports $SYMCONF named.conf
+	nextpart named.run > /dev/null
 	$myRNDC reconfig > rndc.out.test$n 2>&1
-	echo > named.run
-	grep "reloading configuration failed" named.run > /dev/null 2>&1
-	if [ $? -ne 0 ]
+	wait_for_log 10 "reloading configuration succeeded" named.run
+	if [ $? -eq 0 ]
 	then
 		echo_i "testing symlink to plain file succeeded"
 	else
@@ -302,6 +297,7 @@ n=`expr $n + 1`
 echo_i "testing iso8601 timestamp ($n)"
 copy_setports $ISOCONF named.conf
 $myRNDC reconfig > rndc.out.test$n 2>&1
+retry_quiet 5 test -e $ISOFILE
 if grep '^....-..-..T..:..:..\.... ' $ISOFILE > /dev/null; then
 	echo_i "testing iso8601 timestamp succeeded"
 else
@@ -313,6 +309,7 @@ n=`expr $n + 1`
 echo_i "testing iso8601-utc timestamp ($n)"
 copy_setports $ISOCONFUTC named.conf
 $myRNDC reconfig > rndc.out.test$n 2>&1
+retry_quiet 5 test -e $ISOUTCFILE
 if grep '^....-..-..T..:..:..\....Z' $ISOUTCFILE > /dev/null; then
 	echo_i "testing iso8601-utc timestamp succeeded"
 else

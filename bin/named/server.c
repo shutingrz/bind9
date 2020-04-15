@@ -9911,14 +9911,6 @@ named_server_create(isc_mem_t *mctx, named_server_t **serverp) {
 				     &server->in_roothints),
 		   "setting up root hints");
 
-	isc_mutex_init(&server->reload_event_lock);
-
-	server->reload_event = isc_event_allocate(
-		named_g_mctx, server, NAMED_EVENT_RELOAD, named_server_reload,
-		server, sizeof(isc_event_t));
-	CHECKFATAL(server->reload_event == NULL ? ISC_R_NOMEMORY
-						: ISC_R_SUCCESS,
-		   "allocating reload event");
 	server->reload_status = NAMED_RELOAD_IN_PROGRESS;
 
 	/*
@@ -10087,8 +10079,6 @@ named_server_destroy(named_server_t **serverp) {
 	}
 
 	dst_lib_destroy();
-
-	isc_event_free(&server->reload_event);
 
 	INSIST(ISC_LIST_EMPTY(server->kasplist));
 	INSIST(ISC_LIST_EMPTY(server->viewlist));
@@ -10263,42 +10253,54 @@ cleanup:
 }
 
 /*
- * Handle a reload event (from SIGHUP).
+ * Handle a reload event from SIGHUP or rndc.
  */
 static void
 named_server_reload(isc_task_t *task, isc_event_t *event) {
-	named_server_t *server = (named_server_t *)event->ev_arg;
+	named_server_t *server = (named_server_t *)event->ev_sender;
 
 	INSIST(task == server->task);
 	UNUSED(task);
 
 	isc_log_write(named_g_lctx, NAMED_LOGCATEGORY_GENERAL,
-		      NAMED_LOGMODULE_SERVER, ISC_LOG_INFO,
-		      "received SIGHUP signal to reload zones");
+		      NAMED_LOGMODULE_SERVER, ISC_LOG_INFO, "reloading zones");
 	(void)reload(server);
 
-	LOCK(&server->reload_event_lock);
-	INSIST(server->reload_event == NULL);
-	server->reload_event = event;
-	UNLOCK(&server->reload_event_lock);
+	isc_event_free(&event);
 }
 
 void
 named_server_reloadwanted(named_server_t *server) {
-	LOCK(&server->reload_event_lock);
-	if (server->reload_event != NULL) {
-		isc_task_send(server->task, &server->reload_event);
-	}
-	UNLOCK(&server->reload_event_lock);
+	isc_event_t *event = isc_event_allocate(
+		named_g_mctx, server, NAMED_EVENT_RELOAD, named_server_reload,
+		NULL, sizeof(isc_event_t));
+	isc_task_send(server->task, &event);
 }
 
-void
-named_server_scan_interfaces(named_server_t *server) {
+static void
+doscan(isc_task_t *task, isc_event_t *event) {
+	named_server_t *server = (named_server_t *)event->ev_sender;
+	ns_interfacemgr_t *mgr = (ns_interfacemgr_t *)event->ev_arg;
+
+	INSIST(task == server->task);
+	UNUSED(task);
+
 	isc_log_write(named_g_lctx, NAMED_LOGCATEGORY_GENERAL,
 		      NAMED_LOGMODULE_SERVER, ISC_LOG_DEBUG(1),
 		      "automatic interface rescan");
 
-	ns_interfacemgr_scan(server->interfacemgr, true);
+	ns_interfacemgr_scan(mgr, true);
+	isc_event_free(&event);
+}
+
+void
+named_server_scan_interfaces(named_server_t *server) {
+	isc_event_t *event = NULL;
+
+	event = isc_event_allocate(named_g_mctx, server, NAMED_EVENT_COMMAND,
+				   doscan, server->interfacemgr,
+				   sizeof(isc_event_t));
+	isc_task_send(server->task, &event);
 }
 
 /*
@@ -10560,11 +10562,10 @@ named_server_reloadcommand(named_server_t *server, isc_lex_t *lex,
 	if (result != ISC_R_SUCCESS) {
 		return (result);
 	}
+
 	if (zone == NULL) {
-		result = reload(server);
-		if (result == ISC_R_SUCCESS) {
-			msg = "server reload successful";
-		}
+		named_server_reloadwanted(server);
+		msg = "server reload queued";
 	} else {
 		type = dns_zone_gettype(zone);
 		if (type == dns_zone_slave || type == dns_zone_mirror ||
@@ -10603,9 +10604,14 @@ named_server_reloadcommand(named_server_t *server, isc_lex_t *lex,
 /*
  * Act on a "reconfig" command from the command channel.
  */
-isc_result_t
-named_server_reconfigcommand(named_server_t *server) {
+static void
+named_server_reconfig(isc_task_t *task, isc_event_t *event) {
 	isc_result_t result;
+	named_server_t *server = (named_server_t *)event->ev_sender;
+
+	INSIST(task == server->task);
+	UNUSED(task);
+
 	server->reload_status = NAMED_RELOAD_IN_PROGRESS;
 
 	CHECK(loadconfig(server));
@@ -10620,10 +10626,24 @@ named_server_reconfigcommand(named_server_t *server) {
 			      NAMED_LOGMODULE_SERVER, ISC_LOG_ERROR,
 			      "loading new zones failed: %s",
 			      isc_result_totext(result));
+	}
+
+cleanup:
+	if (result != ISC_R_SUCCESS) {
 		server->reload_status = NAMED_RELOAD_FAILED;
 	}
-cleanup:
-	return (result);
+
+	isc_event_free(&event);
+	return;
+}
+
+isc_result_t
+named_server_reconfigcommand(named_server_t *server) {
+	isc_event_t *event = isc_event_allocate(
+		named_g_mctx, server, NAMED_EVENT_RELOAD, named_server_reconfig,
+		NULL, sizeof(isc_event_t));
+	isc_task_send(server->task, &event);
+	return (ISC_R_SUCCESS);
 }
 
 /*

@@ -535,8 +535,9 @@ $RNDC -s 10.53.0.4 -p ${EXTRAPORT6} -c ns4/key6.conf reconfig > /dev/null || ret
 sleep 1
 mv ns4/named.conf ns4/named.conf.save
 echo "error error error" >> ns4/named.conf
-$RNDC -s 10.53.0.4 -p ${EXTRAPORT6} -c ns4/key6.conf reconfig > rndc.out.1.test$n 2>&1 && ret=1
-grep "rndc: 'reconfig' failed: unexpected token" rndc.out.1.test$n > /dev/null || ret=1
+$RNDC -s 10.53.0.4 -p ${EXTRAPORT6} -c ns4/key6.conf reconfig > rndc.out.1.test$n 2>&1 || ret=1
+sleep 1
+grep "unknown option 'error'" ns4/named.run > /dev/null || ret=1
 if [ $ret != 0 ]; then echo_i "failed"; fi
 status=`expr $status + $ret`
 

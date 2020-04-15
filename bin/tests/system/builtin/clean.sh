@@ -9,7 +9,7 @@
 # See the COPYRIGHT file distributed with this work for additional
 # information regarding copyright ownership.
 
-rm -f ns?/named.run
+rm -f ns?/named.run ns?/named.run.prev
 rm -f ns?/named.memstats
 rm -f ns?/named.conf
 rm -f rndc.status.ns*
