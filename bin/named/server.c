@@ -11450,8 +11450,7 @@ named_server_validation(named_server_t *server, isc_lex_t *lex,
 	/* Look for the view name. */
 	ptr = next_token(lex, text);
 
-	result = isc_task_beginexclusive(server->task);
-	RUNTIME_CHECK(result == ISC_R_SUCCESS);
+	isc_nm_beginexclusive(named_g_nm);
 	for (view = ISC_LIST_HEAD(server->viewlist); view != NULL;
 	     view = ISC_LIST_NEXT(view, link))
 	{
@@ -11489,7 +11488,7 @@ named_server_validation(named_server_t *server, isc_lex_t *lex,
 		result = ISC_R_FAILURE;
 	}
 cleanup:
-	isc_task_endexclusive(server->task);
+	isc_nm_endexclusive(named_g_nm);
 	return (result);
 }
 
@@ -11511,8 +11510,7 @@ named_server_flushcache(named_server_t *server, isc_lex_t *lex) {
 	/* Look for the view name. */
 	ptr = next_token(lex, NULL);
 
-	result = isc_task_beginexclusive(server->task);
-	RUNTIME_CHECK(result == ISC_R_SUCCESS);
+	isc_nm_beginexclusive(named_g_nm);
 	flushed = true;
 	found = false;
 
@@ -11634,7 +11632,7 @@ named_server_flushcache(named_server_t *server, isc_lex_t *lex) {
 			result = ISC_R_FAILURE;
 		}
 	}
-	isc_task_endexclusive(server->task);
+	isc_nm_endexclusive(named_g_nm);
 	return (result);
 }
 
@@ -11674,8 +11672,7 @@ named_server_flushnode(named_server_t *server, isc_lex_t *lex, bool tree) {
 	/* Look for the view name. */
 	viewname = next_token(lex, NULL);
 
-	result = isc_task_beginexclusive(server->task);
-	RUNTIME_CHECK(result == ISC_R_SUCCESS);
+	isc_nm_beginexclusive(named_g_nm);
 	flushed = true;
 	found = false;
 	for (view = ISC_LIST_HEAD(server->viewlist); view != NULL;
@@ -11726,7 +11723,7 @@ named_server_flushnode(named_server_t *server, isc_lex_t *lex, bool tree) {
 		}
 		result = ISC_R_FAILURE;
 	}
-	isc_task_endexclusive(server->task);
+	isc_nm_endexclusive(named_g_nm);
 	return (result);
 }
 
@@ -11971,8 +11968,7 @@ named_server_tsigdelete(named_server_t *server, isc_lex_t *lex,
 
 	viewname = next_token(lex, text);
 
-	result = isc_task_beginexclusive(server->task);
-	RUNTIME_CHECK(result == ISC_R_SUCCESS);
+	isc_nm_beginexclusive(named_g_nm);
 	for (view = ISC_LIST_HEAD(server->viewlist); view != NULL;
 	     view = ISC_LIST_NEXT(view, link))
 	{
@@ -11983,12 +11979,12 @@ named_server_tsigdelete(named_server_t *server, isc_lex_t *lex,
 			RWUNLOCK(&view->dynamickeys->lock,
 				 isc_rwlocktype_write);
 			if (result != ISC_R_SUCCESS) {
-				isc_task_endexclusive(server->task);
+				isc_nm_endexclusive(named_g_nm);
 				return (result);
 			}
 		}
 	}
-	isc_task_endexclusive(server->task);
+	isc_nm_endexclusive(named_g_nm);
 
 	snprintf(fbuf, sizeof(fbuf), "%u", foundkeys);
 
@@ -12225,8 +12221,7 @@ named_server_sync(named_server_t *server, isc_lex_t *lex, isc_buffer_t **text) {
 	}
 
 	if (zone == NULL) {
-		result = isc_task_beginexclusive(server->task);
-		RUNTIME_CHECK(result == ISC_R_SUCCESS);
+		isc_nm_beginexclusive(named_g_nm);
 		tresult = ISC_R_SUCCESS;
 		for (view = ISC_LIST_HEAD(server->viewlist); view != NULL;
 		     view = ISC_LIST_NEXT(view, link))
@@ -12238,7 +12233,7 @@ named_server_sync(named_server_t *server, isc_lex_t *lex, isc_buffer_t **text) {
 				tresult = result;
 			}
 		}
-		isc_task_endexclusive(server->task);
+		isc_nm_endexclusive(named_g_nm);
 		isc_log_write(named_g_lctx, NAMED_LOGCATEGORY_GENERAL,
 			      NAMED_LOGMODULE_SERVER, ISC_LOG_INFO,
 			      "dumping all zones%s: %s",
@@ -12247,10 +12242,9 @@ named_server_sync(named_server_t *server, isc_lex_t *lex, isc_buffer_t **text) {
 		return (tresult);
 	}
 
-	result = isc_task_beginexclusive(server->task);
-	RUNTIME_CHECK(result == ISC_R_SUCCESS);
+	isc_nm_beginexclusive(named_g_nm);
 	result = synczone(zone, &cleanup);
-	isc_task_endexclusive(server->task);
+	isc_nm_endexclusive(named_g_nm);
 
 	view = dns_zone_getview(zone);
 	if (strcmp(view->name, "_default") == 0 ||
@@ -12294,8 +12288,7 @@ named_server_freeze(named_server_t *server, bool freeze, isc_lex_t *lex,
 		return (result);
 	}
 	if (mayberaw == NULL) {
-		result = isc_task_beginexclusive(server->task);
-		RUNTIME_CHECK(result == ISC_R_SUCCESS);
+		isc_nm_beginexclusive(named_g_nm);
 		tresult = ISC_R_SUCCESS;
 		for (view = ISC_LIST_HEAD(server->viewlist); view != NULL;
 		     view = ISC_LIST_NEXT(view, link))
@@ -12306,7 +12299,7 @@ named_server_freeze(named_server_t *server, bool freeze, isc_lex_t *lex,
 				tresult = result;
 			}
 		}
-		isc_task_endexclusive(server->task);
+		isc_nm_endexclusive(named_g_nm);
 		isc_log_write(named_g_lctx, NAMED_LOGCATEGORY_GENERAL,
 			      NAMED_LOGMODULE_SERVER, ISC_LOG_INFO,
 			      "%s all zones: %s",
@@ -12331,8 +12324,7 @@ named_server_freeze(named_server_t *server, bool freeze, isc_lex_t *lex,
 		return (DNS_R_NOTDYNAMIC);
 	}
 
-	result = isc_task_beginexclusive(server->task);
-	RUNTIME_CHECK(result == ISC_R_SUCCESS);
+	isc_nm_beginexclusive(named_g_nm);
 	frozen = dns_zone_getupdatedisabled(mayberaw);
 	if (freeze) {
 		if (frozen) {
@@ -12369,7 +12361,7 @@ named_server_freeze(named_server_t *server, bool freeze, isc_lex_t *lex,
 			}
 		}
 	}
-	isc_task_endexclusive(server->task);
+	isc_nm_endexclusive(named_g_nm);
 
 	if (msg != NULL) {
 		(void)putstr(text, msg);
@@ -13288,8 +13280,7 @@ do_addzone(named_server_t *server, ns_cfgctx_t *cfg, dns_view_t *view,
 	}
 #endif /* HAVE_LMDB */
 
-	result = isc_task_beginexclusive(server->task);
-	RUNTIME_CHECK(result == ISC_R_SUCCESS);
+	isc_nm_beginexclusive(named_g_nm);
 
 	/* Mark view unfrozen and configure zone */
 	dns_view_thaw(view);
@@ -13299,7 +13290,7 @@ do_addzone(named_server_t *server, ns_cfgctx_t *cfg, dns_view_t *view,
 				false);
 	dns_view_freeze(view);
 
-	isc_task_endexclusive(server->task);
+	isc_nm_endexclusive(named_g_nm);
 
 	if (result != ISC_R_SUCCESS) {
 		TCHECK(putstr(text, "configure_zone failed: "));
@@ -13445,8 +13436,7 @@ do_modzone(named_server_t *server, ns_cfgctx_t *cfg, dns_view_t *view,
 	}
 #endif /* ifndef HAVE_LMDB */
 
-	result = isc_task_beginexclusive(server->task);
-	RUNTIME_CHECK(result == ISC_R_SUCCESS);
+	isc_nm_beginexclusive(named_g_nm);
 	exclusive = true;
 
 #ifndef HAVE_LMDB
@@ -13482,7 +13472,7 @@ do_modzone(named_server_t *server, ns_cfgctx_t *cfg, dns_view_t *view,
 	dns_view_freeze(view);
 
 	exclusive = false;
-	isc_task_endexclusive(server->task);
+	isc_nm_endexclusive(named_g_nm);
 
 	if (result != ISC_R_SUCCESS) {
 		TCHECK(putstr(text, "configure_zone failed: "));
@@ -13603,7 +13593,7 @@ do_modzone(named_server_t *server, ns_cfgctx_t *cfg, dns_view_t *view,
 
 cleanup:
 	if (exclusive) {
-		isc_task_endexclusive(server->task);
+		isc_nm_endexclusive(named_g_nm);
 	}
 
 #ifndef HAVE_LMDB
@@ -14978,8 +14968,7 @@ named_server_nta(named_server_t *server, isc_lex_t *lex, bool readonly,
 
 	isc_stdtime_get(&now);
 
-	result = isc_task_beginexclusive(server->task);
-	RUNTIME_CHECK(result == ISC_R_SUCCESS);
+	isc_nm_beginexclusive(named_g_nm);
 	excl = true;
 	for (view = ISC_LIST_HEAD(server->viewlist); view != NULL;
 	     view = ISC_LIST_NEXT(view, link))
@@ -15098,7 +15087,7 @@ cleanup:
 	}
 
 	if (excl) {
-		isc_task_endexclusive(server->task);
+		isc_nm_endexclusive(named_g_nm);
 	}
 	if (ntatable != NULL) {
 		dns_ntatable_detach(&ntatable);
@@ -15166,7 +15155,7 @@ cleanup:
 }
 
 static isc_result_t
-mkey_destroy(named_server_t *server, dns_view_t *view, isc_buffer_t **text) {
+mkey_destroy(dns_view_t *view, isc_buffer_t **text) {
 	isc_result_t result;
 	char msg[DNS_NAME_FORMATSIZE + 500] = "";
 	bool exclusive = false;
@@ -15183,8 +15172,7 @@ mkey_destroy(named_server_t *server, dns_view_t *view, isc_buffer_t **text) {
 		 view->name);
 	CHECK(putstr(text, msg));
 
-	result = isc_task_beginexclusive(server->task);
-	RUNTIME_CHECK(result == ISC_R_SUCCESS);
+	isc_nm_beginexclusive(named_g_nm);
 	exclusive = true;
 
 	/* Remove and clean up managed keys zone from view */
@@ -15231,7 +15219,7 @@ mkey_destroy(named_server_t *server, dns_view_t *view, isc_buffer_t **text) {
 
 cleanup:
 	if (exclusive) {
-		isc_task_endexclusive(server->task);
+		isc_nm_endexclusive(named_g_nm);
 	}
 	return (result);
 }
@@ -15478,7 +15466,7 @@ named_server_mkeys(named_server_t *server, isc_lex_t *lex,
 			if (!first) {
 				CHECK(putstr(text, "\n"));
 			}
-			CHECK(mkey_destroy(server, view, text));
+			CHECK(mkey_destroy(view, text));
 			break;
 		default:
 			INSIST(0);
@@ -15621,13 +15609,12 @@ named_server_tcptimeouts(isc_lex_t *lex, isc_buffer_t **text) {
 			CHECK(ISC_R_RANGE);
 		}
 
-		result = isc_task_beginexclusive(named_g_server->task);
-		RUNTIME_CHECK(result == ISC_R_SUCCESS);
+		isc_nm_beginexclusive(named_g_nm);
 
 		isc_nm_tcp_settimeouts(named_g_nm, initial, idle, keepalive,
 				       advertised);
 
-		isc_task_endexclusive(named_g_server->task);
+		isc_nm_endexclusive(named_g_nm);
 	}
 
 	snprintf(msg, sizeof(msg), "tcp-initial-timeout=%u\n", initial);
@@ -15714,8 +15701,7 @@ named_server_servestale(named_server_t *server, isc_lex_t *lex,
 		}
 	}
 
-	result = isc_task_beginexclusive(server->task);
-	RUNTIME_CHECK(result == ISC_R_SUCCESS);
+	isc_nm_beginexclusive(named_g_nm);
 	exclusive = true;
 
 	for (view = ISC_LIST_HEAD(server->viewlist); view != NULL;
@@ -15783,7 +15769,7 @@ named_server_servestale(named_server_t *server, isc_lex_t *lex,
 
 cleanup:
 	if (exclusive) {
-		isc_task_endexclusive(named_g_server->task);
+		isc_nm_endexclusive(named_g_nm);
 	}
 
 	if (isc_buffer_usedlength(*text) > 0) {
