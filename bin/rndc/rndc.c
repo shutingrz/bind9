@@ -976,8 +976,14 @@ main(int argc, char **argv) {
 	argc -= isc_commandline_index;
 	argv += isc_commandline_index;
 
-	if (argc < 1) {
+	if (argv[0] == NULL) {
 		usage(1);
+	} else {
+		command = argv[0];
+		if (strcmp(command, "restart") == 0) {
+			fatal("'%s' is not implemented", command);
+		}
+		notify("%s", command);
 	}
 
 	serial = isc_random32();
@@ -1004,8 +1010,6 @@ main(int argc, char **argv) {
 
 	isccc_result_register();
 
-	command = *argv;
-
 	isc_buffer_allocate(rndc_mctx, &databuf, 2048);
 
 	/*
@@ -1031,12 +1035,6 @@ main(int argc, char **argv) {
 	p--;
 	*p++ = '\0';
 	INSIST(p == args + argslen);
-
-	notify("%s", command);
-
-	if (strcmp(command, "restart") == 0) {
-		fatal("'%s' is not implemented", command);
-	}
 
 	if (nserveraddrs == 0 && servername != NULL) {
 		get_addresses(servername, (in_port_t)remoteport);
