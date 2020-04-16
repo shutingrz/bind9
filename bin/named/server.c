@@ -12077,7 +12077,7 @@ cleanup:
 
 isc_result_t
 named_server_tsiglist(named_server_t *server, isc_buffer_t **text) {
-	isc_result_t result;
+	isc_result_t result = ISC_R_SUCCESS;
 	dns_view_t *view;
 	unsigned int foundkeys = 0;
 
