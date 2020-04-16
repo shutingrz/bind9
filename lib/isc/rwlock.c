@@ -43,13 +43,33 @@ isc_rwlock_init(isc_rwlock_t *rwl, unsigned int read_quota,
 
 isc_result_t
 isc_rwlock_lock(isc_rwlock_t *rwl, isc_rwlocktype_t type) {
+	int spins = 0;
+	int res = 0;
 	switch (type) {
 	case isc_rwlocktype_read:
-		REQUIRE(pthread_rwlock_rdlock(&rwl->rwlock) == 0);
+		spins = 0;
+		while (spins++ < 100) {
+			res = pthread_rwlock_tryrdlock(&rwl->rwlock);
+			if (res == 0) {
+				break;
+			}
+		}
+		if (res != 0) {
+			REQUIRE(pthread_rwlock_rdlock(&rwl->rwlock) == 0);
+		}
 		break;
 	case isc_rwlocktype_write:
 		while (true) {
-			REQUIRE(pthread_rwlock_wrlock(&rwl->rwlock) == 0);
+			spins = 0;
+			while (spins++ < 100) {
+				res = pthread_rwlock_trywrlock(&rwl->rwlock);
+				if (res == 0) {
+					break;
+				}
+			}
+			if (res != 0) {
+				REQUIRE(pthread_rwlock_wrlock(&rwl->rwlock) == 0);
+			}
 			/* Unlock if in middle of downgrade operation */
 			if (atomic_load_acquire(&rwl->downgrade)) {
 				REQUIRE(pthread_rwlock_unlock(&rwl->rwlock) ==
