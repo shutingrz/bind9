@@ -586,7 +586,7 @@ readtimeout_cb(uv_timer_t *handle) {
 	if (sock->quota) {
 		isc_quota_detach(&sock->quota);
 	}
-	sock->rcb.recv(sock->tcphandle, NULL, sock->rcbarg);
+	sock->rcb.recv(sock->tcphandle, ISC_R_TIMEDOUT, NULL, sock->rcbarg);
 }
 
 isc_result_t
@@ -719,7 +719,8 @@ read_cb(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf) {
 					.length = nread };
 
 		if (sock->rcb.recv != NULL) {
-			sock->rcb.recv(sock->tcphandle, &region, sock->rcbarg);
+			sock->rcb.recv(sock->tcphandle, ISC_R_SUCCESS, &region,
+				       sock->rcbarg);
 		}
 
 		sock->read_timeout = (atomic_load(&sock->keepalive)
@@ -744,7 +745,7 @@ read_cb(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf) {
 	 */
 	if (sock->rcb.recv != NULL) {
 		isc__nm_incstats(sock->mgr, sock->statsindex[STATID_RECVFAIL]);
-		sock->rcb.recv(sock->tcphandle, NULL, sock->rcbarg);
+		sock->rcb.recv(sock->tcphandle, ISC_R_EOF, NULL, sock->rcbarg);
 	}
 
 	/*
@@ -1088,6 +1089,7 @@ isc__nm_tcp_shutdown(isc_nmsocket_t *sock) {
 	if (sock->type == isc_nm_tcpsocket && sock->tcphandle != NULL &&
 	    sock->rcb.recv != NULL)
 	{
-		sock->rcb.recv(sock->tcphandle, NULL, sock->rcbarg);
+		sock->rcb.recv(sock->tcphandle, ISC_R_CANCELED, NULL,
+			       sock->rcbarg);
 	}
 }

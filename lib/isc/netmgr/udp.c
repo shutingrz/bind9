@@ -326,7 +326,7 @@ udp_recv_cb(uv_udp_t *handle, ssize_t nrecv, const uv_buf_t *buf,
 	region.length = nrecv;
 
 	INSIST(sock->rcb.recv != NULL);
-	sock->rcb.recv(nmhandle, &region, sock->rcbarg);
+	sock->rcb.recv(nmhandle, ISC_R_SUCCESS, &region, sock->rcbarg);
 	isc__nm_free_uvbuf(sock, buf);
 
 	/*
