@@ -421,8 +421,8 @@ isc__rwlock_lock(isc_rwlock_t *rwl, isc_rwlocktype_t type) {
 isc_result_t
 isc_rwlock_lock(isc_rwlock_t *rwl, isc_rwlocktype_t type) {
 	int32_t cnt = 0;
-	int32_t spins = atomic_load_acquire(&rwl->spins) * 2 + 10;
-	int32_t max_cnt = ISC_MAX(spins, RWLOCK_MAX_ADAPTIVE_COUNT);
+//	int32_t spins = atomic_load_acquire(&rwl->spins) * 2 + 10;
+	int32_t max_cnt = RWLOCK_MAX_ADAPTIVE_COUNT; // ISC_MAX(spins, RWLOCK_MAX_ADAPTIVE_COUNT);
 	isc_result_t result = ISC_R_SUCCESS;
 
 	do {
@@ -433,7 +433,7 @@ isc_rwlock_lock(isc_rwlock_t *rwl, isc_rwlocktype_t type) {
 		isc_rwlock_pause();
 	} while (isc_rwlock_trylock(rwl, type) != ISC_R_SUCCESS);
 
-	atomic_fetch_add_release(&rwl->spins, (cnt - spins) / 8);
+//	atomic_fetch_add_release(&rwl->spins, (cnt - spins) / 8);
 
 	return (result);
 }
