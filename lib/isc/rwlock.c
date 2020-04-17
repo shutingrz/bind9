@@ -80,9 +80,7 @@ isc_rwlock_lock(isc_rwlock_t *rwl, isc_rwlocktype_t type) {
 			/* Unlock if in middle of downgrade operation */
                         REQUIRE(pthread_rwlock_unlock(&rwl->rwlock) == 0);
                         while (atomic_load_acquire(&rwl->downgrade)) {
-                                if (isc_rwlock_pause() == -1) {
-                                        break;
-				}
+                                isc_rwlock_pause();
 			}
 		}
 		break;
