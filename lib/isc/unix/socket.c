@@ -1943,6 +1943,8 @@ free_socket(isc__socket_t **socketp) {
 
 	isc_mem_put(sock->manager->mctx, sock, sizeof(*sock));
 }
+#undef SO_RCVBUF
+#undef SO_SNDBUF
 
 #ifdef SO_RCVBUF
 static isc_once_t rcvbuf_once = ISC_ONCE_INIT;
