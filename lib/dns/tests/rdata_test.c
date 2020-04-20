@@ -2333,6 +2333,11 @@ httpssvc(void **state) {
 				   "alpn=\"h2\""),
 		TEXT_VALID("2 svc.example.net. key65535=\"2222\""),
 		TEXT_INVALID("2 svc.example.net. key65536=\"2222\""),
+		TEXT_VALID("2 svc.example.net. key10"),
+		TEXT_VALID_CHANGED("2 svc.example.net. key11=",
+				   "2 svc.example.net. key11"),
+		TEXT_VALID_CHANGED("2 svc.example.net. key12=\"\"",
+				   "2 svc.example.net. key12"),
 		TEXT_SENTINEL()
 	};
 	wire_ok_t wire_ok[] = {

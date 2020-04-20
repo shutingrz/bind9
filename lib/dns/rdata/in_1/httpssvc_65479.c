@@ -33,13 +33,13 @@ static const struct {
 	enum encoding encoding;
 	bool initial;
 } sbpr[] = {
-	{ "key0=", 0, sbpr_text, true },
-	{ "alpn=", 1, sbpr_text, true },
-	{ "no-default-alpn=", 2, sbpr_empty, true },
-	{ "port=", 3, sbpr_port, true },
-	{ "ipv4hint=", 4, sbpr_ipv4s, true },
-	{ "esniconfig=", 5, sbpr_base64, true },
-	{ "ipv6hint=", 6, sbpr_ipv6s, true },
+	{ "key0", 0, sbpr_text, true },
+	{ "alpn", 1, sbpr_text, true },
+	{ "no-default-alpn", 2, sbpr_empty, true },
+	{ "port", 3, sbpr_port, true },
+	{ "ipv4hint", 4, sbpr_ipv4s, true },
+	{ "esniconfig", 5, sbpr_base64, true },
+	{ "ipv6hint", 6, sbpr_ipv6s, true },
 };
 
 static isc_result_t
@@ -56,8 +56,14 @@ svc_fromtext(isc_textregion_t *region, isc_buffer_t *target) {
 
 	for (i = 0; i < ARRAYSIZE(sbpr); i++) {
 		len = strlen(sbpr[i].name);
-		if (strncasecmp(region->base, sbpr[i].name, len) != 0) {
+		if (strncasecmp(region->base, sbpr[i].name, len) != 0 ||
+		    (region->base[len] != 0 && region->base[len] != '='))
+		{
 			continue;
+		}
+
+		if (region->base[len] == '=') {
+			len++;
 		}
 
 		RETERR(uint16_tobuffer(sbpr[i].value, target));
@@ -140,13 +146,18 @@ svc_fromtext(isc_textregion_t *region, isc_buffer_t *target) {
 		return (DNS_R_SYNTAX);
 	}
 	ul = strtoul(region->base, &e, 10);
-	if (*e != '=') {
+	if (*e != '=' && *e != 0) {
 		return (DNS_R_SYNTAX);
 	}
 	if (ul > 0xffff) {
 		return (ISC_R_RANGE);
 	}
 	RETERR(uint16_tobuffer(ul, target));
+	if (*e == 0) {
+		isc_textregion_consume(region, region->length);
+		RETERR(uint16_tobuffer(0, target)); /* length */
+		return (ISC_R_SUCCESS);
+	}
 	isc_textregion_consume(region, e - region->base + 1);
 	sb = *target;
 	RETERR(uint16_tobuffer(0, target)); /* length */
@@ -168,7 +179,7 @@ svcparamkey(unsigned short value, enum encoding *encoding, char *buf,
 			return (sbpr[i].name);
 		}
 	}
-	n = snprintf(buf, len, "key%u=", value);
+	n = snprintf(buf, len, "key%u", value);
 	INSIST(n > 0 && (unsigned)n < len);
 	*encoding = sbpr_text;
 	return (buf);
@@ -242,8 +253,10 @@ fromtext_in_httpssvc(ARGS_FROMTEXT) {
 			return (ISC_R_SUCCESS);
 		}
 
-		if (token.type != isc_tokentype_qvpair &&
-		    token.type != isc_tokentype_vpair) {
+		if (token.type != isc_tokentype_string && /* key only */
+		    token.type != isc_tokentype_qvpair &&
+		    token.type != isc_tokentype_vpair)
+		{
 			RETERR(DNS_R_SYNTAX);
 		}
 		RETERR(svc_fromtext(&token.value.as_textregion, target));
@@ -306,6 +319,10 @@ totext_in_httpssvc(ARGS_TOTEXT) {
 		r = region;
 		r.length = num;
 		isc_region_consume(&region, num);
+		if (num == 0) {
+			continue;
+		}
+		RETERR(str_totext("=", target));
 		switch (encoding) {
 		case sbpr_text:
 			RETERR(multitxt_totext(&r, target));

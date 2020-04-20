@@ -931,7 +931,8 @@ isc_lex_getmastertoken(isc_lex_t *lex, isc_token_t *token,
 		return (ISC_R_SUCCESS);
 	}
 	if (token->type == isc_tokentype_string &&
-	    expect == isc_tokentype_qstring) {
+	    (expect == isc_tokentype_qstring || expect == isc_tokentype_qvpair))
+	{
 		return (ISC_R_SUCCESS);
 	}
 	if (token->type == isc_tokentype_vpair &&
