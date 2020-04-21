@@ -513,6 +513,7 @@ isc_rwlock_trylock(isc_rwlock_t *rwl, isc_rwlocktype_t type) {
 
 isc_result_t
 isc_rwlock_tryupgrade(isc_rwlock_t *rwl) {
+	INSIST(0);
 	REQUIRE(VALID_RWLOCK(rwl));
 
 	int_fast32_t reader_incr = READER_INCR;
@@ -542,6 +543,7 @@ isc_rwlock_tryupgrade(isc_rwlock_t *rwl) {
 
 void
 isc_rwlock_downgrade(isc_rwlock_t *rwl) {
+	INSIST(0);
 	int32_t prev_readers;
 
 	REQUIRE(VALID_RWLOCK(rwl));
