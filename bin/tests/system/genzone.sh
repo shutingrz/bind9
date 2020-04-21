@@ -490,6 +490,9 @@ dlv			DLV	30795 1 1 (
 httpssvc0		HTTPSSVC	0 example.net.
 httpssvc1		HTTPSSVC	1 . port=60
 
+svcb0			SVCB	0 example.net.
+svcb1			SVCB	1 . port=60
+
 ; keydata (internal type used for managed keys)
 keydata			TYPE65533	\# 0
 keydata			TYPE65533	\# 6 010203040506 

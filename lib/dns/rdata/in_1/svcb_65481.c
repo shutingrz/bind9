@@ -11,10 +11,10 @@
 
 /* draft-ietf-dnsop-svcb-httpssvc-02 */
 
-#ifndef RDATA_IN_1_HTTPSSVC_65479_C
-#define RDATA_IN_1_HTTPSSVC_65479_C
+#ifndef RDATA_IN_1_SVCB_65481_C
+#define RDATA_IN_1_SVCB_65481_C
 
-#define RRTYPE_HTTPSSVC_ATTRIBUTES (0)
+#define RRTYPE_SVCB_ATTRIBUTES (0)
 
 /*
  * Service Binding Parameter Registry
@@ -186,7 +186,7 @@ svcparamkey(unsigned short value, enum encoding *encoding, char *buf,
 }
 
 static inline isc_result_t
-fromtext_in_httpssvc(ARGS_FROMTEXT) {
+generic_fromtext_in_svcb(ARGS_FROMTEXT) {
 	isc_token_t token;
 	dns_name_t name;
 	isc_buffer_t buffer;
@@ -194,9 +194,6 @@ fromtext_in_httpssvc(ARGS_FROMTEXT) {
 #if 0
 	bool ok = true;
 #endif
-
-	REQUIRE(type == dns_rdatatype_httpssvc);
-	REQUIRE(rdclass == dns_rdataclass_in);
 
 	UNUSED(type);
 	UNUSED(rdclass);
@@ -264,7 +261,18 @@ fromtext_in_httpssvc(ARGS_FROMTEXT) {
 }
 
 static inline isc_result_t
-totext_in_httpssvc(ARGS_TOTEXT) {
+fromtext_in_svcb(ARGS_FROMTEXT) {
+	REQUIRE(type == dns_rdatatype_svcb);
+	REQUIRE(rdclass == dns_rdataclass_in);
+	UNUSED(type);
+	UNUSED(rdclass);
+	UNUSED(callbacks);
+
+	return (generic_fromtext_in_svcb(CALL_FROMTEXT));
+}
+
+static inline isc_result_t
+generic_totext_in_svcb(ARGS_TOTEXT) {
 	isc_region_t region;
 	dns_name_t name;
 	dns_name_t prefix;
@@ -273,8 +281,6 @@ totext_in_httpssvc(ARGS_TOTEXT) {
 	unsigned short num;
 	int n;
 
-	REQUIRE(rdata->type == dns_rdatatype_httpssvc);
-	REQUIRE(rdata->rdclass == dns_rdataclass_in);
 	REQUIRE(rdata->length != 0);
 
 	dns_name_init(&name, NULL);
@@ -372,13 +378,19 @@ totext_in_httpssvc(ARGS_TOTEXT) {
 }
 
 static inline isc_result_t
-fromwire_in_httpssvc(ARGS_FROMWIRE) {
+totext_in_svcb(ARGS_TOTEXT) {
+	REQUIRE(rdata->type == dns_rdatatype_svcb);
+	REQUIRE(rdata->rdclass == dns_rdataclass_in);
+	REQUIRE(rdata->length != 0);
+
+	return (generic_totext_in_svcb(CALL_TOTEXT));
+}
+
+static inline isc_result_t
+generic_fromwire_in_svcb(ARGS_FROMWIRE) {
 	dns_name_t name;
 	isc_region_t region;
 	bool alias;
-
-	REQUIRE(type == dns_rdatatype_httpssvc);
-	REQUIRE(rdclass == dns_rdataclass_in);
 
 	UNUSED(type);
 	UNUSED(rdclass);
@@ -478,12 +490,19 @@ fromwire_in_httpssvc(ARGS_FROMWIRE) {
 }
 
 static inline isc_result_t
-towire_in_httpssvc(ARGS_TOWIRE) {
+fromwire_in_svcb(ARGS_FROMWIRE) {
+	REQUIRE(type == dns_rdatatype_svcb);
+	REQUIRE(rdclass == dns_rdataclass_in);
+
+	return (generic_fromwire_in_svcb(CALL_FROMWIRE));
+}
+
+static inline isc_result_t
+generic_towire_in_svcb(ARGS_TOWIRE) {
 	dns_name_t name;
 	dns_offsets_t offsets;
 	isc_region_t region;
 
-	REQUIRE(rdata->type == dns_rdatatype_httpssvc);
 	REQUIRE(rdata->length != 0);
 
 	dns_compress_setmethods(cctx, DNS_COMPRESS_NONE);
@@ -509,14 +528,22 @@ towire_in_httpssvc(ARGS_TOWIRE) {
 	return (mem_tobuffer(target, region.base, region.length));
 }
 
+static inline isc_result_t
+towire_in_svcb(ARGS_TOWIRE) {
+	REQUIRE(rdata->type == dns_rdatatype_svcb);
+	REQUIRE(rdata->length != 0);
+
+	return (generic_towire_in_svcb(CALL_TOWIRE));
+}
+
 static inline int
-compare_in_httpssvc(ARGS_COMPARE) {
+compare_in_svcb(ARGS_COMPARE) {
 	isc_region_t region1;
 	isc_region_t region2;
 
 	REQUIRE(rdata1->type == rdata2->type);
 	REQUIRE(rdata1->rdclass == rdata2->rdclass);
-	REQUIRE(rdata1->type == dns_rdatatype_httpssvc);
+	REQUIRE(rdata1->type == dns_rdatatype_svcb);
 	REQUIRE(rdata1->rdclass == dns_rdataclass_in);
 	REQUIRE(rdata1->length != 0);
 	REQUIRE(rdata2->length != 0);
@@ -528,92 +555,119 @@ compare_in_httpssvc(ARGS_COMPARE) {
 }
 
 static inline isc_result_t
-fromstruct_in_httpssvc(ARGS_FROMSTRUCT) {
-	dns_rdata_in_httpssvc_t *httpssvc = source;
+generic_fromstruct_in_svcb(ARGS_FROMSTRUCT) {
+	dns_rdata_in_svcb_t *svcb = source;
 	isc_region_t region;
 
-	REQUIRE(type == dns_rdatatype_httpssvc);
-	REQUIRE(rdclass == dns_rdataclass_in);
-	REQUIRE(httpssvc != NULL);
-	REQUIRE(httpssvc->common.rdtype == type);
-	REQUIRE(httpssvc->common.rdclass == rdclass);
+	REQUIRE(svcb != NULL);
+	REQUIRE(svcb->common.rdtype == type);
+	REQUIRE(svcb->common.rdclass == rdclass);
 
 	UNUSED(type);
 	UNUSED(rdclass);
 
-	RETERR(uint16_tobuffer(httpssvc->priority, target));
-	dns_name_toregion(&httpssvc->svcdomain, &region);
+	RETERR(uint16_tobuffer(svcb->priority, target));
+	dns_name_toregion(&svcb->svcdomain, &region);
 	RETERR(isc_buffer_copyregion(target, &region));
 
-	return (mem_tobuffer(target, httpssvc->svc, httpssvc->svclen));
+	return (mem_tobuffer(target, svcb->svc, svcb->svclen));
 }
 
 static inline isc_result_t
-tostruct_in_httpssvc(ARGS_TOSTRUCT) {
+fromstruct_in_svcb(ARGS_FROMSTRUCT) {
+	dns_rdata_in_svcb_t *svcb = source;
+
+	REQUIRE(type == dns_rdatatype_svcb);
+	REQUIRE(rdclass == dns_rdataclass_in);
+	REQUIRE(svcb != NULL);
+	REQUIRE(svcb->common.rdtype == type);
+	REQUIRE(svcb->common.rdclass == rdclass);
+
+	return (generic_fromstruct_in_svcb(CALL_FROMSTRUCT));
+}
+
+static inline isc_result_t
+generic_tostruct_in_svcb(ARGS_TOSTRUCT) {
 	isc_region_t region;
-	dns_rdata_in_httpssvc_t *httpssvc = target;
+	dns_rdata_in_svcb_t *svcb = target;
 	dns_name_t name;
 
-	REQUIRE(rdata->rdclass == dns_rdataclass_in);
-	REQUIRE(rdata->type == dns_rdatatype_httpssvc);
-	REQUIRE(httpssvc != NULL);
+	REQUIRE(svcb != NULL);
 	REQUIRE(rdata->length != 0);
 
-	httpssvc->common.rdclass = rdata->rdclass;
-	httpssvc->common.rdtype = rdata->type;
-	ISC_LINK_INIT(&httpssvc->common, link);
+	svcb->common.rdclass = rdata->rdclass;
+	svcb->common.rdtype = rdata->type;
+	ISC_LINK_INIT(&svcb->common, link);
 
 	dns_rdata_toregion(rdata, &region);
 
-	httpssvc->priority = uint16_fromregion(&region);
+	svcb->priority = uint16_fromregion(&region);
 	isc_region_consume(&region, 2);
 
-	dns_name_init(&httpssvc->svcdomain, NULL);
+	dns_name_init(&svcb->svcdomain, NULL);
 	dns_name_init(&name, NULL);
 	dns_name_fromregion(&name, &region);
 	isc_region_consume(&region, name_length(&name));
 
-	RETERR(name_duporclone(&name, mctx, &httpssvc->svcdomain));
-	httpssvc->svclen = region.length;
-	httpssvc->svc = mem_maybedup(mctx, region.base, region.length);
+	RETERR(name_duporclone(&name, mctx, &svcb->svcdomain));
+	svcb->svclen = region.length;
+	svcb->svc = mem_maybedup(mctx, region.base, region.length);
 
-	if (httpssvc->svc == NULL) {
+	if (svcb->svc == NULL) {
 		if (mctx != NULL) {
-			dns_name_free(&httpssvc->svcdomain, httpssvc->mctx);
+			dns_name_free(&svcb->svcdomain, svcb->mctx);
 		}
 		return (ISC_R_NOMEMORY);
 	}
 
-	httpssvc->mctx = mctx;
+	svcb->mctx = mctx;
 
 	return (ISC_R_SUCCESS);
 }
 
+static inline isc_result_t
+tostruct_in_svcb(ARGS_TOSTRUCT) {
+	dns_rdata_in_svcb_t *svcb = target;
+
+	REQUIRE(rdata->rdclass == dns_rdataclass_in);
+	REQUIRE(rdata->type == dns_rdatatype_svcb);
+	REQUIRE(svcb != NULL);
+	REQUIRE(rdata->length != 0);
+
+	return (generic_tostruct_in_svcb(CALL_TOSTRUCT));
+}
+
 static inline void
-freestruct_in_httpssvc(ARGS_FREESTRUCT) {
-	dns_rdata_in_httpssvc_t *httpssvc = source;
+generic_freestruct_in_svcb(ARGS_FREESTRUCT) {
+	dns_rdata_in_svcb_t *svcb = source;
 
-	REQUIRE(httpssvc != NULL);
-	REQUIRE(httpssvc->common.rdclass == dns_rdataclass_in);
-	REQUIRE(httpssvc->common.rdtype == dns_rdatatype_httpssvc);
+	REQUIRE(svcb != NULL);
 
-	if (httpssvc->mctx == NULL) {
+	if (svcb->mctx == NULL) {
 		return;
 	}
 
-	dns_name_free(&httpssvc->svcdomain, httpssvc->mctx);
-	isc_mem_free(httpssvc->mctx, httpssvc->svc);
-	httpssvc->mctx = NULL;
+	dns_name_free(&svcb->svcdomain, svcb->mctx);
+	isc_mem_free(svcb->mctx, svcb->svc);
+	svcb->mctx = NULL;
+}
+
+static inline void
+freestruct_in_svcb(ARGS_FREESTRUCT) {
+	dns_rdata_in_svcb_t *svcb = source;
+
+	REQUIRE(svcb != NULL);
+	REQUIRE(svcb->common.rdclass == dns_rdataclass_in);
+	REQUIRE(svcb->common.rdtype == dns_rdatatype_svcb);
+
+	generic_freestruct_in_svcb(CALL_FREESTRUCT);
 }
 
 static inline isc_result_t
-additionaldata_in_httpssvc(ARGS_ADDLDATA) {
+generic_additionaldata_in_svcb(ARGS_ADDLDATA) {
 	dns_name_t name;
 	dns_offsets_t offsets;
 	isc_region_t region;
-
-	REQUIRE(rdata->type == dns_rdatatype_httpssvc);
-	REQUIRE(rdata->rdclass == dns_rdataclass_in);
 
 	dns_name_init(&name, offsets);
 	dns_rdata_toregion(rdata, &region);
@@ -627,10 +681,18 @@ additionaldata_in_httpssvc(ARGS_ADDLDATA) {
 }
 
 static inline isc_result_t
-digest_in_httpssvc(ARGS_DIGEST) {
+additionaldata_in_svcb(ARGS_ADDLDATA) {
+	REQUIRE(rdata->type == dns_rdatatype_svcb);
+	REQUIRE(rdata->rdclass == dns_rdataclass_in);
+
+	return (generic_additionaldata_in_svcb(CALL_ADDLDATA));
+}
+
+static inline isc_result_t
+digest_in_svcb(ARGS_DIGEST) {
 	isc_region_t region1;
 
-	REQUIRE(rdata->type == dns_rdatatype_httpssvc);
+	REQUIRE(rdata->type == dns_rdatatype_svcb);
 	REQUIRE(rdata->rdclass == dns_rdataclass_in);
 
 	dns_rdata_toregion(rdata, &region1);
@@ -638,8 +700,8 @@ digest_in_httpssvc(ARGS_DIGEST) {
 }
 
 static inline bool
-checkowner_in_httpssvc(ARGS_CHECKOWNER) {
-	REQUIRE(type == dns_rdatatype_httpssvc);
+checkowner_in_svcb(ARGS_CHECKOWNER) {
+	REQUIRE(type == dns_rdatatype_svcb);
 	REQUIRE(rdclass == dns_rdataclass_in);
 
 	UNUSED(name);
@@ -651,15 +713,13 @@ checkowner_in_httpssvc(ARGS_CHECKOWNER) {
 }
 
 static inline bool
-checknames_in_httpssvc(ARGS_CHECKNAMES) {
+generic_checknames_in_svcb(ARGS_CHECKNAMES) {
 #if 0
 	isc_region_t region;
 	dns_name_t name;
 #endif
 
-	REQUIRE(rdata->type == dns_rdatatype_httpssvc);
-	REQUIRE(rdata->rdclass == dns_rdataclass_in);
-
+	UNUSED(rdata);
 	UNUSED(bad);
 	UNUSED(owner);
 
@@ -678,9 +738,17 @@ checknames_in_httpssvc(ARGS_CHECKNAMES) {
 	return (true);
 }
 
-static inline int
-casecompare_in_httpssvc(ARGS_COMPARE) {
-	return (compare_in_httpssvc(rdata1, rdata2));
+static inline bool
+checknames_in_svcb(ARGS_CHECKNAMES) {
+	REQUIRE(rdata->type == dns_rdatatype_svcb);
+	REQUIRE(rdata->rdclass == dns_rdataclass_in);
+
+	return (generic_checknames_in_svcb(CALL_CHECKNAMES));
 }
 
-#endif /* RDATA_IN_1_HTTPSSVC_65479_C */
+static inline int
+casecompare_in_svcb(ARGS_COMPARE) {
+	return (compare_in_svcb(rdata1, rdata2));
+}
+
+#endif /* RDATA_IN_1_SVCB_65481_C */

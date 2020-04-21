@@ -2296,7 +2296,7 @@ wks(void **state) {
 }
 
 static void
-httpssvc(void **state) {
+svcb_httpssvc(void **state) {
 	text_ok_t text_ok[] = {
 		/* unknown key invalid */
 		TEXT_INVALID("1 . unknown="),
@@ -2375,6 +2375,8 @@ httpssvc(void **state) {
 
 	UNUSED(state);
 
+	check_rdata(text_ok, wire_ok, NULL, false, dns_rdataclass_in,
+		    dns_rdatatype_svcb, sizeof(dns_rdata_in_svcb_t));
 	check_rdata(text_ok, wire_ok, NULL, false, dns_rdataclass_in,
 		    dns_rdatatype_httpssvc, sizeof(dns_rdata_in_httpssvc_t));
 }
@@ -2615,7 +2617,8 @@ main(int argc, char **argv) {
 		cmocka_unit_test_setup_teardown(edns_client_subnet, _setup,
 						_teardown),
 		cmocka_unit_test_setup_teardown(hip, _setup, _teardown),
-		cmocka_unit_test_setup_teardown(httpssvc, _setup, _teardown),
+		cmocka_unit_test_setup_teardown(svcb_httpssvc, _setup,
+						_teardown),
 		cmocka_unit_test_setup_teardown(isdn, _setup, _teardown),
 		cmocka_unit_test_setup_teardown(key, _setup, _teardown),
 		cmocka_unit_test_setup_teardown(nimloc, _setup, _teardown),
