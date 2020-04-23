@@ -9,9 +9,9 @@ LDADD +=			\
 	$(LIBISC_LIBS)		\
 	$(LIBIRS_LIBS)
 
-check_PROGRAMS = \
+noinst_PROGRAMS = \
 	resconf_test
 
-TESTS = $(check_PROGRAMS)
+TESTS = $(noinst_PROGRAMS)
 
 unit-local: check

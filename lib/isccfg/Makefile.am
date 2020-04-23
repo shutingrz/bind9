@@ -35,5 +35,5 @@ libisccfg_la_LDFLAGS =		\
 	$(libisccfg_VERSION_INFO)
 
 if HAVE_CMOCKA
-SUBDIRS = tests
+SUBDIRS = . tests
 endif

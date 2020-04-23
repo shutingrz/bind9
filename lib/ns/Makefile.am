@@ -55,5 +55,5 @@ libns_la_LDFLAGS =		\
 	$(libns_VERSION_INFO)
 
 if HAVE_CMOCKA
-SUBDIRS = tests
+SUBDIRS = . tests
 endif

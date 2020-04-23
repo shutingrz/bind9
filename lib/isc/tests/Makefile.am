@@ -11,7 +11,7 @@ LDADD +=			\
 noinst_LTLIBRARIES = libisctest.la
 libisctest_la_SOURCES = isctest.c isctest.h
 
-check_PROGRAMS =	\
+noinst_PROGRAMS =	\
 	aes_test	\
 	buffer_test	\
 	counter_test	\
@@ -42,7 +42,7 @@ check_PROGRAMS =	\
 	time_test	\
 	timer_test
 
-TESTS = $(check_PROGRAMS)
+TESTS = $(noinst_PROGRAMS)
 
 hmac_test_CPPFLAGS =	\
 	$(AM_CPPFLAGS)	\

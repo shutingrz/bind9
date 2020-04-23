@@ -245,5 +245,5 @@ libisc_la_LIBADD +=		\
 endif HAVE_LIBXML2
 
 if HAVE_CMOCKA
-SUBDIRS = tests
+SUBDIRS = . tests
 endif

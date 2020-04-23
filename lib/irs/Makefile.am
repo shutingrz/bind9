@@ -27,5 +27,5 @@ libirs_la_LDFLAGS =		\
 
 
 if HAVE_CMOCKA
-SUBDIRS = tests
+SUBDIRS = . tests
 endif

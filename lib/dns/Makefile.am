@@ -346,5 +346,5 @@ libdns_la_LIBADD += $(LMDB_LIBS)
 endif
 
 if HAVE_CMOCKA
-SUBDIRS = tests
+SUBDIRS = . tests
 endif

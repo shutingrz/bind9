@@ -12,17 +12,17 @@ LDADD +=			\
 	$(LIBDNS_LIBS)		\
 	$(LIBNS_LIBS)
 
-check_LTLIBRARIES = libnstest.la
+noinst_LTLIBRARIES = libnstest.la
 libnstest_la_SOURCES = nstest.c nstest.h
-check_PROGRAMS =		\
+noinst_PROGRAMS =		\
 	listenlist_test		\
 	plugin_test
 
-TESTS = $(check_PROGRAMS)
+TESTS = $(noinst_PROGRAMS)
 
 if HAVE_LD_WRAP
 
-check_PROGRAMS +=	\
+noinst_PROGRAMS +=	\
 	notify_test	\
 	query_test
 
