@@ -10687,9 +10687,7 @@ example.com                 CNAME   rpz-tcp-only.
 	    this value.  This differs from the behavior of
 	    <command>edns-udp-size</command> in <command>options</command>
 	    or <command>view</command> statements, where it specifies
-	    a maximum value. The <command>server</command> statement
-	    behavior may be brought into conformance with the
-	    <command>options/view</command> behavior in future releases.)
+	    a maximum value.)
 	  </para>
 
 	  <para>
