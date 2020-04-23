@@ -153,3 +153,5 @@ LOG_COMPILER = $(builddir)/system-test-driver.sh
 
 clean-local:
 	-rm -f get_base_port.state get_base_port.lock
+
+test-local: check
