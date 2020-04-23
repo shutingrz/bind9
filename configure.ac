@@ -1597,6 +1597,46 @@ AC_CONFIG_FILES([bin/tests/system/stop.sh],
 AC_CONFIG_FILES([bin/tests/system/system-test-driver.sh],
 		[chmod +x bin/tests/system/system-test-driver.sh])
 
+# Documentation
+
+#
+# Look for Docbook-XSL stylesheets.  Location probably varies by system.
+# If it's not explicitly specified, guess where it might be found, based on
+# where SGML stuff lives on some systems (FreeBSD is the only one we're sure
+# of at the moment).
+#
+AC_MSG_CHECKING(for Docbook-XSL path)
+AC_ARG_WITH(docbook-xsl,
+            AS_HELP_STRING([--with-docbook-xsl[=PATH]],
+                           [specify path for Docbook-XSL stylesheets]),
+   docbook_path="$withval", docbook_path="auto")
+case "$docbook_path" in
+auto)
+        AC_MSG_RESULT(auto)
+        docbook_xsl_trees="/usr/pkg/share/xsl/docbook /usr/local/share/xsl/docbook-ns /usr/local/share/xsl/docbook /usr/share/xsl/docbook /usr/share/sgml/docbook/xsl-stylesheets /opt/local/share/xsl/docbook-xsl /opt/local/share/xsl/docbook-xsl-nons /usr/share/xml/docbook/stylesheet/docbook-xsl"
+        ;;
+*)
+        docbook_xsl_trees="$withval"
+        AC_MSG_RESULT($docbook_xsl_trees)
+        ;;
+esac
+
+#
+# Look for stylesheets we need.
+#
+
+AX_PATH_FILE(XSLT_DOCBOOK_STYLE_HTML, html/docbook.xsl, $docbook_xsl_trees)
+AX_PATH_FILE(XSLT_DOCBOOK_STYLE_XHTML, xhtml/docbook.xsl, $docbook_xsl_trees)
+AX_PATH_FILE(XSLT_DOCBOOK_STYLE_MAN, manpages/docbook.xsl, $docbook_xsl_trees)
+AX_PATH_FILE(XSLT_DOCBOOK_CHUNK_HTML, html/chunk.xsl, $docbook_xsl_trees)
+AX_PATH_FILE(XSLT_DOCBOOK_CHUNK_XHTML, xhtml/chunk.xsl, $docbook_xsl_trees)
+AX_PATH_FILE(XSLT_DOCBOOK_CHUNKTOC_HTML, html/chunktoc.xsl, $docbook_xsl_trees)
+AX_PATH_FILE(XSLT_DOCBOOK_CHUNKTOC_XHTML, xhtml/chunktoc.xsl, $docbook_xsl_trees)
+AX_PATH_FILE(XSLT_DOCBOOK_MAKETOC_HTML, html/maketoc.xsl, $docbook_xsl_trees)
+AX_PATH_FILE(XSLT_DOCBOOK_MAKETOC_XHTML, xhtml/maketoc.xsl, $docbook_xsl_trees)
+
+AC_CONFIG_FILES([doc/xsl/isc-manpage.xsl])
+
 # Misc
 
 AC_CONFIG_FILES([util/check-make-install])

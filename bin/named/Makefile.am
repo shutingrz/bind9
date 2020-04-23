@@ -107,3 +107,6 @@ if HAVE_JSON_C
 named_LDADD +=					\
 	$(JSON_C_LIBS)
 endif HAVE_JSON_C
+
+man8_MANS = named.8 lwresd.8
+man5_MANS = named.conf.5

@@ -77,3 +77,32 @@ LIBLTDL_CFLAGS = \
 
 LIBLTDL_LIBS = \
 	$(top_builddir)/libltdl/libltdlc.la
+
+SUFFIXES: .docbook .html .1 .2 .3 .4 .5 .6 .7 .8
+
+.docbook.html:
+	${XSLTPROC} -o $@ ${top_srcdir}/doc/xsl/isc-docbook-html.xsl $<
+
+.docbook.1:
+	${XSLTPROC} -o $@ ${top_srcdir}/doc/xsl/isc-manpage.xsl $<
+
+.docbook.2:
+	${XSLTPROC} -o $@ ${top_srcdir}/doc/xsl/isc-manpage.xsl $<
+
+.docbook.3:
+	${XSLTPROC} -o $@ ${top_srcdir}/doc/xsl/isc-manpage.xsl $<
+
+.docbook.4:
+	${XSLTPROC} -o $@ ${top_srcdir}/doc/xsl/isc-manpage.xsl $<
+
+.docbook.5:
+	${XSLTPROC} -o $@ ${top_srcdir}/doc/xsl/isc-manpage.xsl $<
+
+.docbook.6:
+	${XSLTPROC} -o $@ ${top_srcdir}/doc/xsl/isc-manpage.xsl $<
+
+.docbook.7:
+	${XSLTPROC} -o $@ ${top_srcdir}/doc/xsl/isc-manpage.xsl $<
+
+.docbook.8:
+	${XSLTPROC} -o $@ ${top_srcdir}/doc/xsl/isc-manpage.xsl $<
