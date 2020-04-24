@@ -804,6 +804,8 @@ gcc:tumbleweed:amd64:
   <<: *build_job
 
 system:gcc:tumbleweed:amd64:
+  variables:
+    XFAIL_TESTS: tsiggss nsupdate
   <<: *tumbleweed_latest_amd64_image
   <<: *system_test_job
   needs:
