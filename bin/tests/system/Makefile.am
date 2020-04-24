@@ -144,8 +144,8 @@ endif HAVE_PYMOD_DNS
 endif HAVE_PYTHON
 
 else !HAVE_PERL
-check:
-	echo Perl is not available, no tests were ran
+check-local:
+	echo Perl is not available, no tests were run
 	exit 1
 endif !HAVE_PERL
 
