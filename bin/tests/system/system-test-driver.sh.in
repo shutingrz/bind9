@@ -65,6 +65,11 @@ fi
 
 echo "Running $TEST_PROGRAM"
 
-"${builddir}/run.sh" -p "$("${srcdir}/get_base_port.sh")" "$@" "$TEST_PROGRAM"
+if [ -n "$V" ]; then
+    "${builddir}/run.sh" -p "$("${srcdir}/get_base_port.sh")" "$@" "$TEST_PROGRAM" | tee /dev/fd/3
+else
+    "${builddir}/run.sh" -p "$("${srcdir}/get_base_port.sh")" "$@" "$TEST_PROGRAM"
+fi
+
 
 exit $?

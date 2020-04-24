@@ -150,6 +150,7 @@ check-local:
 endif !HAVE_PERL
 
 LOG_COMPILER = $(builddir)/system-test-driver.sh
+AM_TESTS_FD_REDIRECT = 3>&1
 
 clean-local:
 	-rm -f get_base_port.state get_base_port.lock
