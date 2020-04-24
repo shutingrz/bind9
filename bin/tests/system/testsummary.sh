@@ -11,14 +11,16 @@
 
 # Creates the system tests output file from the various test output files.  It
 # then searches that file and prints the number of tests passed, failed, not
-# run.  It also checks whether the IP addresses 10.53.0.[1-8] were set up and,
-# if not, prints a warning.
+# run.
 #
 # Usage:
-#    testsummary.sh [-n]
+#    testsummary.sh [-ns] [testnames]
 #
 # -n	Do NOT delete the individual test output files after concatenating
 #	them into systests.output.
+# -s    Skip printing the counts of failed, passed, and skipped tests.
+#       (This information is unnecessary when called from the automake
+#       makefile, because it generates its own summary including counts.)
 #
 # Status return:
 # 0 - no tests failed
@@ -28,16 +30,23 @@ SYSTEMTESTTOP=.
 . $SYSTEMTESTTOP/conf.sh
 
 keepfile=0
+skip=0
 
-while getopts "n" flag; do
+while getopts "ns" flag; do
     case $flag in
 	n) keepfile=1 ;;
+        s) skip=1 ;;
     esac
+    shift
 done
 
-for file in $(ls *.log 2> /dev/null); do
-    [ ! -d $(basename -s .log $file) ] && continue
-    files="$files $file"
+# if test names weren't passed in via the command line, use the
+# value TESTS, which is set in the makefile.
+[ "$#" -eq 0 ] && set -- $TESTS
+
+for file; do
+    [ -f ${file}.log ] || { echo_i "MISSING:$f"; continue; }
+    files="$files ${file}.log"
     found=yes
 done
 
@@ -52,8 +61,10 @@ else
 fi
 
 status=0
-echoinfo "I:System test result summary:"
-echoinfo "`grep 'R:[a-z0-9_-][a-z0-9_-]*:[A-Z][A-Z]*' systests.output | cut -d':' -f3 | sort | uniq -c | sed -e 's/^/I:/'`"
+if [ "$skip" -eq 0 ]; then
+    echoinfo "I:System test result summary:"
+    echoinfo "`grep 'R:[a-z0-9_-][a-z0-9_-]*:[A-Z][A-Z]*' systests.output | cut -d':' -f3 | sort | uniq -c | sed -e 's/^/I:/'`"
+fi
 
 FAILED_TESTS=`grep 'R:[a-z0-9_-][a-z0-9_-]*:FAIL' systests.output | cut -d':' -f2 | sort | sed -e 's/^/I:      /'`
 if [ -n "${FAILED_TESTS}" ]; then
@@ -80,11 +91,12 @@ if [ -n "${TSAN_REPORT_TESTS}" ]; then
 	echoinfo "${TSAN_REPORT_TESTS}"
 fi
 
-RESULTS_FOUND=`grep -c 'R:[a-z0-9_-][a-z0-9_-]*:[A-Z][A-Z]*' systests.output`
-TESTS_RUN=`echo "${SUBDIRS}" | wc -w`
-if [ "${RESULTS_FOUND}" -ne "${TESTS_RUN}" ]; then
-	echofail "I:Found ${RESULTS_FOUND} test results out of ${TESTS_RUN} tests"
-	status=1
+if [ "$#" -ne 0 ]; then
+    RESULTS=`grep -c 'R:[a-z0-9_-][a-z0-9_-]*:[A-Z][A-Z]*' systests.output`
+    if [ "${RESULTS}" -ne "$#" ]; then
+        echofail "I:Found ${RESULTS} results out of $# tests"
+        status=1
+    fi
 fi
 
 exit $status

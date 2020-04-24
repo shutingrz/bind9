@@ -155,3 +155,8 @@ clean-local:
 	-rm -f get_base_port.state get_base_port.lock
 
 test-local: check
+
+check:
+	@sh testsummary.sh -s
+
+.IGNORE: check-TESTS
