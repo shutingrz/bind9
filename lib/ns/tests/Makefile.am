@@ -14,15 +14,15 @@ LDADD +=			\
 
 noinst_LTLIBRARIES = libnstest.la
 libnstest_la_SOURCES = nstest.c nstest.h
-noinst_PROGRAMS =		\
+check_PROGRAMS =		\
 	listenlist_test		\
 	plugin_test
 
-TESTS = $(noinst_PROGRAMS)
+TESTS = $(check_PROGRAMS)
 
 if HAVE_LD_WRAP
 
-noinst_PROGRAMS +=	\
+check_PROGRAMS +=	\
 	notify_test	\
 	query_test
 
@@ -43,5 +43,9 @@ query_test_LDFLAGS =			\
 	-Wl,--wrap=isc_nmhandle_unref
 
 endif
+
+if TESTBUILD
+noinst_PROGRAMS=$(check_PROGRAMS)
+endif TESTBUILD
 
 unit-local: check

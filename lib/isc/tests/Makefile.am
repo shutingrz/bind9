@@ -11,7 +11,7 @@ LDADD +=			\
 noinst_LTLIBRARIES = libisctest.la
 libisctest_la_SOURCES = isctest.c isctest.h
 
-noinst_PROGRAMS =	\
+check_PROGRAMS =	\
 	aes_test	\
 	buffer_test	\
 	counter_test	\
@@ -42,7 +42,7 @@ noinst_PROGRAMS =	\
 	time_test	\
 	timer_test
 
-TESTS = $(noinst_PROGRAMS)
+TESTS = $(check_PROGRAMS)
 
 hmac_test_CPPFLAGS =	\
 	$(AM_CPPFLAGS)	\
@@ -63,5 +63,9 @@ md_test_LDADD =		\
 random_test_LDADD =	\
 	$(LDADD)	\
 	-lm
+
+if TESTBUILD
+noinst_PROGRAMS=$(check_PROGRAMS)
+endif TESTBUILD
 
 unit-local: check

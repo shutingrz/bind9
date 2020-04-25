@@ -152,6 +152,15 @@ AC_ARG_ENABLE([warn_error],
 AS_IF([test "$enable_warn_error" = "yes"],
       [STD_CFLAGS="$STD_CFLAGS -Werror"])
 
+#
+# Build all tests?
+#
+AC_ARG_ENABLE([testbuild],
+	      [AS_HELP_STRING([--enable-testbuild],
+			      [build all tests when building (default=no)])],
+	      [], [enable_testbuild=no])
+AM_CONDITIONAL([TESTBUILD], [test "$enable_testbuild" != "no"])
+
 AC_ARG_ENABLE([developer],
 	      [AS_HELP_STRING([--enable-developer],
 			      [enable developer build settings])])
@@ -164,6 +173,7 @@ AS_IF([test "$enable_developer" = "yes"],
        test "${with_dlz_filesystem+set}" = set || with_dlz_filesystem=yes
        test "${with_zlib+set}" = set || with_zlib=yes
        test "${enable_warn_error+set}" = set || enable_warn_error=yes
+       test "${enable_testbuild+set}" = set || enable_testbuild=yes
        ])
 
 AC_SUBST([STD_CFLAGS])

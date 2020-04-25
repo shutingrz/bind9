@@ -16,7 +16,7 @@ LDADD +=			\
 noinst_LTLIBRARIES = libdnstest.la
 libdnstest_la_SOURCES = dnstest.c dnstest.h
 
-noinst_PROGRAMS =		\
+check_PROGRAMS =		\
 	acl_test		\
 	db_test			\
 	dbdiff_test		\
@@ -46,11 +46,11 @@ noinst_PROGRAMS =		\
 	zonemgr_test		\
 	zt_test
 
-TESTS = $(noinst_PROGRAMS)
+TESTS = $(check_PROGRAMS)
 
 if HAVE_PERL
 
-noinst_PROGRAMS +=		\
+check_PROGRAMS +=		\
 	master_test
 
 EXTRA_master_test_DEPENDENCIES = testdata/master/master12.data testdata/master/master13.data testdata/master/master14.data
@@ -71,7 +71,7 @@ testdata/master/master14.data: testdata/master/master14.data.in
 endif
 
 if HAVE_GEOIP2
-noinst_PROGRAMS +=		\
+check_PROGRAMS +=		\
 	geoip_test
 
 geoip_test_CPPFLAGS =		\
@@ -84,7 +84,7 @@ geoip_test_LDADD =		\
 endif
 
 if HAVE_DNSTAP
-noinst_PROGRAMS +=		\
+check_PROGRAMS +=		\
 	dnstap_test
 
 dnstap_test_CPPFLAGS =		\
@@ -106,5 +106,9 @@ dst_test_CPPFLAGS =		\
 rsa_test_CPPFLAGS =		\
 	$(AM_CPPFLAGS)		\
 	$(OPENSSL_CFLAGS)
+
+if TESTBUILD
+noinst_PROGRAMS=$(check_PROGRAMS)
+endif TESTBUILD
 
 unit-local: check

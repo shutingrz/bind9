@@ -10,7 +10,7 @@ LDADD =				\
 
 if HAVE_PERL
 
-noinst_PROGRAMS =		\
+check_PROGRAMS =		\
 	feature-test		\
 	makejournal		\
 	pipelined/pipequeries	\
@@ -18,6 +18,10 @@ noinst_PROGRAMS =		\
 	rpz/dnsrps		\
 	tkey/keycreate		\
 	tkey/keydelete
+
+if TESTBUILD
+noinst_PROGRAMS=$(check_PROGRAMS)
+endif TESTBUILD
 
 feature_test_CPPFLAGS =		\
 	$(AM_CPPFLAGS)		\

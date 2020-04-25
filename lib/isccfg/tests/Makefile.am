@@ -11,9 +11,13 @@ LDADD +=			\
 	$(LIBDNS_LIBS)		\
 	$(LIBISCCFG_LIBS)
 
-noinst_PROGRAMS = \
+check_PROGRAMS = \
 	parser_test
 
-TESTS = $(noinst_PROGRAMS)
+TESTS = $(check_PROGRAMS)
+
+if TESTBUILD
+noinst_PROGRAMS=$(check_PROGRAMS)
+endif TESTBUILD
 
 unit-local: check
