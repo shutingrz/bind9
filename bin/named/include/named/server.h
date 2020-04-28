@@ -17,6 +17,7 @@
 #include <inttypes.h>
 #include <stdbool.h>
 
+#include <isc/atomic.h>
 #include <isc/log.h>
 #include <isc/magic.h>
 #include <isc/quota.h>
@@ -109,7 +110,8 @@ struct named_server {
 
 	dns_dtenv_t *dtenv; /*%< Dnstap environment */
 
-	char *lockfile;
+	atomic_bool shuttingdown;
+	char *	    lockfile;
 };
 
 #define NAMED_SERVER_MAGIC    ISC_MAGIC('S', 'V', 'E', 'R')

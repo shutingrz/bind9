@@ -233,6 +233,13 @@ shutdown_listener(controllistener_t *listener) {
 
 static bool
 address_ok(isc_sockaddr_t *sockaddr, dns_acl_t *acl) {
+	/* This check may avoid using possible NULL
+	 * named_g_server->interfacemgr pointer below, if named
+	 * is being shutdown. */
+	if (atomic_load(&named_g_server->shuttingdown)) {
+		return (false);
+	}
+
 	dns_aclenv_t *env =
 		ns_interfacemgr_getaclenv(named_g_server->interfacemgr);
 	isc_netaddr_t netaddr;

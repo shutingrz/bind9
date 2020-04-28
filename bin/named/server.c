@@ -9743,6 +9743,8 @@ shutdown_server(isc_task_t *task, isc_event_t *event) {
 	UNUSED(task);
 	INSIST(task == server->task);
 
+	atomic_store(&server->shuttingdown, true);
+
 	/*
 	 * We need to shutdown the interface before going
 	 * exclusive (which would pause the netmgr).
@@ -9881,6 +9883,7 @@ named_server_create(isc_mem_t *mctx, named_server_t **serverp) {
 		fatal(server, "allocating server object", ISC_R_NOMEMORY);
 	}
 
+	atomic_init(&server->shuttingdown, false);
 	server->mctx = mctx;
 	server->task = NULL;
 	server->zonemgr = NULL;
