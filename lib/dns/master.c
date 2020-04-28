@@ -1902,6 +1902,31 @@ load_text(dns_loadctx_t *lctx) {
 			}
 		}
 
+		if (dns_rdatatype_atparent(type) &&
+		    (lctx->options & DNS_MASTER_ZONE) != 0 &&
+		    (lctx->options & DNS_MASTER_SLAVE) == 0 &&
+		    dns_name_equal(ictx->current, lctx->top))
+		{
+			char namebuf[DNS_NAME_FORMATSIZE];
+			char typebuf[DNS_RDATATYPE_FORMATSIZE];
+
+			dns_name_format(ictx->current, namebuf,
+					sizeof(namebuf));
+			dns_rdatatype_format(type, typebuf, sizeof(typebuf));
+			(*callbacks->error)(
+				callbacks,
+				"%s:%lu: %s record at top of zone (%s)", source,
+				line, typebuf, namebuf);
+			result = DNS_R_ATZONETOP;
+			if (MANYERRS(lctx, result)) {
+				SETRESULT(lctx, result);
+				target = target_ft;
+				continue;
+			} else {
+				goto insist_and_cleanup;
+			}
+		}
+
 		if (type == dns_rdatatype_rrsig || type == dns_rdatatype_sig) {
 			covers = dns_rdata_covers(&rdata[rdcount]);
 		} else {
