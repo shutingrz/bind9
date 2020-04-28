@@ -58,9 +58,15 @@ New Features
 -  ``dig`` and other tools can now print the Extended DNS Error (EDE)
    option when it appears in a request or response. [GL #1834]
 
+
 -  Per-type record count limits can now be specified in ``update-policy``
    statements, to limit the number of records of a particular type
    that can be added to a domain name via dynamic update. [GL #1657]
+
+-  ``named`` and ``named-checkzone`` now reject master zones that
+   have a DS RRset at the zone apex.  Attempts to add DS records
+   at the zone apex via UPDATE will be logged but otherwise ignored.
+   DS records belong in the parent zone, not at the zone apex.
 
 Feature Changes
 ~~~~~~~~~~~~~~~
