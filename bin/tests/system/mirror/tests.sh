@@ -84,6 +84,19 @@ if [ $ret != 0 ]; then echo_i "failed"; fi
 status=`expr $status + $ret`
 
 n=`expr $n + 1`
+echo_i "checking that IXFR is disabled in mirror zones unless explicitly enabled ($n)"
+ret=0
+nextpartreset ns3/named.run
+# this should be logged in because request-ixfr was not specified in the zone
+nextpartpeek ns3/named.run | grep "disabling request-ixfr for mirror zone 'verify-csk'" > /dev/null || ret=1
+# should be missing in named.run because request-ixfr was explicitly set
+nextpartpeek ns3/named.run | grep "disabling request-ixfr for mirror zone 'verify-ixfr'" > /dev/null && ret=1
+nextpartpeek ns3/named.run | grep "disabling request-ixfr for mirror zone 'verify-axfr'" > /dev/null && ret=1
+if [ $ret != 0 ]; then echo_i "failed"; fi
+status=`expr $status + $ret`
+n=`expr $n + 1`
+
+n=`expr $n + 1`
 echo_i "checking that a mirror zone signed using an untrusted key is rejected ($n)"
 ret=0
 nextpartreset ns3/named.run
@@ -108,7 +121,6 @@ nextpartpeek ns3/named.run | grep "verify-csk.*mirror zone is now in use" > /dev
 if [ $ret != 0 ]; then echo_i "failed"; fi
 status=`expr $status + $ret`
 
-n=`expr $n + 1`
 echo_i "checking that an AXFR of an incorrectly signed mirror zone is rejected ($n)"
 ret=0
 nextpartreset ns3/named.run

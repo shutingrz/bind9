@@ -1409,7 +1409,31 @@ named_zone_configure(const cfg_obj_t *config, const cfg_obj_t *vconfig,
 		obj = NULL;
 		result = named_config_get(maps, "request-ixfr", &obj);
 		INSIST(result == ISC_R_SUCCESS);
-		dns_zone_setrequestixfr(zone, cfg_obj_asboolean(obj));
+		if (ztype == dns_zone_mirror && cfg_obj_asboolean(obj)) {
+			const cfg_obj_t *obj2 = NULL;
+			bool ixfr = false;
+
+			/*
+			 * For mirror zones, the default is no; we only
+			 * use IXFR if explicitly set in the zone
+			 * statement.
+			 */
+			result = cfg_map_get(zoptions, "request-ixfr", &obj2);
+			if (result == ISC_R_SUCCESS) {
+				ixfr = cfg_obj_asboolean(obj2);
+			}
+			dns_zone_setrequestixfr(zone, ixfr);
+			if (!ixfr) {
+				cfg_obj_log(zconfig, named_g_lctx,
+					    ISC_LOG_DEBUG(5),
+					    "disabling request-ixfr for "
+					    "mirror zone '%s', "
+					    "overriding global default",
+					    zname);
+			}
+		} else {
+			dns_zone_setrequestixfr(zone, cfg_obj_asboolean(obj));
+		}
 
 		checknames(ztype, maps, &obj);
 		INSIST(obj != NULL);

@@ -1,3 +1,7 @@
+5395.	[bug]		When transferring mirror zones, use AXFR unless
+			specifically configured to request IXFR at the zone
+			level. [GL #1803]
+
 5394.	[cleanup]	Don't change effective uid/gid in named_os_openfile()
 			if named is already running under specified uid/gid.
 			[GL #1042] [GL #1090]

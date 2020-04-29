@@ -59,6 +59,17 @@
           BIND 9 rwlock implementation. [GL #1753]
         </para>
       </listitem>
+      <listitem>
+	<para>
+	  When transferring zones of type <command>mirror</command>, use AXFR
+	  unless specifically configured to request IXFR at the zone level.
+	  This avoids an inefficiency: IXFRs sometimes consist of more than
+	  one transaction, and the entire zone is revalidated after each
+	  transaction. Mirror zones are usually only used for the root
+	  zone, which is infrequently updated and not very large, so
+	  AXFR by default makes sense. [GL #1803]
+        </para>
+      </listitem>
     </itemizedlist>
   </section>
 

@@ -1492,11 +1492,14 @@ controls {
       </para>
 
       <para>
-	When acting as a secondary server, <acronym>BIND</acronym> 9 will
-	attempt to use IXFR unless
-	it is explicitly disabled. For more information about disabling
-	IXFR, see the description of the <command>request-ixfr</command> clause
-	of the <command>server</command> statement.
+	Generally when acting as a secondary server, <acronym>BIND</acronym> 9
+	will attempt to use IXFR except when it is explicitly disabled, or
+	when transferring in zones of type <command>mirror</command>.
+	Mirror zones do not use IXFR unless explicitly enabled at the
+	<command>zone</command> level.  For more
+	information about disabling IXFR, see the description of the
+	<command>request-ixfr</command> clause of the
+	<command>server</command> statement.
       </para>
 
       <para>
@@ -10628,11 +10631,10 @@ example.com                 CNAME   rpz-tcp-only.
 	  </para>
 
 	  <para>
-	    The <command>request-ixfr</command> clause determines
-	    whether
-	    the local server, acting as a slave, will request incremental zone
-	    transfers from the given remote server, a master. If not set, the
-	    value of the <command>request-ixfr</command> option in
+	    The <command>request-ixfr</command> clause determines whether
+	    the local server, acting as a secondary, will request incremental
+	    zone transfers from the given remote primary server. If not set,
+	    the value of the <command>request-ixfr</command> option in
 	    the view or global options block is used as a default. It may
 	    also be set in the zone block and, if set there, it will
 	    override the global or view setting for that zone.
@@ -11785,8 +11787,13 @@ view "external" {
 			in answers.  Validation is applied to the entire
 			zone during the zone transfer process, and again
 			when the zone file is loaded from disk when
-			<command>named</command> is restarted.  If
-		        validation of a new version of a mirror zone
+			<command>named</command> is restarted.  Because
+			incremental transfers sometimes involve multiple
+			updates, and the zone is revalidated for each
+			update, IXFR is disabled by default for mirror zones.
+		      </para>
+		      <para>
+			If validation of a new version of a mirror zone
 		        fails, a retransfer is scheduled and the most
 		        recent correctly validated version of that zone
 			is used until it either expires or a newer version

@@ -54,6 +54,7 @@ zone "verify-axfr" {
 	type mirror;
 	masters { 10.53.0.2; };
 	file "verify-axfr.db.mirror";
+	request-ixfr no;
 };
 
 zone "verify-csk" {
@@ -67,6 +68,7 @@ zone "verify-ixfr" {
 	masters { 10.53.0.2; };
 	file "verify-ixfr.db.mirror";
 	masterfile-format text;
+	request-ixfr yes;
 };
 
 zone "verify-load" {
