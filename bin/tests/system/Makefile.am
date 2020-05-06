@@ -1,5 +1,7 @@
 include $(top_srcdir)/Makefile.top
 
+EXTRA_DIST = .
+
 SUBDIRS = dyndb/driver dlzexternal/driver
 
 AM_CPPFLAGS +=			\

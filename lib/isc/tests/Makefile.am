@@ -9,7 +9,10 @@ LDADD +=			\
 	$(LIBISC_LIBS)
 
 check_LTLIBRARIES = libisctest.la
-libisctest_la_SOURCES = isctest.c isctest.h
+libisctest_la_SOURCES = 	\
+	../unix/socket_p.h	\
+	isctest.c		\
+	isctest.h
 
 check_PROGRAMS =	\
 	aes_test	\
@@ -65,3 +68,5 @@ random_test_LDADD =	\
 	-lm
 
 unit-local: check
+
+EXTRA_DIST = testdata
