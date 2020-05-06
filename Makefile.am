@@ -11,3 +11,10 @@ bind.keys.h: bind.keys Makefile
 dist_sysconf_DATA = bind.keys
 
 .PHONY: doc
+
+EXTRA_DIST = 			\
+	util/bindkeys.pl	\
+	contrib			\
+	OPTIONS.md		\
+	PLATFORMS.md		\
+	README.md

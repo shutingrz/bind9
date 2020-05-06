@@ -108,3 +108,5 @@ rsa_test_CPPFLAGS =		\
 	$(OPENSSL_CFLAGS)
 
 unit-local: check
+
+EXTRA_DIST = testdata testkeys

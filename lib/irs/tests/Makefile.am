@@ -15,3 +15,5 @@ check_PROGRAMS = \
 TESTS = $(check_PROGRAMS)
 
 unit-local: check
+
+EXTRA_DIST = testdata
