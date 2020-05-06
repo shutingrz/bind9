@@ -2968,6 +2968,14 @@ update_action(isc_task_t *task, isc_event_t *event) {
 				soa_serial_changed = true;
 			}
 
+			if (rdata.type == dns_rdatatype_ds &&
+			    dns_name_equal(name, zonename)) {
+				update_log(client, zone, LOGLEVEL_PROTOCOL,
+					   "attempt to add a DS record at "
+					   "zone apex ignored");
+				continue;
+			}
+
 			if (rdata.type == privatetype) {
 				update_log(client, zone, LOGLEVEL_PROTOCOL,
 					   "attempt to add a private type "
