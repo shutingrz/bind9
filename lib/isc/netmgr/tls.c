@@ -96,6 +96,7 @@ tls_do_bio(isc_nmsocket_t *sock, int rv) {
 		isc_nm_pauseread(sock->outer);
 		pending = BIO_pending(sock->tls.app_bio);
 		if (pending > 0) {
+			int s;
 			char *p = malloc(pending);
 			rv = BIO_read(sock->tls.app_bio, p, pending);
 			s = isc_nm_send(sock->outer->tcphandle,
