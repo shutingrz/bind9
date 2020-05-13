@@ -79,12 +79,16 @@ tls_do_bio(isc_nmsocket_t *sock, int rv) {
 	int pending = BIO_pending(sock->tls.app_bio);
 	if (pending > 0) {
 		char *p = malloc(pending);
+		int s;
 		rv = BIO_read(sock->tls.app_bio, p, pending);
-		rv = isc_nm_send(sock->outer->tcphandle,
-				 &(isc_region_t){ (unsigned char *)p, rv },
-				 tls_senddone, sock);
-		return;
+		s = isc_nm_send(sock->outer->tcphandle,
+				&(isc_region_t){ (unsigned char *)p, rv },
+				tls_senddone, sock);
+		if (s != rv) {
+			goto error;
+		}
 	}
+
 	int err = SSL_get_error(sock->tls.ssl, rv);
 	if (err == 0) {
 		return;
@@ -94,20 +98,25 @@ tls_do_bio(isc_nmsocket_t *sock, int rv) {
 		if (pending > 0) {
 			char *p = malloc(pending);
 			rv = BIO_read(sock->tls.app_bio, p, pending);
-			rv = isc_nm_send(
-				sock->outer->tcphandle,
-				&(isc_region_t){ (unsigned char *)p, rv },
-				tls_senddone, sock);
+			s = isc_nm_send(sock->outer->tcphandle,
+					&(isc_region_t){ (unsigned char *)p, rv },
+					tls_senddone, sock);
+			if (s != rv) {
+				goto error;
+			}
 		}
 	} else if (err == SSL_ERROR_WANT_READ) {
 		isc_nm_resumeread(sock->outer);
 	} else {
-		/* XXXWPK TODO log it ! */
-		if (sock->rcb.recv != NULL) {
-			sock->rcb.recv(sock->tcphandle, NULL, sock->rcbarg);
-		} else {
-			tls_close_direct(sock);
-		}
+		goto error;
+	}
+	return;
+error:
+	/* XXXWPK TODO log it ! */
+	if (sock->rcb.recv != NULL) {
+		sock->rcb.recv(sock->tcphandle, NULL, sock->rcbarg);
+	} else {
+		tls_close_direct(sock);
 	}
 }
 /*
