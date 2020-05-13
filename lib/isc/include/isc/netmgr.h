@@ -15,6 +15,8 @@
 #include <isc/result.h>
 #include <isc/types.h>
 
+#include <openssl/ssl.h>
+
 typedef enum {
 	NMEV_READ,
 	NMEV_WRITE,
@@ -332,6 +334,11 @@ isc_nm_tcp_gettimeouts(isc_nm_t *mgr, uint32_t *initial, uint32_t *idle,
  * Requires:
  * \li	'mgr' is a valid netmgr.
  */
+
+isc_result_t
+isc_nm_listentls(isc_nm_t *mgr, isc_nmiface_t *iface, isc_nm_cb_t accept_cb,
+		 void *accept_cbarg, size_t extrahandlesize, int backlog,
+		 isc_quota_t *quota, SSL_CTX *sslctx, isc_nmsocket_t **sockp);
 
 void
 isc_nm_maxudp(isc_nm_t *mgr, uint32_t maxudp);
