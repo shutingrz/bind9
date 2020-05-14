@@ -564,25 +564,25 @@ Its argument is a syslog facility as described in the ``syslog`` man
 page. Known facilities are ``kern``, ``user``, ``mail``, ``daemon``,
 ``auth``, ``syslog``, ``lpr``, ``news``, ``uucp``, ``cron``,
 ``authpriv``, ``ftp``, ``local0``, ``local1``, ``local2``, ``local3``,
-``local4``, ``local5``, ``local6`` and ``local7``, however not all
-facilities are supported on all operating systems. How ``syslog`` will
-handle messages sent to this facility is described in the
-``syslog.conf`` man page. If you have a system which uses a very old
-version of ``syslog`` that only uses two arguments to the ``openlog()``
-function, then this clause is silently ignored.
+``local4``, ``local5``, ``local6``, and ``local7``; however, not all
+facilities are supported on all operating systems. How ``syslog`` 
+handles messages sent to this facility is described in the
+``syslog.conf`` man page. On a system which uses a very old
+version of ``syslog``, that only uses two arguments to the ``openlog()``
+function, this clause is silently ignored.
 
 On Windows machines syslog messages are directed to the EventViewer.
 
 The ``severity`` clause works like ``syslog``'s "priorities", except
-that they can also be used if you are writing straight to a file rather
+that they can also be used when writing straight to a file rather
 than using ``syslog``. Messages which are not at least of the severity
 level given will not be selected for the channel; messages of higher
 severity levels will be accepted.
 
-If you are using ``syslog``, then the ``syslog.conf`` priorities will
+When using ``syslog``, the ``syslog.conf`` priorities
 also determine what eventually passes through. For example, defining a
-channel facility and severity as ``daemon`` and ``debug`` but only
-logging ``daemon.warning`` via ``syslog.conf`` will cause messages of
+channel facility and severity as ``daemon`` and ``debug``, but only
+logging ``daemon.warning`` via ``syslog.conf``, causes messages of
 severity ``info`` and ``notice`` to be dropped. If the situation were
 reversed, with ``named`` writing messages of only ``warning`` or higher,
 then ``syslogd`` would print all messages it received from the channel.
@@ -594,11 +594,11 @@ configuration.
 
 The server can supply extensive debugging information when it is in
 debugging mode. If the server's global debug level is greater than zero,
-then debugging mode will be active. The global debug level is set either
+debugging mode is active. The global debug level is set either
 by starting the ``named`` server with the ``-d`` flag followed by a
 positive integer, or by running ``rndc trace``. The global debug level
 can be set to zero, and debugging mode turned off, by running ``rndc
-notrace``. All debugging messages in the server have a debug level, and
+notrace``. All debugging messages in the server have a debug level;
 higher debug levels give more detailed output. Channels that specify a
 specific debug severity, for example:
 
@@ -609,18 +609,18 @@ specific debug severity, for example:
        severity debug 3;
    };
 
-will get debugging output of level 3 or less any time the server is in
+get debugging output of level 3 or less any time the server is in
 debugging mode, regardless of the global debugging level. Channels with
 ``dynamic`` severity use the server's global debug level to determine
 what messages to print.
 
 ``print-time`` can be set to ``yes``, ``no``, or a time format
-specifier, which may be one of ``local``, ``iso8601`` or
-``iso8601-utc``. If set to ``no``, then the date and time will not be
+specifier, which may be one of ``local``, ``iso8601``, or
+``iso8601-utc``. If set to ``no``, the date and time will not be
 logged. If set to ``yes`` or ``local``, the date and time are logged in
-a human readable format, using the local time zone. If set to
+a human-readable format, using the local time zone. If set to
 ``iso8601`` the local time is logged in ISO8601 format. If set to
-``iso8601-utc``, then the date and time are logged in ISO8601 format,
+``iso8601-utc``, the date and time are logged in ISO8601 format,
 with time zone set to UTC. The default is ``no``.
 
 ``print-time`` may be specified for a ``syslog`` channel, but it is
@@ -628,18 +628,18 @@ usually pointless since ``syslog`` also logs the date and time.
 
 If ``print-category`` is requested, then the category of the message
 will be logged as well. Finally, if ``print-severity`` is on, then the
-severity level of the message will be logged. The ``print-`` options may
-be used in any combination, and will always be printed in the following
+severity level of the message is logged. The ``print-`` options may
+be used in any combination, and are always printed in the following
 order: time, category, severity. Here is an example where all three
 ``print-`` options are on:
 
 ``28-Feb-2000 15:05:32.863 general: notice: running``
 
-If ``buffered`` has been turned on the output to files will not be
+If ``buffered`` has been turned on, the output to files will not be
 flushed after each log entry. By default all log messages are flushed.
 
 There are four predefined channels that are used for ``named``'s default
-logging as follows. If ``named`` is started with the ``-L`` then a fifth
+logging, as follows. If ``named`` is started with ``-L`` then a fifth
 channel ``default_logfile`` is added. How they are used is described in
 :ref:`the_category_phrase`.
 
@@ -689,39 +689,39 @@ writes to a file called ``named.run`` in the server's working directory.
 For security reasons, when the ``-u`` command line option is used, the
 ``named.run`` file is created only after ``named`` has changed to the
 new UID, and any debug output generated while ``named`` is starting up
-and still running as root is discarded. If you need to capture this
-output, you must run the server with the ``-L`` option to specify a
-default logfile, or the ``-g`` option to log to standard error which you
-can redirect to a file.
+and still running as root is discarded. To capture this
+output, run the server with the ``-L`` option to specify a
+default logfile, or the ``-g`` option to log to standard error which can
+be redirected to a file.
 
-Once a channel is defined, it cannot be redefined. Thus you cannot alter
-the built-in channels directly, but you can modify the default logging
-by pointing categories at channels you have defined.
+Once a channel is defined, it cannot be redefined. The
+built-in channels cannot be altered directly, but the default logging
+can be modified by pointing categories at defined channels.
 
 .. _the_category_phrase:
 
 The ``category`` Phrase
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-There are many categories, so you can send the logs you want to see
-wherever you want, without seeing logs you don't want. If you don't
-specify a list of channels for a category, then log messages in that
-category will be sent to the ``default`` category instead. If you don't
-specify a default category, the following "default default" is used:
+There are many categories, so desired logs can be sent anywhere
+while unwanted logs are ignored. If
+a list of channels is not specified for a category, log messages in that
+category will be sent to the ``default`` category instead. If no
+default category is specified, the following "default default" is used:
 
 ::
 
    category default { default_syslog; default_debug; };
 
-If you start ``named`` with the ``-L`` option then the default category
+If ``named`` is started with the ``-L`` option then the default category
 is:
 
 ::
 
    category default { default_logfile; default_debug; };
 
-As an example, let's say you want to log security events to a file, but
-you also want keep the default logging behavior. You'd specify the
+As an example, let's say a user wants to log security events to a file, but
+also wants to keep the default logging behavior. They would specify the
 following:
 
 ::
@@ -755,21 +755,21 @@ The ``query-errors`` Category
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The ``query-errors`` category is used to indicate why and how specific queries
-resulted in responses which indicate an error.  Normally, these messages will be
+resulted in responses which indicate an error.  Normally, these messages are
 logged at ``debug`` logging levels; note, however, that if query logging is
-active, some will be logged at ``info``. The logging levels are described below:
+active, some are logged at ``info``. The logging levels are described below:
 
-At ``debug`` levels of 1 or higher, - or at ``info``, when query logging is
+At ``debug`` levels of 1 or higher - or at ``info`` when query logging is
 active - each response with the rcode of SERVFAIL is logged as follows:
 
 ``client 127.0.0.1#61502: query failed (SERVFAIL) for www.example.com/IN/AAAA at query.c:3880``
 
 This means an error resulting in SERVFAIL was detected at line 3880 of source
-file ``query.c``.  Log messages of this level will particularly help identify
+file ``query.c``.  Log messages of this level are particularly helpful in identifying
 the cause of SERVFAIL for an authoritative server.
 
 At ``debug`` level 2 or higher, detailed context information about recursive
-resolutions that resulted in SERVFAIL will be logged.  The log message will look
+resolutions that resulted in SERVFAIL is logged.  The log message looks
 like this:
 
 ::
@@ -780,11 +780,11 @@ like this:
    badresp:1,adberr:0,findfail:0,valfail:0]
 
 The first part before the colon shows that a recursive resolution for
-AAAA records of www.example.com completed in 10.000183 seconds and the
+AAAA records of www.example.com completed in 10.000183 seconds, and the
 final result that led to the SERVFAIL was determined at line 2970 of
 source file ``resolver.c``.
 
-The following part shows the detected final result and the latest result of
+The next part shows the detected final result and the latest result of
 DNSSEC validation.  The latter is always "success" when no validation attempt
 was made.  In this example, this query probably resulted in SERVFAIL because all
 name servers are down or unreachable, leading to a timeout in 10 seconds.
@@ -796,28 +796,28 @@ the resolver reached; it is the zone where the error was finally detected.  The
 meaning of the other fields is summarized in the following list.
 
 ``referral``
-    The number of referrals the resolver received throughout the resolution process. In the above example.com there are two.
+    The number of referrals the resolver received throughout the resolution process. In the above ``example.com`` there are two.
 
 ``restart``
     The number of cycles that the resolver tried remote servers at the ``domain`` zone. In each cycle the resolver sends one query (possibly resending it, depending on the response) to each known name server of the ``domain`` zone.
 
 ``qrysent``
-      The number of queries the resolver sent at the ``domain`` zone.
+    The number of queries the resolver sent at the ``domain`` zone.
 
 ``timeout``
-    The number of timeouts since the resolver received since the last response.
+    The number of timeouts the resolver received since the last response.
 
 ``lame``
-    The number of lame servers the resolver detected at the ``domain`` zone. A server is detected to be lame either by an invalid response or as a result of lookup in BIND9's address database (ADB), where lame servers are cached.
+    The number of lame servers the resolver detected at the ``domain`` zone. A server is detected to be lame either by an invalid response or as a result of lookup in BIND 9's address database (ADB), where lame servers are cached.
 
 ``quota``
     The number of times the resolver was unable to send a query because it had exceeded the permissible fetch quota for a server.
 
 ``neterr``
-    The number of erroneous results that the resolver encountered in sending queries at the ``domain`` zone. One common case is the remote server is unreachable and the resolver receives an ICMP unreachable error message.                         |
+    The number of erroneous results that the resolver encountered in sending queries at the ``domain`` zone. One common case is the remote server is unreachable and the resolver receives an ICMP unreachable error message.
 
 ``badresp``
-    The number of unexpected responses (other than``lame``) to queries sent by the resolver at the``domain`` zone.
+    The number of unexpected responses (other than ``lame``) to queries sent by the resolver at the ``domain`` zone.
 
 ``adberr``
     Failures in finding remote server addresses of the``domain`` zone in the ADB. One common case of this is that the remote server's name does not have any address records.
@@ -829,13 +829,13 @@ meaning of the other fields is summarized in the following list.
     Failures of DNSSEC validation. Validation failures are counted throughout the resolution process (not limited to the ``domain`` zone), but should only happen in ``domain``.
 
 At ``debug`` level 3 or higher, the same messages as those at
-``debug`` level 1 will be logged for other errors than
+``debug`` level 1 will be logged for errors other than
 SERVFAIL. Note that negative responses such as NXDOMAIN are not errors, and are
 not logged at this debug level.
 
 At ``debug`` level 4 or higher, the detailed context information logged at
-``debug`` level 2 will be logged for other errors than SERVFAIL and for negative
-resonses such as NXDOMAIN.
+``debug`` level 2 will be logged for errors other than SERVFAIL and for negative
+responses such as NXDOMAIN.
 
 .. _masters_grammar:
 
@@ -874,11 +874,11 @@ no ``options`` statement, an options block with each option set to its
 default will be used.
 
 ``attach-cache``
-   Allows multiple views to share a single cache database. Each view has
+   This option allows multiple views to share a single cache database. Each view has
    its own cache database by default, but if multiple views have the
    same operational policy for name resolution and caching, those views
-   can share a single cache to save memory and possibly improve
-   resolution efficiency by using this option.
+   can share a single cache to save memory, and possibly improve
+   resolution efficiency, by using this option.
 
    The ``attach-cache`` option may also be specified in ``view``
    statements, in which case it overrides the global ``attach-cache``
@@ -887,8 +887,8 @@ default will be used.
    The cache_name specifies the cache to be shared. When the ``named``
    server configures views which are supposed to share a cache, it
    creates a cache with the specified name for the first view of these
-   sharing views. The rest of the views will simply refer to the already
-   created cache.
+   sharing views. The rest of the views will simply refer to the
+   already-created cache.
 
    One common configuration to share a cache would be to allow all views
    to share a single cache. This can be done by specifying the
@@ -897,7 +897,7 @@ default will be used.
    Another possible operation is to allow a subset of all views to share
    a cache while the others to retain their own caches. For example, if
    there are three views A, B, and C, and only A and B should share a
-   cache, specify the ``attach-cache`` option as a view A (or B)'s
+   cache, specify the ``attach-cache`` option as a view of A (or B)'s
    option, referring to the other view name:
 
    ::
@@ -920,23 +920,23 @@ default will be used.
    requires the following configurable options be consistent among these
    views: ``check-names``, ``dnssec-accept-expired``,
    ``dnssec-validation``, ``max-cache-ttl``, ``max-ncache-ttl``,
-   ``max-stale-ttl``, ``max-cache-size``, and ``min-cache-ttl``,
-   ``min-ncache-ttl``, ``zero-no-soa-ttl``.
+   ``max-stale-ttl``, ``max-cache-size``, ``min-cache-ttl``,
+   ``min-ncache-ttl``, and ``zero-no-soa-ttl``.
 
    Note that there may be other parameters that may cause confusion if
    they are inconsistent for different views that share a single cache.
    For example, if these views define different sets of forwarders that
    can return different answers for the same question, sharing the
-   answer does not make sense or could even be harmful. It is
+   answer does not make sense or could even be harmful. It is the
    administrator's responsibility to ensure configuration differences in
    different views do not cause disruption with a shared cache.
 
 ``directory``
-   The working directory of the server. Any non-absolute pathnames in
-   the configuration file will be taken as relative to this directory.
+   This sets the working directory of the server. Any non-absolute pathnames in
+   the configuration file are taken as relative to this directory.
    The default location for most server output files (e.g.
    ``named.run``) is this directory. If a directory is not specified,
-   the working directory defaults to \`\ ``.``', the directory from
+   the working directory defaults to ".", the directory from
    which the server was started. The directory specified should be an
    absolute path, and *must* be writable by the effective user ID of the
    ``named`` process.
@@ -945,7 +945,7 @@ default will be used.
    ``dnstap`` is a fast, flexible method for capturing and logging DNS
    traffic. Developed by Robert Edmonds at Farsight Security, Inc., and
    supported by multiple DNS implementations, ``dnstap`` uses
-   ``libfstrm`` (a lightweight high-speed framing library, see
+   ``libfstrm`` (a lightweight high-speed framing library; see
    https://github.com/farsightsec/fstrm) to send event payloads which
    are encoded using Protocol Buffers (``libprotobuf-c``, a mechanism
    for serializing structured data developed by Google, Inc.; see
@@ -958,7 +958,7 @@ default will be used.
    The ``dnstap`` option is a bracketed list of message types to be
    logged. These may be set differently for each view. Supported types
    are ``client``, ``auth``, ``resolver``, ``forwarder``, and
-   ``update``. Specifying type ``all`` will cause all ``dnstap``
+   ``update``. Specifying type ``all`` causes all ``dnstap``
    messages to be logged, regardless of type.
 
    Each type may take an additional argument to indicate whether to log
@@ -998,7 +998,7 @@ default will be used.
       queue entries to allow on an input queue before waking the I/O
       thread. The minimum is 1 and the default is 32.
 
-   -  ``fstrm-set-output-queue-model``: Controls the queuing semantics
+   -  ``fstrm-set-output-queue-model``: The queuing semantics
       to use for queue objects. The default is ``mpsc`` (multiple
       producer, single consumer); the other option is ``spsc`` (single
       producer, single consumer).
@@ -1023,13 +1023,13 @@ default will be used.
    for more information.
 
 ``dnstap-output``
-   Configures the path to which the ``dnstap`` frame stream will be sent
+   This configures the path to which the ``dnstap`` frame stream will be sent
    if ``dnstap`` is enabled at compile time and active.
 
    The first argument is either ``file`` or ``unix``, indicating whether
    the destination is a file or a UNIX domain socket. The second
    argument is the path of the file or socket. (Note: when using a
-   socket, ``dnstap`` messages will only be sent if another process such
+   socket, ``dnstap`` messages are only sent if another process such
    as ``fstrm_capture`` (provided with ``libfstrm``) is listening on the
    socket.)
 
@@ -1049,30 +1049,30 @@ default will be used.
    cannot be changed by ``rndc reload`` or ``rndc reconfig``.
 
 ``dnstap-identity``
-   Specifies an ``identity`` string to send in ``dnstap`` messages. If
-   set to ``hostname``, which is the default, the server's hostname will
-   be sent. If set to ``none``, no identity string will be sent.
+   This specifies an ``identity`` string to send in ``dnstap`` messages. If
+   set to ``hostname``, which is the default, the server's hostname
+   is sent. If set to ``none``, no identity string is sent.
 
 ``dnstap-version``
-   Specifies a ``version`` string to send in ``dnstap`` messages. The
+   This specifies a ``version`` string to send in ``dnstap`` messages. The
    default is the version number of the BIND release. If set to
-   ``none``, no version string will be sent.
+   ``none``, no version string is sent.
 
 ``geoip-directory``
    When ``named`` is compiled using the MaxMind GeoIP2 geolocation API, this
    specifies the directory containing GeoIP database files.  By default, the
-   option is set based on the prefix used to build the ``libmaxminddb`` module:
+   option is set based on the prefix used to build the ``libmaxminddb`` module;
    for example, if the library is installed in ``/usr/local/lib``, then the
-   default ``geoip-directory`` will be ``/usr/local/share/GeoIP``. On Windows,
+   default ``geoip-directory`` is ``/usr/local/share/GeoIP``. On Windows,
    the default is the ``named`` working directory.  See :ref:`acl`
    for details about ``geoip`` ACLs.
 
 ``key-directory``
-   When performing dynamic update of secure zones, the directory where
-   the public and private DNSSEC key files should be found, if different
+   This is the directory where the public and private DNSSEC key files should be
+   found when performing a dynamic update of secure zones, if different
    than the current working directory. (Note that this option has no
    effect on the paths for files containing non-DNSSEC keys such as
-   ``bind.keys``, ``rndc.key`` or ``session.key``.)
+   ``bind.keys``, ``rndc.key``, or ``session.key``.)
 
 ``lmdb-mapsize``
    When ``named`` is built with liblmdb, this option sets a maximum size
@@ -1082,21 +1082,21 @@ default will be used.
    database file size, but the largest size that the database may grow
    to.
 
-   Because the database file is memory mapped, its size is limited by
-   the address space of the named process. The default of 32 megabytes
+   Because the database file is memory-mapped, its size is limited by
+   the address space of the ``named`` process. The default of 32 megabytes
    was chosen to be usable with 32-bit ``named`` builds. The largest
    permitted value is 1 terabyte. Given typical zone configurations
    without elaborate ACLs, a 32 MB NZD file ought to be able to hold
    configurations of about 100,000 zones.
 
 ``managed-keys-directory``
-   Specifies the directory in which to store the files that track managed DNSSEC
+   This specifies the directory in which to store the files that track managed DNSSEC
    keys (i.e., those configured using the ``initial-key`` or ``initial-ds``
    keywords in a ``trust-anchors`` statement). By default, this is the working
    directory. The directory *must* be writable by the effective user ID of the
    ``named`` process.
 
-   If ``named`` is not configured to use views, then managed keys for
+   If ``named`` is not configured to use views, managed keys for
    the server will be tracked in a single file called
    ``managed-keys.bind``. Otherwise, managed keys will be tracked in
    separate files, one file per view; each file name will be the view
@@ -1104,65 +1104,65 @@ default will be used.
    a file name, the SHA256 hash of the view name), followed by the
    extension ``.mkeys``.
 
-   (Note: in previous releases, file names for views always used the
-   SHA256 hash of the view name. To ensure compatibility after upgrade,
-   if a file using the old name format is found to exist, it will be
+   (Note: in earlier releases, file names for views always used the
+   SHA256 hash of the view name. To ensure compatibility after upgrading,
+   if a file using the old name format is found to exist, it is
    used instead of the new format.)
 
 ``max-ixfr-ratio``
-   Sets the size threshold (expressed as a percentage of the size of the full
+   This sets the size threshold (expressed as a percentage of the size of the full
    zone) beyond which ``named`` will choose to use an AXFR response rather than
    IXFR when answering zone transfer requests.  See
    :ref:`incremental_zone_transfers`.
 
 ``new-zones-directory``
-   Specifies the directory in which to store the configuration
+   This specifies the directory in which to store the configuration
    parameters for zones added via ``rndc addzone``. By default, this is
-   the working directory. If set to a relative path, it will be relative
+   the working directory. If set to a relative path, it is relative
    to the working directory. The directory *must* be writable by the
    effective user ID of the ``named`` process.
 
 ``qname-minimization``
-   This option controls QNAME minimization behaviour in the BIND
-   resolver. When set to ``strict``, BIND will follow the QNAME
+   This option controls QNAME minimization behavior in the BIND
+   resolver. When set to ``strict``, BIND follows the QNAME
    minimization algorithm to the letter, as specified in :rfc:`7816`.
-   Setting this option to ``relaxed`` will cause BIND to fall back to
+   Setting this option to ``relaxed`` causes BIND to fall back to
    normal (non-minimized) query mode when it receives either NXDOMAIN or
    other unexpected responses (e.g. SERVFAIL, improper zone cut,
    REFUSED) to a minimized query. ``disabled`` disables QNAME
    minimization completely. The current default is ``relaxed``, but it
-   might be changed to ``strict`` in a future release.
+   may be changed to ``strict`` in a future release.
 
 ``tkey-gssapi-keytab``
-   The KRB5 keytab file to use for GSS-TSIG updates. If this option is
-   set and tkey-gssapi-credential is not set, then updates will be
+   This is the KRB5 keytab file to use for GSS-TSIG updates. If this option is
+   set and tkey-gssapi-credential is not set, updates are
    allowed with any key matching a principal in the specified keytab.
 
 ``tkey-gssapi-credential``
-   The security credential with which the server should authenticate
+   This is the security credential with which the server should authenticate
    keys requested by the GSS-TSIG protocol. Currently only Kerberos 5
-   authentication is available and the credential is a Kerberos
+   authentication is available; the credential is a Kerberos
    principal which the server can acquire through the default system key
    file, normally ``/etc/krb5.keytab``. The location keytab file can be
    overridden using the tkey-gssapi-keytab option. Normally this
-   principal is of the form "``DNS/``\ ``server.domain``". To use
+   principal is of the form ``DNS/``\ ``server.domain``. To use
    GSS-TSIG, ``tkey-domain`` must also be set if a specific keytab is
    not set with tkey-gssapi-keytab.
 
 ``tkey-domain``
-   The domain appended to the names of all shared keys generated with
+   This domain is appended to the names of all shared keys generated with
    ``TKEY``. When a client requests a ``TKEY`` exchange, it may or may
    not specify the desired name for the key. If present, the name of the
-   shared key will be ``client specified part`` + ``tkey-domain``.
-   Otherwise, the name of the shared key will be ``random hex digits``
+   shared key is ``client specified part`` + ``tkey-domain``.
+   Otherwise, the name of the shared key is ``random hex digits``
    + ``tkey-domain``. In most cases, the ``domainname``
-   should be the server's domain name, or an otherwise non-existent
-   subdomain like "_tkey.``domainname``". If you are using GSS-TSIG,
-   this variable must be defined, unless you specify a specific keytab
-   using tkey-gssapi-keytab.
+   should be the server's domain name, or an otherwise nonexistent
+   subdomain like ``_tkey.domainname``. If using GSS-TSIG,
+   this variable must be defined, unless a specific keytab
+   is specified using ``tkey-gssapi-keytab``.
 
 ``tkey-dhkey``
-   The Diffie-Hellman key used by the server to generate shared keys
+   This is the Diffie-Hellman key used by the server to generate shared keys
    with clients using the Diffie-Hellman mode of ``TKEY``. The server
    must be able to load the public and private keys from files in the
    working directory. In most cases, the ``key_name`` should be the
@@ -1172,18 +1172,18 @@ default will be used.
    This is for testing only. Do not use.
 
 ``dump-file``
-   The pathname of the file the server dumps the database to when
+   This is the pathname of the file the server dumps the database to, when
    instructed to do so with ``rndc dumpdb``. If not specified, the
    default is ``named_dump.db``.
 
 ``memstatistics-file``
-   The pathname of the file the server writes memory usage statistics to
+   This is the pathname of the file the server writes memory usage statistics to
    on exit. If not specified, the default is ``named.memstats``.
 
 ``lock-file``
-   The pathname of a file on which ``named`` will attempt to acquire a
+   This is the pathname of a file on which ``named`` attempts to acquire a
    file lock when starting up for the first time; if unsuccessful, the
-   server will will terminate, under the assumption that another server
+   server terminates, under the assumption that another server
    is already running. If not specified, the default is
    ``none``.
 
@@ -1191,67 +1191,67 @@ default will be used.
    ``lock-file`` is ignored if ``named`` was run using the ``-X``
    option, which overrides it. Changes to ``lock-file`` are ignored if
    ``named`` is being reloaded or reconfigured; it is only effective
-   when the server is first started up.
+   when the server is first started.
 
 ``pid-file``
-   The pathname of the file the server writes its process ID in. If not
+   This is the pathname of the file the server writes its process ID in. If not
    specified, the default is ``/var/run/named/named.pid``. The PID file
-   is used by programs that want to send signals to the running name
-   server. Specifying ``pid-file none`` disables the use of a PID file —
-   no file will be written and any existing one will be removed. Note
+   is used by programs that send signals to the running name
+   server. Specifying ``pid-file none`` disables the use of a PID file;
+   no file is written and any existing one is removed. Note
    that ``none`` is a keyword, not a filename, and therefore is not
    enclosed in double quotes.
 
 ``recursing-file``
-   The pathname of the file the server dumps the queries that are
-   currently recursing when instructed to do so with ``rndc recursing``.
+   This is the pathname of the file the server dumps the queries that are
+   currently recursing, when instructed to do so with ``rndc recursing``.
    If not specified, the default is ``named.recursing``.
 
 ``statistics-file``
-   The pathname of the file the server appends statistics to when
+   This is the pathname of the file the server appends statistics to, when
    instructed to do so using ``rndc stats``. If not specified, the
    default is ``named.stats`` in the server's current directory. The
    format of the file is described in :ref:`statsfile`.
 
 ``bindkeys-file``
-   The pathname of a file to override the built-in trusted keys provided
+   This is the pathname of a file to override the built-in trusted keys provided
    by ``named``. See the discussion of ``dnssec-validation`` for
    details. If not specified, the default is ``/etc/bind.keys``.
 
 ``secroots-file``
-   The pathname of the file the server dumps security roots to when
+   This is the pathname of the file the server dumps security roots to, when
    instructed to do so with ``rndc secroots``. If not specified, the
    default is ``named.secroots``.
 
 ``session-keyfile``
-   The pathname of the file into which to write a TSIG session key
+   This is the pathname of the file into which to write a TSIG session key
    generated by ``named`` for use by ``nsupdate -l``. If not specified,
    the default is ``/var/run/named/session.key``. (See :ref:`dynamic_update_policies`,
    and in particular the discussion of the ``update-policy`` statement's
-   ``local`` option for more information about this feature.)
+   ``local`` option, for more information about this feature.)
 
 ``session-keyname``
-   The key name to use for the TSIG session key. If not specified, the
-   default is "local-ddns".
+   This is the key name to use for the TSIG session key. If not specified, the
+   default is ``local-ddns``.
 
 ``session-keyalg``
-   The algorithm to use for the TSIG session key. Valid values are
-   hmac-sha1, hmac-sha224, hmac-sha256, hmac-sha384, hmac-sha512 and
+   This is the algorithm to use for the TSIG session key. Valid values are
+   hmac-sha1, hmac-sha224, hmac-sha256, hmac-sha384, hmac-sha512, and
    hmac-md5. If not specified, the default is hmac-sha256.
 
 ``port``
-   The UDP/TCP port number the server uses for receiving and sending DNS
+   This is the UDP/TCP port number the server uses for receiving and sending DNS
    protocol traffic. The default is 53. This option is mainly intended
-   for server testing; a server using a port other than 53 will not be
+   for server testing; a server using a port other than 53 is not
    able to communicate with the global DNS.
 
 ``dscp``
-   The global Differentiated Services Code Point (DSCP) value to
-   classify outgoing DNS traffic on operating systems that support DSCP.
+   This is the global Differentiated Services Code Point (DSCP) value to
+   classify outgoing DNS traffic, on operating systems that support DSCP.
    Valid values are 0 through 63. It is not configured by default.
 
 ``random-device``
-   Specifies a source of entropy to be used by the server. This is a
+   This specifies a source of entropy to be used by the server; it is a
    device or file from which to read entropy. If it is a file,
    operations requiring entropy will fail when the file has been
    exhausted.
@@ -1259,12 +1259,12 @@ default will be used.
    Entropy is needed for cryptographic operations such as TKEY
    transactions, dynamic update of signed zones, and generation of TSIG
    session keys. It is also used for seeding and stirring the
-   pseudo-random number generator, which is used for less critical
-   functions requiring randomness such as generation of DNS message
-   transaction ID's.
+   pseudo-random number generator which is used for less critical
+   functions requiring randomness, such as generation of DNS message
+   transaction IDs.
 
    If ``random-device`` is not specified, or if it is set to ``none``,
-   entropy will be read from the random number generation function
+   entropy is read from the random number generation function
    supplied by the cryptographic library with which BIND was linked
    (i.e. OpenSSL or a PKCS#11 provider).
 
@@ -1281,31 +1281,31 @@ default will be used.
 .. _root-delegation-only:
 
 ``root-delegation-only``
-   Turn on enforcement of delegation-only in TLDs (top level domains)
+   This turns on enforcement of delegation-only in TLDs (top-level domains)
    and root zones with an optional exclude list.
 
    DS queries are expected to be made to and be answered by delegation
    only zones. Such queries and responses are treated as an exception to
    delegation-only processing and are not converted to NXDOMAIN
-   responses provided a CNAME is not discovered at the query name.
+   responses, provided a CNAME is not discovered at the query name.
 
-   If a delegation only zone server also serves a child zone it is not
+   If a delegation-only zone server also serves a child zone, it is not
    always possible to determine whether an answer comes from the
-   delegation only zone or the child zone. SOA NS and DNSKEY records are
-   apex only records and a matching response that contains these records
+   delegation-only zone or the child zone. SOA NS and DNSKEY records are
+   apex-only records and a matching response that contains these records
    or DS is treated as coming from a child zone. RRSIG records are also
-   examined to see if they are signed by a child zone or not. The
-   authority section is also examined to see if there is evidence that
+   examined to see whether they are signed by a child zone, and the
+   authority section is examined to see if there is evidence that
    the answer is from the child zone. Answers that are determined to be
    from a child zone are not converted to NXDOMAIN responses. Despite
    all these checks there is still a possibility of false negatives when
    a child zone is being served.
 
-   Similarly false positives can arise from empty nodes (no records at
-   the name) in the delegation only zone when the query type is not ANY.
+   Similarly, false positives can arise from empty nodes (no records at
+   the name) in the delegation-only zone when the query type is not ``ANY``.
 
-   Note some TLDs are not delegation only (e.g. "DE", "LV", "US" and
-   "MUSEUM"). This list is not exhaustive.
+   Note that some TLDs are not delegation-only; e.g. "DE", "LV", "US" and
+   "MUSEUM". This list is not exhaustive.
 
    ::
 
@@ -1314,32 +1314,32 @@ default will be used.
       };
 
 ``disable-algorithms``
-   Disable the specified DNSSEC algorithms at and below the specified
+   This disables the specified DNSSEC algorithms at and below the specified
    name. Multiple ``disable-algorithms`` statements are allowed. Only
-   the best match ``disable-algorithms`` clause will be used to
+   the best match ``disable-algorithms`` clause is used to
    determine which algorithms are used.
 
    If all supported algorithms are disabled, the zones covered by the
-   ``disable-algorithms`` will be treated as insecure.
+   ``disable-algorithms`` setting are treated as insecure.
 
    Configured trust anchors in ``trusted-anchors`` (or ``managed-keys`` or
-   ``trusted-keys``) that match a disabled algorithm will be ignored and treated
+   ``trusted-keys``) that match a disabled algorithm are ignored and treated
    as if they were not configured at all.
 
 ``disable-ds-digests``
-   Disable the specified DS digest types at and below the specified
+   This disables the specified DS digest types at and below the specified
    name. Multiple ``disable-ds-digests`` statements are allowed. Only
-   the best match ``disable-ds-digests`` clause will be used to
-   determine which digest types are used.
+   the best match ``disable-ds-digests`` clause is used to
+   determine the digest types.
 
    If all supported digest types are disabled, the zones covered by the
-   ``disable-ds-digests`` will be treated as insecure.
+   ``disable-ds-digests`` are treated as insecure.
 
 ``dnssec-must-be-secure``
-   Specify hierarchies which must be or may not be secure (signed and
-   validated). If ``yes``, then ``named`` will only accept answers if
-   they are secure. If ``no``, then normal DNSSEC validation applies
-   allowing for insecure answers to be accepted. The specified domain
+   This specifies hierarchies which must be or may not be secure (signed and
+   validated). If ``yes``, then ``named`` only accepts answers if
+   they are secure. If ``no``, then normal DNSSEC validation applies,
+   allowing insecure answers to be accepted. The specified domain
    must be defined as a trust anchor, for instance in a ``trust-anchors``
    statement, or ``dnssec-validation auto`` must be active.
 
@@ -1349,16 +1349,16 @@ default will be used.
    used in conjunction with a NAT64. Each ``dns64`` defines one DNS64
    prefix. Multiple DNS64 prefixes can be defined.
 
-   Compatible IPv6 prefixes have lengths of 32, 40, 48, 56, 64 and 96 as per
-   :rfc:`6052`. Bits 64..71 inclusive must be zero with the most significate bit
+   Compatible IPv6 prefixes have lengths of 32, 40, 48, 56, 64, and 96, per
+   :rfc:`6052`. Bits 64..71 inclusive must be zero with the most significant bit
    of the prefix in position 0.
 
-   Additionally a reverse IP6.ARPA zone will be created for the prefix
+   In addition, a reverse IP6.ARPA zone is created for the prefix
    to provide a mapping from the IP6.ARPA names to the corresponding
    IN-ADDR.ARPA names using synthesized CNAMEs. ``dns64-server`` and
    ``dns64-contact`` can be used to specify the name of the server and
-   contact for the zones. These are settable at the view / options
-   level. These are not settable on a per-prefix basis.
+   contact for the zones. These can be set at the view/options
+   level but not on a per-prefix basis.
 
    Each ``dns64`` supports an optional ``clients`` ACL that determines
    which clients are affected by this directive. If not defined, it
@@ -1366,24 +1366,24 @@ default will be used.
 
    Each ``dns64`` supports an optional ``mapped`` ACL that selects which
    IPv4 addresses are to be mapped in the corresponding A RRset. If not
-   defined it defaults to ``any;``.
+   defined, it defaults to ``any;``.
 
-   Normally, DNS64 won't apply to a domain name that owns one or more
-   AAAA records; these records will simply be returned. The optional
+   Normally, DNS64 does not apply to a domain name that owns one or more
+   AAAA records; these records are simply returned. The optional
    ``exclude`` ACL allows specification of a list of IPv6 addresses that
-   will be ignored if they appear in a domain name's AAAA records, and
-   DNS64 will be applied to any A records the domain name owns. If not
+   are ignored if they appear in a domain name's AAAA records;
+   DNS64 is applied to any A records the domain name owns. If not
    defined, ``exclude`` defaults to ::ffff:0.0.0.0/96.
 
-   A optional ``suffix`` can also be defined to set the bits trailing
+   An optional ``suffix`` can also be defined to set the bits trailing
    the mapped IPv4 address bits. By default these bits are set to
    ``::``. The bits matching the prefix and mapped IPv4 address must be
    zero.
 
-   If ``recursive-only`` is set to ``yes`` the DNS64 synthesis will only
-   happen for recursive queries. The default is ``no``.
+   If ``recursive-only`` is set to ``yes`` the DNS64 synthesis only
+   happens for recursive queries. The default is ``no``.
 
-   If ``break-dnssec`` is set to ``yes`` the DNS64 synthesis will happen
+   If ``break-dnssec`` is set to ``yes`` the DNS64 synthesis happens
    even if the result, if validated, would cause a DNSSEC validation
    failure. If this option is set to ``no`` (the default), the DO is set
    on the incoming query, and there are RRSIGs on the applicable
@@ -1412,10 +1412,10 @@ default will be used.
    reduced.
 
 ``dnssec-policy``
-   Specifies which key and signing policy (KASP) should be used for this zone.
+   This specifies which key and signing policy (KASP) should be used for this zone.
    This is a string referring to a ``dnssec-policy`` statement.  There are two
-   built-in policies: ``default`` allows you to use the default policy, and
-   ``none`` means not to use any DNSSEC policy, keeping the zone unsigned.  The
+   built-in policies: ``default``, which uses the default policy, and
+   ``none``, which means no DNSSEC policy and keeps the zone unsigned.  The
    default is ``none``.  See :ref:`dnssec-policy Grammar
    <dnssec_policy_grammar>` for more details.
 
@@ -1423,48 +1423,48 @@ default will be used.
    If this option is set to its default value of ``maintain`` in a zone
    of type ``master`` which is DNSSEC-signed and configured to allow
    dynamic updates (see :ref:`dynamic_update_policies`), and if ``named`` has access
-   to the private signing key(s) for the zone, then ``named`` will
-   automatically sign all new or changed records and maintain signatures
+   to the private signing key(s) for the zone, then ``named``
+   automatically signs all new or changed records and maintains signatures
    for the zone by regenerating RRSIG records whenever they approach
    their expiration date.
 
-   If the option is changed to ``no-resign``, then ``named`` will sign
+   If the option is changed to ``no-resign``, then ``named`` signs
    all new or changed records, but scheduled maintenance of signatures
    is disabled.
 
-   With either of these settings, ``named`` will reject updates to a
+   With either of these settings, ``named`` rejects updates to a
    DNSSEC-signed zone when the signing keys are inactive or unavailable
    to ``named``. (A planned third option, ``external``, will disable all
    automatic signing and allow DNSSEC data to be submitted into a zone
    via dynamic update; this is not yet implemented.)
 
 ``nta-lifetime``
-   Species the default lifetime, in seconds, that will be used for
+   This specifies the default lifetime, in seconds, for
    negative trust anchors added via ``rndc nta``.
 
    A negative trust anchor selectively disables DNSSEC validation for
-   zones that are known to be failing because of misconfiguration rather
+   zones that are known to be failing because of misconfiguration, rather
    than an attack. When data to be validated is at or below an active
-   NTA (and above any other configured trust anchors), ``named`` will
-   abort the DNSSEC validation process and treat the data as insecure
-   rather than bogus. This continues until the NTA's lifetime is
+   NTA (and above any other configured trust anchors), ``named``
+   aborts the DNSSEC validation process and treats the data as insecure
+   rather than bogus. This continues until the NTA's lifetime has
    elapsed. NTAs persist across ``named`` restarts.
 
    For convenience, TTL-style time unit suffixes can be used to specify the NTA
-   lifetime in seconds, minutes or hours. It also accepts ISO 8601 duration
+   lifetime in seconds, minutes, or hours. It also accepts ISO 8601 duration
    formats.
 
-   ``nta-lifetime`` defaults to one hour. It cannot exceed one week.
+   ``nta-lifetime`` defaults to one hour; it cannot exceed one week.
 
 ``nta-recheck``
-   Species how often to check whether negative trust anchors added via
+   This specifies how often to check whether negative trust anchors added via
    ``rndc nta`` are still necessary.
 
    A negative trust anchor is normally used when a domain has stopped
    validating due to operator error; it temporarily disables DNSSEC
    validation for that domain. In the interest of ensuring that DNSSEC
-   validation is turned back on as soon as possible, ``named`` will
-   periodically send a query to the domain, ignoring negative trust
+   validation is turned back on as soon as possible, ``named``
+   periodically sends a query to the domain, ignoring negative trust
    anchors, to find out whether it can now be validated. If so, the
    negative trust anchor is allowed to expire early.
 
@@ -1472,23 +1472,23 @@ default will be used.
    ``rndc nta -f``, or for all NTAs by setting ``nta-recheck`` to zero.
 
    For convenience, TTL-style time unit suffixes can be used to specify the NTA
-   recheck interval in seconds, minutes or hours. It also accepts ISO 8601
+   recheck interval in seconds, minutes, or hours. It also accepts ISO 8601
    duration formats.
 
-   The default is five minutes. It cannot be longer than ``nta-lifetime`` (which
-   cannot be longer than a week).
+   The default is five minutes. It cannot be longer than ``nta-lifetime``, which
+   cannot be longer than a week.
 
 ``max-zone-ttl``
-   Specifies a maximum permissible TTL value in seconds. For
+   This specifies a maximum permissible TTL value in seconds. For
    convenience, TTL-style time unit suffixes may be used to specify the
    maximum value. When loading a zone file using a ``masterfile-format``
    of ``text`` or ``raw``, any record encountered with a TTL higher than
-   ``max-zone-ttl`` will cause the zone to be rejected.
+   ``max-zone-ttl`` causes the zone to be rejected.
 
    This is useful in DNSSEC-signed zones because when rolling to a new
    DNSKEY, the old key needs to remain available until RRSIG records
    have expired from caches. The ``max-zone-ttl`` option guarantees that
-   the largest TTL in the zone will be no higher than the set value.
+   the largest TTL in the zone is no higher than the set value.
 
    (NOTE: Because ``map``-format files load directly into memory, this
    option cannot be used with them.)
@@ -1497,7 +1497,7 @@ default will be used.
    treated as ``unlimited``.
 
 ``stale-answer-ttl``
-   Specifies the TTL to be returned on stale answers. The default is 1
+   This specifies the TTL to be returned on stale answers. The default is 1
    second. The minimum allowed is also 1 second; a value of 0 will be
    updated silently to 1 second.
 
@@ -1507,33 +1507,33 @@ default will be used.
 
 ``serial-update-method``
    Zones configured for dynamic DNS may use this option to set the
-   update method that will be used for the zone serial number in the SOA
+   update method to be used for the zone serial number in the SOA
    record.
 
    With the default setting of ``serial-update-method increment;``, the
-   SOA serial number will be incremented by one each time the zone is
+   SOA serial number is incremented by one each time the zone is
    updated.
 
    When set to ``serial-update-method unixtime;``, the SOA serial number
-   will be set to the number of seconds since the UNIX epoch, unless the
+   is set to the number of seconds since the UNIX epoch, unless the
    serial number is already greater than or equal to that value, in
    which case it is simply incremented by one.
 
    When set to ``serial-update-method date;``, the new SOA serial number
-   will be the current date in the form "YYYYMMDD", followed by two
+   is the current date in the form "YYYYMMDD", followed by two
    zeroes, unless the existing serial number is already greater than or
    equal to that value, in which case it is incremented by one.
 
 ``zone-statistics``
-   If ``full``, the server will collect statistical data on all zones
-   (unless specifically turned off on a per-zone basis by specifying
+   If ``full``, the server collects statistical data on all zones,
+   unless specifically turned off on a per-zone basis by specifying
    ``zone-statistics terse`` or ``zone-statistics none`` in the ``zone``
-   statement). The default is ``terse``, providing minimal statistics on
+   statement. The default is ``terse``, providing minimal statistics on
    zones (including name and current serial number, but not query type
    counters).
 
    These statistics may be accessed via the ``statistics-channel`` or
-   using ``rndc stats``, which will dump them to the file listed in the
+   using ``rndc stats``, which dumps them to the file listed in the
    ``statistics-file``. See also :ref:`statsfile`.
 
    For backward compatibility with earlier versions of BIND 9, the
