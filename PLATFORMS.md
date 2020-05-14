@@ -46,8 +46,8 @@ As of Mar 2020, BIND 9.17 is fully supported and regularly tested on the
 following systems:
 
 * Debian 9, 10
-* Ubuntu LTS 16.04, 18.04
-* Fedora 31
+* Ubuntu LTS 16.04, 20.04
+* Fedora 32
 * Red Hat Enterprise Linux / CentOS 7, 8
 * FreeBSD 11.3, 12.1
 * OpenBSD 6.6
