@@ -159,8 +159,8 @@ keymgr_settime_syncpublish(dns_dnsseckey_t *key, dns_kasp_t *kasp, bool first) {
 		/* Also need to wait until the signatures are omnipresent. */
 		isc_stdtime_t zrrsig_present;
 		zrrsig_present = published + dns_kasp_zonemaxttl(kasp) +
-				   dns_kasp_zonepropagationdelay(kasp) +
-				   dns_kasp_publishsafety(kasp);
+				 dns_kasp_zonepropagationdelay(kasp) +
+				 dns_kasp_publishsafety(kasp);
 		if (zrrsig_present > syncpublish) {
 			syncpublish = zrrsig_present;
 		}
@@ -291,7 +291,7 @@ keymgr_prepublication_time(dns_dnsseckey_t *key, dns_kasp_t *kasp,
 }
 
 static void
-keymgr_key_retire(dns_dnsseckey_t *key, dns_kasp_t* kasp, isc_stdtime_t now) {
+keymgr_key_retire(dns_dnsseckey_t *key, dns_kasp_t *kasp, isc_stdtime_t now) {
 	char keystr[DST_KEY_FORMATSIZE];
 	isc_result_t ret;
 	isc_stdtime_t retire;
@@ -1567,7 +1567,8 @@ dns_keymgr_run(const dns_name_t *origin, dns_rdataclass_t rdclass,
 						 * the kasp key configuration.
 						 * Retire excess keys in use.
 						 */
-						keymgr_key_retire(dkey, kasp, now);
+						keymgr_key_retire(dkey, kasp,
+								  now);
 					}
 					continue;
 				}
@@ -1712,7 +1713,7 @@ dns_keymgr_run(const dns_name_t *origin, dns_rdataclass_t rdclass,
 			 * effectively immediately making the key active.
 			 */
 			if (prepub < created) {
-				active += (created-prepub);
+				active += (created - prepub);
 				prepub = created;
 			}
 			if (active < created) {
