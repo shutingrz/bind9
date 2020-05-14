@@ -1,3 +1,6 @@
+5412.	[bug]		When using dnssec-policy, print correct keytiming
+			metadata. [GL #1843]
+
 5411.	[cleanup]	Refactoring of TCP accept code to use a single accept()
 			and pass the accepted socket to child threads for
 			processing. [GL !3320]
