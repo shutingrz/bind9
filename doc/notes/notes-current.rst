@@ -109,3 +109,7 @@ Bug Fixes
 -  When built without LMDB support, ``named`` failed to restart after a
    zone with a double quote (") in its name was added with ``rndc
    addzone``. Thanks to Alberto Fernández. [GL #1695]
+
+-  Fix a bug in dnssec-policy keymgr where the check if a key has a
+   successor would return a false positive if any other key in the
+   keyring has a successor. [GL #1845]
