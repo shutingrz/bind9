@@ -4,7 +4,7 @@ AM_CPPFLAGS +=			\
 	$(LIBISC_CFLAGS)	\
 	$(LIBDNS_CFLAGS)
 
-dyndb_LTLIBRARIES = sample.la
+noinst_LTLIBRARIES = sample.la
 dyndbdir = $(abs_builddir)
 
 sample_la_SOURCES =	\

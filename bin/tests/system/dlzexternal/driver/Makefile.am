@@ -4,7 +4,7 @@ AM_CPPFLAGS +=			\
 	$(LIBISC_CFLAGS)	\
 	$(LIBDNS_CFLAGS)
 
-dlzexternal_LTLIBRARIES = dlzexternal.la
+noinst_LTLIBRARIES = dlzexternal.la
 dlzexternaldir = $(abs_builddir)
 
 dlzexternal_la_SOURCES =	\
