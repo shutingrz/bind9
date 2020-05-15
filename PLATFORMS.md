@@ -42,7 +42,7 @@ offer support on a "best effort" basis for some.
 
 ### Regularly tested platforms
 
-As of Mar 2020, BIND 9.17 is fully supported and regularly tested on the
+As of Jun 2020, BIND 9.17 is fully supported and regularly tested on the
 following systems:
 
 * Debian 9, 10
