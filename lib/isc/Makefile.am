@@ -93,7 +93,28 @@ libisc_la_HEADERS =			\
 	include/isc/tm.h		\
 	include/isc/types.h		\
 	include/isc/utf8.h		\
-	include/isc/util.h		\
+	include/isc/util.h
+
+if BUILD_WINDOWS
+libisc_la_HEADERS +=			\
+	win32/include/isc/align.h	\
+	win32/include/isc/bind_registry.h	\
+	win32/include/isc/bindevt.h	\
+	win32/include/isc/dir.h		\
+	win32/include/isc/ipv6.h	\
+	win32/include/isc/net.h		\
+	win32/include/isc/netdb.h	\
+	win32/include/isc/ntgroups.h	\
+	win32/include/isc/ntpaths.h	\
+	win32/include/isc/offset.h	\
+	win32/include/isc/stat.h	\
+	win32/include/isc/stdatomic.h	\
+	win32/include/isc/stdtime.h	\
+	win32/include/isc/syslog.h	\
+	win32/include/isc/time.h	\
+	win32/include/isc/win32os.h
+else BUILD_WINDOWS
+libisc_la_HEADERS +=			\
 	unix/include/isc/align.h	\
 	unix/include/isc/dir.h		\
 	unix/include/isc/netdb.h	\
@@ -104,6 +125,7 @@ libisc_la_HEADERS =			\
 	unix/include/isc/stdtime.h	\
 	unix/include/isc/syslog.h	\
 	unix/include/isc/time.h
+endif BUILD_WINDOWS
 
 pk11dir = $(includedir)/pk11
 pk11_HEADERS =				\
@@ -129,22 +151,6 @@ libisc_la_SOURCES =		\
 	netmgr/uv-compat.c	\
 	netmgr/uv-compat.h	\
 	netmgr/uverr2result.c	\
-	unix/pk11_api.c		\
-	unix/dir.c		\
-	unix/errno.c		\
-	unix/errno2result.c	\
-	unix/file.c		\
-	unix/fsaccess.c		\
-	unix/interfaceiter.c	\
-	unix/meminfo.c		\
-	unix/net.c		\
-	unix/os.c		\
-	unix/resource.c		\
-	unix/socket.c		\
-	unix/stdio.c		\
-	unix/stdtime.c		\
-	unix/syslog.c		\
-	unix/time.c		\
 	pk11.c			\
 	pk11_result.c		\
 	aes.c			\
@@ -214,6 +220,49 @@ libisc_la_SOURCES =		\
 	mem_p.h			\
 	task_p.h		\
 	timer_p.h
+
+if BUILD_WINDOWS
+libisc_la_SOURCES +=		\
+	win32/DLLMain.c		\
+	win32/dir.c		\
+	win32/errno.c		\
+	win32/errno2result.c	\
+	win32/file.c		\
+	win32/fsaccess.c	\
+	win32/interfaceiter.c	\
+	win32/ipv6.c		\
+	win32/meminfo.c		\
+	win32/net.c		\
+	win32/ntgroups.c	\
+	win32/ntpaths.c		\
+	win32/os.c		\
+	win32/pk11_api.c	\
+	win32/resource.c	\
+	win32/socket.c		\
+	win32/stdio.c		\
+	win32/stdtime.c		\
+	win32/syslog.c		\
+	win32/time.c		\
+	win32/win32os.c
+else BUILD_WINDOWS
+libisc_la_SOURCES +=		\
+	unix/pk11_api.c		\
+	unix/dir.c		\
+	unix/errno.c		\
+	unix/errno2result.c	\
+	unix/file.c		\
+	unix/fsaccess.c		\
+	unix/interfaceiter.c	\
+	unix/meminfo.c		\
+	unix/net.c		\
+	unix/os.c		\
+	unix/resource.c		\
+	unix/socket.c		\
+	unix/stdio.c		\
+	unix/stdtime.c		\
+	unix/syslog.c		\
+	unix/time.c
+endif
 
 libisc_la_CPPFLAGS =		\
 	$(AM_CPPFLAGS)		\

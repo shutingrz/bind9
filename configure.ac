@@ -85,6 +85,11 @@ AX_BIND9_LIB_VERSION([ns])
 AC_USE_SYSTEM_EXTENSIONS
 AC_CANONICAL_HOST
 
+build_windows=no
+AS_CASE([$host_os],
+	[mingw*],[build_windows=yes])
+AM_CONDITIONAL([WINDOWS_BUILD],[test "$build_windows" = "yes"])
+
 #
 # Compiler compatibility flags
 #
