@@ -940,24 +940,40 @@ AM_CONDITIONAL([HAVE_BACKTRACE], [test "$ac_cv_func_backtrace" = "yes"])
 #
 AC_MSG_CHECKING([for IPv6 structures])
 AC_COMPILE_IFELSE(
-  [AC_LANG_PROGRAM(
-     [[
-       #include <sys/types.h>
-       #include <sys/socket.h>
-       #include <netinet/in.h>
-     ]],
-     [[
-       struct sockaddr_in6 sin6;
-       struct in6_addr in6;
-       struct in6_pktinfo in6_pi;
-       struct sockaddr_storage storage;
-       in6 = in6addr_any;
-       in6 = in6addr_loopback;
-       sin6.sin6_scope_id = 0;
-       return (0);
-     ]])],
-  [AC_MSG_RESULT([yes])],
-  [AC_MSG_FAILURE([IPv6 support is mandatory])])
+    [AC_LANG_PROGRAM(
+	 [[
+	     #include <sys/types.h>
+	     #include <sys/socket.h>
+	     #include <netinet/in.h>
+	 ]],
+	 [[
+	     struct sockaddr_in6 sin6;
+	     struct in6_addr in6;
+	     struct in6_pktinfo in6_pi;
+	     struct sockaddr_storage storage;
+	     in6 = in6addr_any;
+	     in6 = in6addr_loopback;
+	     sin6.sin6_scope_id = 0;
+	     return (0);
+	 ]])],
+    [AC_MSG_RESULT([yes])],
+    [AC_COMPILE_IFELSE(
+	 [AC_LANG_PROGRAM(
+	      [[
+		  #include <winsock2.h>
+	      ]],
+	      [[
+		  struct sockaddr_in6 sin6;
+		  struct in6_addr in6;
+		  struct in6_pktinfo in6_pi;
+		  struct sockaddr_storage storage;
+		  in6 = in6addr_any;
+		  in6 = in6addr_loopback;
+		  sin6.sin6_scope_id = 0;
+		  return (0);
+	      ]])],
+	 [AC_MSG_RESULT([winsock2.h])],
+	 [AC_MSG_FAILURE([IPv6 support is mandatory])])])
 
 #
 # Allow forcibly disabling TCP Fast Open support as autodetection might yield
