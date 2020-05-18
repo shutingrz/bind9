@@ -619,8 +619,8 @@ specifier, which may be one of ``local``, ``iso8601``, or
 ``iso8601-utc``. If set to ``no``, the date and time will not be
 logged. If set to ``yes`` or ``local``, the date and time are logged in
 a human-readable format, using the local time zone. If set to
-``iso8601`` the local time is logged in ISO8601 format. If set to
-``iso8601-utc``, the date and time are logged in ISO8601 format,
+``iso8601`` the local time is logged in ISO 8601 format. If set to
+``iso8601-utc``, the date and time are logged in ISO 8601 format,
 with time zone set to UTC. The default is ``no``.
 
 ``print-time`` may be specified for a ``syslog`` channel, but it is
@@ -936,7 +936,7 @@ default will be used.
    the configuration file are taken as relative to this directory.
    The default location for most server output files (e.g.
    ``named.run``) is this directory. If a directory is not specified,
-   the working directory defaults to ".", the directory from
+   the working directory defaults to ``"."``, the directory from
    which the server was started. The directory specified should be an
    absolute path, and *must* be writable by the effective user ID of the
    ``named`` process.
@@ -1547,16 +1547,15 @@ Boolean Options
 ^^^^^^^^^^^^^^^
 
 ``automatic-interface-scan``
-
-   If ``yes`` and and supported by the operating system, automatically rescan
+   If ``yes`` and supported by the operating system, this automatically rescans
    network interfaces when the interface addresses are added or removed.  The
-   default is ``yes``.  This configuration option does not affect time based
-   ``interface-interval`` option, and it is recommended to set the time based
+   default is ``yes``.  This configuration option does not affect the time-based
+   ``interface-interval`` option; it is recommended to set the time-based
    ``interface-interval`` to 0 when the operator confirms that automatic
    interface scanning is supported by the operating system.
 
    The ``automatic-interface-scan`` implementation uses routing sockets for the
-   network interface discovery, and therefore the operating system has to
+   network interface discovery; therefore, the operating system has to
    support the routing sockets for this feature to work.
 
 ``allow-new-zones``
@@ -1567,62 +1566,62 @@ Boolean Options
    can persist after the server is restarted. The configuration
    information is saved in a file called ``viewname.nzf`` (or, if
    ``named`` is compiled with liblmdb, in an LMDB database file called
-   ``viewname.nzd``). viewname is the name of the view, unless the view
+   ``viewname.nzd``). "viewname" is the name of the view, unless the view
    name contains characters that are incompatible with use as a file
    name, in which case a cryptographic hash of the view name is used
    instead.
 
-   Zones added at runtime will have their configuration stored either in
-   a new-zone file (NZF) or a new-zone database (NZD) depending on
+   Configurations for zones added at runtime are stored either in
+   a new-zone file (NZF) or a new-zone database (NZD), depending on
    whether ``named`` was linked with liblmdb at compile time. See
    :ref:`man_rndc` for further details about ``rndc addzone``.
 
 ``auth-nxdomain``
    If ``yes``, then the ``AA`` bit is always set on NXDOMAIN responses,
    even if the server is not actually authoritative. The default is
-   ``no``. If you are using very old DNS software, you may need to set
-   it to ``yes``.
+   ``no``. If using very old DNS software, this may need to be set
+   to ``yes``.
 
 ``deallocate-on-exit``
    This option was used in BIND 8 to enable checking for memory leaks on
    exit. BIND 9 ignores the option and always performs the checks.
 
 ``memstatistics``
-   Write memory statistics to the file specified by
+   This writes memory statistics to the file specified by
    ``memstatistics-file`` at exit. The default is ``no`` unless '-m
-   record' is specified on the command line in which case it is ``yes``.
+   record' is specified on the command line, in which case it is ``yes``.
 
 ``dialup``
    If ``yes``, then the server treats all zones as if they are doing
    zone transfers across a dial-on-demand dialup link, which can be
-   brought up by traffic originating from this server. This has
-   different effects according to zone type and concentrates the zone
-   maintenance so that it all happens in a short interval, once every
-   ``heartbeat-interval`` and hopefully during the one call. It also
-   suppresses some of the normal zone maintenance traffic. The default
+   brought up by traffic originating from this server. Although this setting has
+   different effects according to zone type, it concentrates the zone
+   maintenance so that everything happens quickly, once every
+   ``heartbeat-interval``, ideally during a single call. It also
+   suppresses some normal zone maintenance traffic. The default
    is ``no``.
 
-   The ``dialup`` option may also be specified in the ``view`` and
-   ``zone`` statements, in which case it overrides the global ``dialup``
+   If specified in the ``view`` and
+   ``zone`` statements, the ``dialup`` option overrides the global ``dialup``
    option.
 
-   If the zone is a primary zone, then the server will send out a NOTIFY
+   If the zone is a primary zone, the server sends out a NOTIFY
    request to all the secondaries (default). This should trigger the zone
    serial number check in the secondary (providing it supports NOTIFY),
    allowing the secondary to verify the zone while the connection is active.
    The set of servers to which NOTIFY is sent can be controlled by
    ``notify`` and ``also-notify``.
 
-   If the zone is a secondary or stub zone, then the server will suppress
-   the regular "zone up to date" (refresh) queries and only perform them
-   when the ``heartbeat-interval`` expires in addition to sending NOTIFY
+   If the zone is a secondary or stub zone, the server suppresses
+   the regular "zone up to date" (refresh) queries and only performs them
+   when the ``heartbeat-interval`` expires, in addition to sending NOTIFY
    requests.
 
-   Finer control can be achieved by using ``notify`` which only sends
-   NOTIFY messages, ``notify-passive`` which sends NOTIFY messages and
-   suppresses the normal refresh queries, ``refresh`` which suppresses
+   Finer control can be achieved by using ``notify``, which only sends
+   NOTIFY messages; ``notify-passive``, which sends NOTIFY messages and
+   suppresses the normal refresh queries; ``refresh``, which suppresses
    normal refresh processing and sends refresh queries when the
-   ``heartbeat-interval`` expires, and ``passive`` which just disables
+   ``heartbeat-interval`` expires; and ``passive``, which just disables
    normal refresh processing.
 
    +--------------------+-----------------+-----------------+-----------------+
@@ -1646,7 +1645,7 @@ Boolean Options
    Note that normal NOTIFY processing is not affected by ``dialup``.
 
 ``flush-zones-on-shutdown``
-   When the nameserver exits due receiving SIGTERM, flush or do not
+   When the nameserver exits upon receiving SIGTERM, flush or do not
    flush any pending zone writes. The default is
    ``flush-zones-on-shutdown`` ``no``.
 
@@ -1655,12 +1654,12 @@ Boolean Options
    CLIENT-SUBNET for authoritative servers, but is now obsolete.
 
 ``root-key-sentinel``
-   Respond to root key sentinel probes as described in
+   If ``yes``, respond to root key sentinel probes as described in
    draft-ietf-dnsop-kskroll-sentinel-08. The default is ``yes``.
 
 ``message-compression``
    If ``yes``, DNS name compression is used in responses to regular
-   queries (not including AXFR or IXFR, which always uses compression).
+   queries (not including AXFR or IXFR, which always use compression).
    Setting this option to ``no`` reduces CPU usage on servers and may
    improve throughput. However, it increases response size, which may
    cause more queries to be processed using TCP; a server with
@@ -1677,14 +1676,14 @@ Boolean Options
    database lookups, causing extra latency when marshalling responses.
    ``minimal-responses`` takes one of four values:
 
-   -  ``no``: the server will be as complete as possible when generating
+   -  ``no``: the server is as complete as possible when generating
       responses.
-   -  ``yes``: the server will only add records to the authority and additional
+   -  ``yes``: the server only adds records to the authority and additional
       sections when such records are required by the DNS protocol (for
       example, when returning delegations or negative responses). This
       provides the best server performance but may result in more client
       queries.
-   -  ``no-auth``: the server will omit records from the authority section except
+   -  ``no-auth``: the server omits records from the authority section except
       when they are required, but it may still add records to the
       additional section.
    -  ``no-auth-recursive``: the same as ``no-auth`` when recursion is requested
@@ -1704,26 +1703,26 @@ Boolean Options
 
    The glue cache uses memory proportional to the number of delegations
    in the zone. The default setting is ``yes``, which improves
-   performance at the cost of increased memory usage for the zone. If
-   you don't want this, set it to ``no``.
+   performance at the cost of increased memory usage for the zone. To avoid
+   this, set it to ``no``.
 
 ``minimal-any``
-   If set to ``yes``, then when generating a positive response to a
-   query of type ANY over UDP, the server will reply with only one of
-   the RRsets for the query name, and its covering RRSIGs if any,
+   If set to ``yes``, the server replies with only one of
+   the RRsets for the query name when generating a positive response to a
+   query of type ANY over UDP, and its covering RRSIGs if any,
    instead of replying with all known RRsets for the name. Similarly, a
-   query for type RRSIG will be answered with the RRSIG records covering
+   query for type RRSIG is answered with the RRSIG records covering
    only one type. This can reduce the impact of some kinds of attack
    traffic, without harming legitimate clients. (Note, however, that the
    RRset returned is the first one found in the database; it is not
    necessarily the smallest available RRset.) Additionally,
    ``minimal-responses`` is turned on for these queries, so no
-   unnecessary records will be added to the authority or additional
+   unnecessary records are added to the authority or additional
    sections. The default is ``no``.
 
 ``notify``
    If ``yes`` (the default), DNS NOTIFY messages are sent when a zone
-   the server is authoritative for changes, see :ref:`notify`.
+   the server is authoritative for changes; see :ref:`notify`.
    The messages are sent to the servers listed in the zone's NS records
    (except the primary server identified in the SOA MNAME field), and to
    any servers listed in the ``also-notify`` option.
@@ -1738,22 +1737,22 @@ Boolean Options
    caused secondary zones to crash.
 
 ``notify-to-soa``
-   If ``yes`` do not check the nameservers in the NS RRset against the
+   If ``yes``, do not check the nameservers in the NS RRset against the
    SOA MNAME. Normally a NOTIFY message is not sent to the SOA MNAME
-   (SOA ORIGIN) as it is supposed to contain the name of the ultimate
+   (SOA ORIGIN), as it is supposed to contain the name of the ultimate
    primary server. Sometimes, however, a secondary server is listed as the SOA MNAME in
    hidden primary configurations; in that case, the
    ultimate primary should be set to still send NOTIFY messages to all the nameservers
    listed in the NS RRset.
 
 ``recursion``
-   If ``yes``, and a DNS query requests recursion, then the server will
-   attempt to do all the work required to answer the query. If recursion
-   is off and the server does not already know the answer, it will
-   return a referral response. The default is ``yes``. Note that setting
+   If ``yes``, and a DNS query requests recursion, then the server
+   attempts to do all the work required to answer the query. If recursion
+   is off and the server does not already know the answer, it
+   returns a referral response. The default is ``yes``. Note that setting
    ``recursion no`` does not prevent clients from getting data from the
    server's cache; it only prevents new data from being cached as an
-   effect of client queries. Caching may still occur as an effect the
+   effect of client queries. Caching may still occur as an effect of the
    server's internal operation, such as NOTIFY address lookups.
 
 ``request-nsid``
@@ -1767,23 +1766,23 @@ Boolean Options
    This experimental option is obsolete.
 
 ``require-server-cookie``
-   Require a valid server cookie before sending a full response to a UDP
-   request from a cookie aware client. BADCOOKIE is sent if there is a
-   bad or no existent server cookie.
+   If ``yes``, require a valid server cookie before sending a full response to a UDP
+   request from a cookie-aware client. BADCOOKIE is sent if there is a
+   bad or nonexistent server cookie.
 
    The default is ``no``.
 
-   Set this to ``yes`` to test that DNS COOKIE clients correctly handle
-   BADCOOKIE or if you are getting a lot of forged DNS requests with DNS COOKIES
-   present. Setting this to ``yes`` will result in reduced amplification effect
-   in a reflection attack, as the BADCOOKIE response will be smaller than a full
+   Users wishing to test that DNS COOKIE clients correctly handle
+   BADCOOKIE, or who are getting a lot of forged DNS requests with DNS COOKIES
+   present, should set this to ``yes``. Setting this to ``yes`` results in a reduced amplification effect
+   in a reflection attack, as the BADCOOKIE response is smaller than a full
    response, while also requiring a legitimate client to follow up with a second
    query with the new, valid, cookie.
 
 ``answer-cookie``
-   When set to the default value of ``yes``, COOKIE EDNS options will be
+   When set to the default value of ``yes``, COOKIE EDNS options are
    sent when applicable in replies to client queries. If set to ``no``,
-   COOKIE EDNS options will not be sent in replies. This can only be set
+   COOKIE EDNS options are not sent in replies. This can only be set
    at the global options level, not per-view.
 
    ``answer-cookie no`` is intended as a temporary measure, for use when
@@ -1797,7 +1796,7 @@ Boolean Options
 
 ``send-cookie``
    If ``yes``, then a COOKIE EDNS option is sent along with the query.
-   If the resolver has previously talked to the server, the COOKIE
+   If the resolver has previously communicated with the server, the COOKIE
    returned in the previous transaction is sent. This is used by the
    server to determine whether the resolver has talked to it before. A
    resolver sending the correct COOKIE is assumed not to be an off-path
@@ -1811,7 +1810,7 @@ Boolean Options
    The default is ``yes``.
 
 ``stale-answer-enable``
-   Enable the returning of "stale" cached answers when the nameservers
+   If ``yes``, enable the returning of "stale" cached answers when the nameservers
    for a zone are not answering. The default is not to return stale
    answers.
 
@@ -1819,7 +1818,7 @@ Boolean Options
    ``rndc serve-stale on`` or ``rndc serve-stale off``; these override
    the configured setting. ``rndc serve-stale reset`` restores the
    setting to the one specified in ``named.conf``. Note that if stale
-   answers have been disabled by ``rndc``, then they cannot be
+   answers have been disabled by ``rndc``, they cannot be
    re-enabled by reloading or reconfiguring ``named``; they must be
    re-enabled with ``rndc serve-stale on``, or the server must be
    restarted.
@@ -1828,8 +1827,8 @@ Boolean Options
    log category.
 
 ``nocookie-udp-size``
-   Sets the maximum size of UDP responses that will be sent to queries
-   without a valid server COOKIE. A value below 128 will be silently
+   This sets the maximum size of UDP responses that are sent to queries
+   without a valid server COOKIE. A value below 128 is silently
    raised to 128. The default value is 4096, but the ``max-udp-size``
    option may further limit the response size.
 
@@ -1837,20 +1836,20 @@ Boolean Options
    This experimental option is obsolete.
 
 ``cookie-algorithm``
-   Set the algorithm to be used when generating the server cookie. One
-   of "aes", "sha1" or "sha256". The default is "aes" if supported by
-   the cryptographic library or otherwise "sha256".
+   This sets the algorithm to be used when generating the server cookie; the options are
+   "aes", "sha1", or "sha256". The default is "aes" if supported by
+   the cryptographic library; otherwise, "sha256".
 
 ``cookie-secret``
    If set, this is a shared secret used for generating and verifying
    EDNS COOKIE options within an anycast cluster. If not set, the system
-   will generate a random secret at startup. The shared secret is
+   generates a random secret at startup. The shared secret is
    encoded as a hex string and needs to be 128 bits for AES128, 160 bits
-   for SHA1 and 256 bits for SHA256.
+   for SHA1, and 256 bits for SHA256.
 
    If there are multiple secrets specified, the first one listed in
    ``named.conf`` is used to generate new server cookies. The others
-   will only be used to verify returned cookies.
+   are only used to verify returned cookies.
 
 ``response-padding``
    The EDNS Padding option is intended to improve confidentiality when
@@ -1866,14 +1865,14 @@ Boolean Options
    of ``block-size`` bytes. If these conditions are not met, the
    response is not padded.
 
-   If ``block-size`` is 0 or the ACL is ``none;``, then this feature is
+   If ``block-size`` is 0 or the ACL is ``none;``, this feature is
    disabled and no padding will occur; this is the default. If
    ``block-size`` is greater than 512, a warning is logged and the value
    is truncated to 512. Block sizes are ordinarily expected to be powers
    of two (for instance, 128), but this is not mandatory.
 
 ``trust-anchor-telemetry``
-   Causes ``named`` to send specially-formed queries once per day to
+   This causes ``named`` to send specially formed queries once per day to
    domains for which trust anchors have been configured via, e.g.,
    ``dnssec-keys`` or ``dnssec-validation auto``.
 
@@ -1883,14 +1882,14 @@ Boolean Options
    The key IDs for each domain are sorted smallest to largest prior to
    encoding. The query type is NULL.
 
-   By monitoring these queries, zone operators will be able to see which
+   By monitoring these queries, zone operators are able to see which
    resolvers have been updated to trust a new key; this may help them
    decide when it is safe to remove an old one.
 
    The default is ``yes``.
 
 ``use-ixfr``
-   *This option is obsolete*. If you need to disable IXFR to a
+   *This option is obsolete*. To disable IXFR to a
    particular server or servers, see the information on the
    ``provide-ixfr`` option in :ref:`server_statement_definition_and_usage`.
    See also :ref:`incremental_zone_transfers`.
@@ -1905,7 +1904,7 @@ Boolean Options
    See the description of ``request-expire`` in :ref:`server_statement_definition_and_usage`.
 
 ``match-mapped-addresses``
-   If ``yes``, then an IPv4-mapped IPv6 address will match any address
+   If ``yes``, then an IPv4-mapped IPv6 address matches any address
    match list entries that match the corresponding IPv4 address.
 
    This option was introduced to work around a kernel quirk in some
@@ -1918,17 +1917,17 @@ Boolean Options
 ``ixfr-from-differences``
    When ``yes`` and the server loads a new version of a primary zone from
    its zone file or receives a new version of a secondary file via zone
-   transfer, it will compare the new version to the previous one and
-   calculate a set of differences. The differences are then logged in
-   the zone's journal file such that the changes can be transmitted to
+   transfer, it compares the new version to the previous one and
+   calculates a set of differences. The differences are then logged in
+   the zone's journal file so that the changes can be transmitted to
    downstream secondaries as an incremental zone transfer.
 
    By allowing incremental zone transfers to be used for non-dynamic
    zones, this option saves bandwidth at the expense of increased CPU
    and memory consumption at the primary server. In particular, if the new
    version of a zone is completely different from the previous one, the
-   set of differences will be of a size comparable to the combined size
-   of the old and new zone version, and the server will need to
+   set of differences is of a size comparable to the combined size
+   of the old and new zone versions, and the server needs to
    temporarily allocate memory to hold this complete difference set.
 
    ``ixfr-from-differences`` also accepts ``master`` (or ``primary``)
@@ -1940,7 +1939,7 @@ Boolean Options
    ``ixfr-from-differences`` setting is ignored for that zone.
 
 ``multi-master``
-   This should be set when you have multiple primary servers for a zone and the
+   This should be set when there are multiple primary servers for a zone and the
    addresses refer to different machines. If ``yes``, ``named`` will not
    log when the serial number on the primary is less than what ``named``
    currently has. The default is ``no``.
@@ -1954,17 +1953,17 @@ Boolean Options
    re-signed whenever the user issues the command ``rndc sign zonename``.
 
    ``auto-dnssec maintain;`` includes the above, but also
-   automatically adjusts the zone's DNSSEC keys on schedule, according
+   automatically adjusts the zone's DNSSEC keys on a schedule, according
    to the keys' timing metadata (see :ref:`man_dnssec-keygen` and
    :ref:`man_dnssec-settime`). The command ``rndc sign zonename``
    causes ``named`` to load keys from the key repository and sign the
-   zone with all keys that are active.  ``rndc loadkeys zonename``
+   zone with all keys that are active. ``rndc loadkeys zonename``
    causes ``named`` to load keys from the key repository and schedule
    key maintenance events to occur in the future, but it does not sign
    the full zone immediately. Note: once keys have been loaded for a
-   zone the first time, the repository will be searched for changes
+   zone the first time, the repository is searched for changes
    periodically, regardless of whether ``rndc loadkeys`` is used. The
-   recheck interval is defined by ``dnssec-loadkeys-interval``.)
+   recheck interval is defined by ``dnssec-loadkeys-interval``.
 
    The default setting is ``auto-dnssec off``.
 
@@ -1976,13 +1975,13 @@ Boolean Options
 ``dnssec-validation``
    This option enables DNSSEC validation in ``named``.
 
-   If set to ``auto``, DNSSEC validation is enabled, and a default trust
+   If set to ``auto``, DNSSEC validation is enabled and a default trust
    anchor for the DNS root zone is used.
 
    If set to ``yes``, DNSSEC validation is enabled, but a trust anchor must be
    manually configured using a ``trust-anchors`` statement (or the
-   ``managed-keys``, or the ``trusted-keys`` statements, both deprecated). If
-   there is no configured trust anchor, validation will not take place.
+   ``managed-keys`` or ``trusted-keys`` statements, both deprecated). If
+   there is no configured trust anchor, validation does not take place.
 
    If set to ``no``, DNSSEC validation is disabled.
 
@@ -1991,14 +1990,14 @@ Boolean Options
    ``yes``.
 
    The default root trust anchor is stored in the file ``bind.keys``.
-   ``named`` will load that key at startup if ``dnssec-validation`` is
+   ``named`` loads that key at startup if ``dnssec-validation`` is
    set to ``auto``. A copy of the file is installed along with BIND 9,
    and is current as of the release date. If the root key expires, a new
    copy of ``bind.keys`` can be downloaded from
    https://www.isc.org/bind-keys.
 
    (To prevent problems if ``bind.keys`` is not found, the current trust
-   anchor is also compiled in to ``named``. Relying on this is not
+   anchor is also compiled in ``named``. Relying on this is not
    recommended, however, as it requires ``named`` to be recompiled with
    a new key when the root key expires.)
 
@@ -2009,21 +2008,21 @@ Boolean Options
 
          Whenever the resolver sends out queries to an EDNS-compliant
          server, it always sets the DO bit indicating it can support DNSSEC
-         responses even if ``dnssec-validation`` is off.
+         responses, even if ``dnssec-validation`` is off.
 
 ``validate-except``
-   Specifies a list of domain names at and beneath which DNSSEC
+   This specifies a list of domain names at and beneath which DNSSEC
    validation should *not* be performed, regardless of the presence of a
    trust anchor at or above those names. This may be used, for example,
    when configuring a top-level domain intended only for local use, so
    that the lack of a secure delegation for that domain in the root zone
-   will not cause validation failures. (This is similar to setting a
-   negative trust anchor, except that it is a permanent configuration,
+   does not cause validation failures. (This is similar to setting a
+   negative trust anchor except that it is a permanent configuration,
    whereas negative trust anchors expire and are removed after a set
    period of time.)
 
 ``dnssec-accept-expired``
-   Accept expired signatures when verifying DNSSEC signatures. The
+   This accepts expired signatures when verifying DNSSEC signatures. The
    default is ``no``. Setting this option to ``yes`` leaves ``named``
    vulnerable to replay attacks.
 
@@ -2044,56 +2043,56 @@ Boolean Options
    from the network. The default varies according to usage area. For
    ``master`` zones the default is ``fail``. For ``slave`` zones the
    default is ``warn``. For answers received from the network
-   (``response``) the default is ``ignore``.
+   (``response``), the default is ``ignore``.
 
    The rules for legal hostnames and mail domains are derived from
    :rfc:`952` and :rfc:`821` as modified by :rfc:`1123`.
 
-   ``check-names`` applies to the owner names of A, AAAA and MX records.
+   ``check-names`` applies to the owner names of A, AAAA, and MX records.
    It also applies to the domain names in the RDATA of NS, SOA, MX, and
    SRV records. It also applies to the RDATA of PTR records where the
-   owner name indicated that it is a reverse lookup of a hostname (the
+   owner name indicates that it is a reverse lookup of a hostname (the
    owner name ends in IN-ADDR.ARPA, IP6.ARPA, or IP6.INT).
 
 ``check-dup-records``
-   Check primary zones for records that are treated as different by
+   This checks primary zones for records that are treated as different by
    DNSSEC but are semantically equal in plain DNS. The default is to
    ``warn``. Other possible values are ``fail`` and ``ignore``.
 
 ``check-mx``
-   Check whether the MX record appears to refer to a IP address. The
+   This checks whether the MX record appears to refer to an IP address. The
    default is to ``warn``. Other possible values are ``fail`` and
    ``ignore``.
 
 ``check-wildcard``
    This option is used to check for non-terminal wildcards. The use of
-   non-terminal wildcards is almost always as a result of a failure to
-   understand the wildcard matching algorithm (:rfc:`1034`). This option
+   non-terminal wildcards is almost always as a result of a lack of
+   understanding of the wildcard matching algorithm (:rfc:`1034`). This option
    affects primary zones. The default (``yes``) is to check for
    non-terminal wildcards and issue a warning.
 
 ``check-integrity``
-   Perform post load zone integrity checks on primary zones. This checks
+   This performs post-load zone integrity checks on primary zones. It checks
    that MX and SRV records refer to address (A or AAAA) records and that
    glue address records exist for delegated zones. For MX and SRV
-   records only in-zone hostnames are checked (for out-of-zone hostnames
-   use ``named-checkzone``). For NS records only names below top of zone
+   records, only in-zone hostnames are checked (for out-of-zone hostnames
+   use ``named-checkzone``). For NS records, only names below top-of-zone
    are checked (for out-of-zone names and glue consistency checks use
    ``named-checkzone``). The default is ``yes``.
 
-   The use of the SPF record for publishing Sender Policy Framework is
-   deprecated as the migration from using TXT records to SPF records was
+   The use of the SPF record to publish Sender Policy Framework is
+   deprecated, as the migration from using TXT records to SPF records was
    abandoned. Enabling this option also checks that a TXT Sender Policy
    Framework record exists (starts with "v=spf1") if there is an SPF
-   record. Warnings are emitted if the TXT record does not exist and can
+   record. Warnings are emitted if the TXT record does not exist; they can
    be suppressed with ``check-spf``.
 
 ``check-mx-cname``
-   If ``check-integrity`` is set then fail, warn or ignore MX records
+   If ``check-integrity`` is set, then fail, warn, or ignore MX records
    that refer to CNAMES. The default is to ``warn``.
 
 ``check-srv-cname``
-   If ``check-integrity`` is set then fail, warn or ignore SRV records
+   If ``check-integrity`` is set, then fail, warn, or ignore SRV records
    that refer to CNAMES. The default is to ``warn``.
 
 ``check-sibling``
@@ -2101,17 +2100,17 @@ Boolean Options
    exists. The default is ``yes``.
 
 ``check-spf``
-   If ``check-integrity`` is set then check that there is a TXT Sender
+   If ``check-integrity`` is set, check that there is a TXT Sender
    Policy Framework record present (starts with "v=spf1") if there is an
    SPF record present. The default is ``warn``.
 
 ``zero-no-soa-ttl``
-   When returning authoritative negative responses to SOA queries set
+   If ``yes``, when returning authoritative negative responses to SOA queries, set
    the TTL of the SOA record returned in the authority section to zero.
    The default is ``yes``.
 
 ``zero-no-soa-ttl-cache``
-   When caching a negative response to a SOA query set the TTL to zero.
+   If ``yes``, when caching a negative response to a SOA query set the TTL to zero.
    The default is ``no``.
 
 ``update-check-ksk``
@@ -2130,14 +2129,14 @@ Boolean Options
    When this option is set to ``yes``, there must be at least two active
    keys for every algorithm represented in the DNSKEY RRset: at least
    one KSK and one ZSK per algorithm. If there is any algorithm for
-   which this requirement is not met, this option will be ignored for
+   which this requirement is not met, this option is ignored for
    that algorithm.
 
 ``dnssec-dnskey-kskonly``
    When this option and ``update-check-ksk`` are both set to ``yes``,
-   only key-signing keys (that is, keys with the KSK bit set) will be
+   only key-signing keys (that is, keys with the KSK bit set) are
    used to sign the DNSKEY, CDNSKEY, and CDS RRsets at the zone apex.
-   Zone-signing keys (keys without the KSK bit set) will be used to sign
+   Zone-signing keys (keys without the KSK bit set) are used to sign
    the remainder of the zone, but not the DNSKEY RRset. This is similar
    to the ``dnssec-signzone -x`` command line option.
 
@@ -2145,34 +2144,34 @@ Boolean Options
    option is ignored.
 
 ``try-tcp-refresh``
-   Try to refresh the zone using TCP if UDP queries fail. The default is
+   If ``yes``, try to refresh the zone using TCP if UDP queries fail. The default is
    ``yes``.
 
 ``dnssec-secure-to-insecure``
-   Allow a dynamic zone to transition from secure to insecure (i.e.,
+   This allows a dynamic zone to transition from secure to insecure (i.e.,
    signed to unsigned) by deleting all of the DNSKEY records. The
    default is ``no``. If set to ``yes``, and if the DNSKEY RRset at the
    zone apex is deleted, all RRSIG and NSEC records will be removed from
    the zone as well.
 
-   If the zone uses NSEC3, then it is also necessary to delete the
+   If the zone uses NSEC3, it is also necessary to delete the
    NSEC3PARAM RRset from the zone apex; this will cause the removal of
    all corresponding NSEC3 records. (It is expected that this
    requirement will be eliminated in a future release.)
 
    Note that if a zone has been configured with ``auto-dnssec maintain``
-   and the private keys remain accessible in the key repository, then
+   and the private keys remain accessible in the key repository,
    the zone will be automatically signed again the next time ``named``
    is started.
 
 ``synth-from-dnssec``
-   Synthesize answers from cached NSEC, NSEC3 and other RRsets that have been
+   This option synthesizes answers from cached NSEC, NSEC3, and other RRsets that have been
    proved to be correct using DNSSEC. The default is ``no``, but it will become
    ``yes`` again in future releases.
 
    .. note:: DNSSEC validation must be enabled for this option to be effective.
       This initial implementation only covers synthesis of answers from
-      NSEC records. Synthesis from NSEC3 is planned for the future. This
+      NSEC records; synthesis from NSEC3 is planned for the future. This
       will also be controlled by ``synth-from-dnssec``.
 
 Forwarding
@@ -2187,21 +2186,21 @@ authoritative and does not have the answer in its cache.
 
 ``forward``
    This option is only meaningful if the forwarders list is not empty. A
-   value of ``first``, the default, causes the server to query the
-   forwarders first — and if that doesn't answer the question, the
-   server will then look for the answer itself. If ``only`` is
-   specified, the server will only query the forwarders.
+   value of ``first`` is the default and causes the server to query the
+   forwarders first; if that does not answer the question, the
+   server then looks for the answer itself. If ``only`` is
+   specified, the server only queries the forwarders.
 
 ``forwarders``
-   Specifies a list of IP addresses to which queries shall be forwarded. The
-   default is the empty list (no forwarding).  Each address in the list can be
+   This specifies a list of IP addresses to which queries are forwarded. The
+   default is the empty list (no forwarding). Each address in the list can be
    associated with an optional port number and/or DSCP value, and a default port
    number and DSCP value can be set for the entire list.
 
 Forwarding can also be configured on a per-domain basis, allowing for
-the global forwarding options to be overridden in a variety of ways. You
-can set particular domains to use different forwarders, or have a
-different ``forward only/first`` behavior, or not forward at all, see
+the global forwarding options to be overridden in a variety of ways.
+Particular domains can be set to use different forwarders, or have a
+different ``forward only/first`` behavior, or not forward at all; see
 :ref:`zone_statement_grammar`.
 
 .. _dual_stack:
@@ -2209,15 +2208,15 @@ different ``forward only/first`` behavior, or not forward at all, see
 Dual-stack Servers
 ^^^^^^^^^^^^^^^^^^
 
-Dual-stack servers are used as servers of last resort to work around
-problems in reachability due the lack of support for either IPv4 or IPv6
+Dual-stack servers are used as servers of last resort, to work around
+problems in reachability due to the lack of support for either IPv4 or IPv6
 on the host machine.
 
 ``dual-stack-servers``
-   Specifies host names or addresses of machines with access to both
+   This specifies host names or addresses of machines with access to both
    IPv4 and IPv6 transports. If a hostname is used, the server must be
    able to resolve the name using only the transport it has. If the
-   machine is dual stacked, then the ``dual-stack-servers`` have no
+   machine is dual-stacked, the ``dual-stack-servers`` parameter has no
    effect unless access to a transport has been disabled on the command
    line (e.g. ``named -4``).
 
@@ -2245,15 +2244,15 @@ for details on how to specify IP address lists.
    to expand the list of permitted hosts, not to reduce it.
 
 ``allow-query``
-   Specifies which hosts are allowed to ask ordinary DNS questions.
+   This specifies which hosts are allowed to ask ordinary DNS questions.
    ``allow-query`` may also be specified in the ``zone`` statement, in
    which case it overrides the ``options allow-query`` statement. If not
    specified, the default is to allow queries from all hosts.
 
-   .. note:: ``allow-query-cache`` is now used to specify access to the cache.
+   .. note:: ``allow-query-cache`` is used to specify access to the cache.
 
 ``allow-query-on``
-   Specifies which local addresses can accept ordinary DNS questions.
+   This specifies which local addresses can accept ordinary DNS questions.
    This makes it possible, for instance, to allow queries on
    internal-facing interfaces but disallow them on external-facing ones,
    without necessarily knowing the internal network's addresses.
@@ -2270,14 +2269,13 @@ for details on how to specify IP address lists.
    .. note:: ``allow-query-cache`` is used to specify access to the cache.
 
 ``allow-query-cache``
-   Specifies which hosts are allowed to get answers from the cache. If
-   ``allow-query-cache`` is not set then ``allow-recursion`` is used if
-   set, otherwise ``allow-query`` is used if set unless
-   ``recursion no;`` is set in which case ``none;`` is used, otherwise
-   the default (``localnets;`` ``localhost;``) is used.
+   This specifies which hosts are allowed to get answers from the cache. If
+   ``allow-recursion`` is not set, BIND checks to see if the following parameters
+   are set, in order: ``allow-query-cache`` and ``allow-query`` (unless ``recursion no;`` is set).
+   If neither of those parameters is set, the default (localnets; localhost;) is used.
 
 ``allow-query-cache-on``
-   Specifies which local addresses can send answers from the cache. If
+   This specifies which local addresses can send answers from the cache. If
    ``allow-query-cache-on`` is not set, then ``allow-recursion-on`` is
    used if set. Otherwise, the default is to allow cache responses to be
    sent from any address. Note: Both ``allow-query-cache`` and
@@ -2286,24 +2284,23 @@ for details on how to specify IP address lists.
    other.
 
 ``allow-recursion``
-   Specifies which hosts are allowed to make recursive queries through
-   this server. If ``allow-recursion`` is not set then
-   ``allow-query-cache`` is used if set, otherwise ``allow-query`` is
-   used if set, otherwise the default (``localnets;`` ``localhost;``) is
-   used.
+   This specifies which hosts are allowed to make recursive queries through
+   this server. BIND checks to see if the following parameters are set, in
+   order: allow-query-cache and allow-query. If neither of those parameters
+   is set, the default (localnets; localhost;) is used.
 
 ``allow-recursion-on``
-   Specifies which local addresses can accept recursive queries. If
+   This specifies which local addresses can accept recursive queries. If
    ``allow-recursion-on`` is not set, then ``allow-query-cache-on`` is
    used if set; otherwise, the default is to allow recursive queries on
-   all addresses: Any client permitted to send recursive queries can
+   all addresses. Any client permitted to send recursive queries can
    send them to any address on which ``named`` is listening. Note: Both
    ``allow-recursion`` and ``allow-recursion-on`` must be satisfied
    before recursion is allowed; a client that is blocked by one cannot
    be allowed by the other.
 
 ``allow-update``
-   When set in the ``zone`` statement for a primary zone, specifies which
+   When set in the ``zone`` statement for a primary zone, this specifies which
    hosts are allowed to submit Dynamic DNS updates to that zone. The
    default is to deny updates from all hosts.
 
@@ -2316,13 +2313,13 @@ for details on how to specify IP address lists.
    allowing updates.
 
 ``allow-update-forwarding``
-   When set in the ``zone`` statement for a secondary zone, specifies which
+   When set in the ``zone`` statement for a secondary zone, this specifies which
    hosts are allowed to submit Dynamic DNS updates and have them be
    forwarded to the primary. The default is ``{ none; }``, which means
    that no update forwarding will be performed.
 
    To enable update forwarding, specify
-   ``allow-update-forwarding { any; };``. in the ``zone`` statement.
+   ``allow-update-forwarding { any; };`` in the ``zone`` statement.
    Specifying values other than ``{ none; }`` or ``{ any; }`` is usually
    counterproductive; the responsibility for update access control
    should rest with the primary server, not the secondary.
@@ -2345,38 +2342,38 @@ for details on how to specify IP address lists.
 .. _allow-transfer-access:
 
 ``allow-transfer``
-   Specifies which hosts are allowed to receive zone transfers from the
+   This specifies which hosts are allowed to receive zone transfers from the
    server. ``allow-transfer`` may also be specified in the ``zone``
    statement, in which case it overrides the ``allow-transfer``
    statement set in ``options`` or ``view``. If not specified, the
    default is to allow transfers to all hosts.
 
 ``blackhole``
-   Specifies a list of addresses that the server will not accept queries
-   from or use to resolve a query. Queries from these addresses will not
+   This specifies a list of addresses which the server does not accept queries
+   from or use to resolve a query. Queries from these addresses are not
    be responded to. The default is ``none``.
 
 ``keep-response-order``
-   Specifies a list of addresses to which the server will send responses
-   to TCP queries in the same order in which they were received. This
+   This specifies a list of addresses to which the server sends responses
+   to TCP queries, in the same order in which they were received. This
    disables the processing of TCP queries in parallel. The default is
    ``none``.
 
 ``no-case-compress``
-   Specifies a list of addresses which require responses to use
+   This specifies a list of addresses which require responses to use
    case-insensitive compression. This ACL can be used when ``named``
    needs to work with clients that do not comply with the requirement in
    :rfc:`1034` to use case-insensitive name comparisons when checking for
    matching domain names.
 
    If left undefined, the ACL defaults to ``none``: case-insensitive
-   compression will be used for all clients. If the ACL is defined and
-   matches a client, then case will be ignored when compressing domain
+   compression is used for all clients. If the ACL is defined and
+   matches a client, then case is ignored when compressing domain
    names in DNS responses sent to that client.
 
-   This can result in slightly smaller responses: if a response contains
+   This can result in slightly smaller responses; if a response contains
    the names "example.com" and "example.COM", case-insensitive
-   compression would treat the second one as a duplicate. It also
+   compression treats the second one as a duplicate. It also
    ensures that the case of the query name exactly matches the case of
    the owner names of returned records, rather than matching the case of
    the records entered in the zone file. This allows responses to
@@ -2386,36 +2383,36 @@ for details on how to specify IP address lists.
    Case-insensitive compression is *always* used in AXFR and IXFR
    responses, regardless of whether the client matches this ACL.
 
-   There are circumstances in which ``named`` will not preserve the case
+   There are circumstances in which ``named`` does not preserve the case
    of owner names of records: if a zone file defines records of
    different types with the same name, but the capitalization of the
    name is different (e.g., "www.example.com/A" and
-   "WWW.EXAMPLE.COM/AAAA"), then all responses for that name will use
+   "WWW.EXAMPLE.COM/AAAA"), then all responses for that name use
    the *first* version of the name that was used in the zone file. This
    limitation may be addressed in a future release. However, domain
    names specified in the rdata of resource records (i.e., records of
-   type NS, MX, CNAME, etc) will always have their case preserved unless
+   type NS, MX, CNAME, etc) always have their case preserved unless
    the client matches this ACL.
 
 ``resolver-query-timeout``
-   The amount of time in milliseconds that the resolver will spend
+   This is the amount of time in milliseconds that the resolver spends
    attempting to resolve a recursive query before failing. The default
    and minimum is ``10000`` and the maximum is ``30000``. Setting it to
    ``0`` will result in the default being used.
 
    This value was originally specified in seconds. Values less than or
-   equal to 300 will be be treated as seconds and converted to
+   equal to 300 are treated as seconds and converted to
    milliseconds before applying the above limits.
 
 Interfaces
 ^^^^^^^^^^
 
-The interfaces and ports that the server will answer queries from may be
+The interfaces and ports that the server answers queries from may be
 specified using the ``listen-on`` option. ``listen-on`` takes an
 optional port and an ``address_match_list`` of IPv4 addresses. (IPv6
-addresses are ignored, with a logged warning.) The server will listen on
+addresses are ignored, with a logged warning.) The server listens on
 all interfaces allowed by the address match list. If a port is not
-specified, port 53 will be used.
+specified, port 53 is used.
 
 Multiple ``listen-on`` statements are allowed. For example,
 
@@ -2424,16 +2421,16 @@ Multiple ``listen-on`` statements are allowed. For example,
    listen-on { 5.6.7.8; };
    listen-on port 1234 { !1.2.3.4; 1.2/16; };
 
-will enable the name server on port 53 for the IP address 5.6.7.8, and
+enables the name server on port 53 for the IP address 5.6.7.8, and
 on port 1234 of an address on the machine in net 1.2 that is not
 1.2.3.4.
 
-If no ``listen-on`` is specified, the server will listen on port 53 on
+If no ``listen-on`` is specified, the server listens on port 53 on
 all IPv4 interfaces.
 
 The ``listen-on-v6`` option is used to specify the interfaces and the
-ports on which the server will listen for incoming queries sent using
-IPv6. If not specified, the server will listen on port 53 on all IPv6
+ports on which the server listens for incoming queries sent using
+IPv6. If not specified, the server listens on port 53 on all IPv6
 interfaces.
 
 When
@@ -2444,7 +2441,7 @@ When
 
 is specified as the ``address_match_list`` for the ``listen-on-v6``
 option, the server does not bind a separate socket to each IPv6
-interface address as it does for IPv4 if the operating system has enough
+interface address as it does for IPv4, if the operating system has enough
 API support for IPv6 (specifically if it conforms to :rfc:`3493` and
 :rfc:`3542`). Instead, it listens on the IPv6 wildcard address. If the system
 only has incomplete API support for IPv6, however, the behavior is the
@@ -2463,10 +2460,10 @@ Multiple ``listen-on-v6`` options can be used. For example,
    listen-on-v6 { any; };
    listen-on-v6 port 1234 { !2001:db8::/32; any; };
 
-will enable the name server on port 53 for any IPv6 addresses (with a
-single wildcard socket), and on port 1234 of IPv6 addresses that is not
+enables the name server on port 53 for any IPv6 addresses (with a
+single wildcard socket), and on port 1234 of IPv6 addresses that are not
 in the prefix 2001:db8::/32 (with separate sockets for each matched
-address.)
+address).
 
 To make the server not listen on any IPv6 address, use
 
@@ -2479,15 +2476,15 @@ To make the server not listen on any IPv6 address, use
 Query Address
 ^^^^^^^^^^^^^
 
-If the server doesn't know the answer to a question, it will query other
+If the server does not know the answer to a question, it queries other
 name servers. ``query-source`` specifies the address and port used for
 such queries. For queries sent over IPv6, there is a separate
 ``query-source-v6`` option. If ``address`` is ``*`` (asterisk) or is
-omitted, a wildcard IP address (``INADDR_ANY``) will be used.
+omitted, a wildcard IP address (``INADDR_ANY``) is used.
 
 If ``port`` is ``*`` or is omitted, a random port number from a
-pre-configured range is picked up and will be used for each query. The
-port range(s) is that specified in the ``use-v4-udp-ports`` (for IPv4)
+pre-configured range is picked up and used for each query. The
+port range(s) is specified in the ``use-v4-udp-ports`` (for IPv4)
 and ``use-v6-udp-ports`` (for IPv6) options, excluding the ranges
 specified in the ``avoid-v4-udp-ports`` and ``avoid-v6-udp-ports``
 options, respectively.
@@ -2501,29 +2498,29 @@ are:
    query-source-v6 address * port *;
 
 If ``use-v4-udp-ports`` or ``use-v6-udp-ports`` is unspecified,
-``named`` will check if the operating system provides a programming
+``named`` checks whether the operating system provides a programming
 interface to retrieve the system's default range for ephemeral ports. If
-such an interface is available, ``named`` will use the corresponding
-system default range; otherwise, it will use its own defaults:
+such an interface is available, ``named`` uses the corresponding
+system default range; otherwise, it uses its own defaults:
 
 ::
 
    use-v4-udp-ports { range 1024 65535; };
    use-v6-udp-ports { range 1024 65535; };
 
-.. note:: Make sure the ranges be sufficiently large for security. A
+.. note:: Make sure the ranges are sufficiently large for security. A
    desirable size depends on various parameters, but we generally recommend
    it contain at least 16384 ports (14 bits of entropy). Note also that the
    system's default range when used may be too small for this purpose, and
    that the range may even be changed while ``named`` is running; the new
-   range will automatically be applied when ``named`` is reloaded. It is
-   encouraged to configure ``use-v4-udp-ports`` and ``use-v6-udp-ports``
-   explicitly so that the ranges are sufficiently large and are reasonably
+   range will automatically be applied when ``named`` is reloaded. Explicit
+   configuration of use-v4-udp-ports and use-v6-udp-ports is encouraged,
+   so that the ranges are sufficiently large and are reasonably
    independent from the ranges used by other applications.
 
 .. note:: The operational configuration where ``named`` runs may prohibit
    the use of some ports. For example, UNIX systems will not allow
-   ``named`` running without a root privilege to use ports less than 1024.
+   ``named``, if run without a root privilege, to use ports less than 1024.
    If such ports are included in the specified (or detected) set of query
    ports, the corresponding query attempts will fail, resulting in
    resolution failures or delay. It is therefore important to configure the
@@ -2573,10 +2570,10 @@ on the amount of load that transfers place on the system. The following
 options apply to zone transfers.
 
 ``also-notify``
-   Defines a global list of IP addresses of name servers that are also
+   This option defines a global list of IP addresses of name servers that are also
    sent NOTIFY messages whenever a fresh copy of the zone is loaded, in
    addition to the servers listed in the zone's NS records. This helps
-   to ensure that copies of the zones will quickly converge on stealth
+   to ensure that copies of the zones quickly converge on stealth
    servers. Optionally, a port may be specified with each
    ``also-notify`` address to send the notify messages to a port other
    than the default of 53. An optional TSIG key can also be specified
@@ -2584,10 +2581,10 @@ options apply to zone transfers.
    be useful when sending notifies to multiple views. In place of
    explicit addresses, one or more named ``masters`` lists can be used.
 
-   If an ``also-notify`` list is given in a ``zone`` statement, it will
-   override the ``options also-notify`` statement. When a
+   If an ``also-notify`` list is given in a ``zone`` statement, it
+   overrides the ``options also-notify`` statement. When a
    ``zone notify`` statement is set to ``no``, the IP addresses in the
-   global ``also-notify`` list will not be sent NOTIFY messages for that
+   global ``also-notify`` list are not sent NOTIFY messages for that
    zone. The default is the empty list (no global notification list).
 
 ``max-transfer-time-in``
@@ -2611,27 +2608,27 @@ options apply to zone transfers.
    is 28 days (40320 minutes).
 
 ``notify-rate``
-   The rate at which NOTIFY requests will be sent during normal zone
+   This specifies the rate at which NOTIFY requests are sent during normal zone
    maintenance operations. (NOTIFY requests due to initial zone loading
    are subject to a separate rate limit; see below.) The default is 20
    per second. The lowest possible rate is one per second; when set to
-   zero, it will be silently raised to one.
+   zero, it is silently raised to one.
 
 ``startup-notify-rate``
-   The rate at which NOTIFY requests will be sent when the name server
+   This is the rate at which NOTIFY requests are sent when the name server
    is first starting up, or when zones have been newly added to the
    nameserver. The default is 20 per second. The lowest possible rate is
-   one per second; when set to zero, it will be silently raised to one.
+   one per second; when set to zero, it is silently raised to one.
 
 ``serial-query-rate``
-   Slave servers will periodically query primary servers to find out if
+   Secondary servers periodically query primary servers to find out if
    zone serial numbers have changed. Each such query uses a minute
    amount of the secondary server's network bandwidth. To limit the amount
    of bandwidth used, BIND 9 limits the rate at which queries are sent.
    The value of the ``serial-query-rate`` option, an integer, is the
    maximum number of queries sent per second. The default is 20 per
    second. The lowest possible rate is one per second; when set to zero,
-   it will be silently raised to one.
+   it is silently raised to one.
 
 ``transfer-format``
    Zone transfers can be sent using two different formats,
@@ -2639,26 +2636,23 @@ options apply to zone transfers.
    is used on the primary server to determine which format it sends.
    ``one-answer`` uses one DNS message per resource record transferred.
    ``many-answers`` packs as many resource records as possible into a
-   message. ``many-answers`` is more efficient, but is only supported by
-   relatively new secondary servers, such as BIND 9, BIND 8.x and BIND 4.9.5
-   onwards. The ``many-answers`` format is also supported by recent
-   Microsoft Windows nameservers. The default is ``many-answers``.
+   message. ``many-answers`` is more efficient; the default is ``many-answers``.
    ``transfer-format`` may be overridden on a per-server basis by using
    the ``server`` statement.
 
 ``transfer-message-size``
    This is an upper bound on the uncompressed size of DNS messages used
    in zone transfers over TCP. If a message grows larger than this size,
-   additional messages will be used to complete the zone transfer.
+   additional messages are used to complete the zone transfer.
    (Note, however, that this is a hint, not a hard limit; if a message
    contains a single resource record whose RDATA does not fit within the
    size limit, a larger message will be permitted so the record can be
    transferred.)
 
-   Valid values are between 512 and 65535 octets, and any values outside
-   that range will be adjusted to the nearest value within it. The
+   Valid values are between 512 and 65535 octets; any values outside
+   that range are adjusted to the nearest value within it. The
    default is ``20480``, which was selected to improve message
-   compression: most DNS messages of this size will compress to less
+   compression; most DNS messages of this size will compress to less
    than 16536 bytes. Larger messages cannot be compressed as
    effectively, because 16536 is the largest permissible compression
    offset pointer in a DNS message.
@@ -2667,18 +2661,18 @@ options apply to zone transfers.
    any benefit in setting a value other than the default.
 
 ``transfers-in``
-   The maximum number of inbound zone transfers that can be running
+   This is the maximum number of inbound zone transfers that can be running
    concurrently. The default value is ``10``. Increasing
    ``transfers-in`` may speed up the convergence of secondary zones, but it
    also may increase the load on the local system.
 
 ``transfers-out``
-   The maximum number of outbound zone transfers that can be running
-   concurrently. Zone transfer requests in excess of the limit will be
+   This is the maximum number of outbound zone transfers that can be running
+   concurrently. Zone transfer requests in excess of the limit are
    refused. The default value is ``10``.
 
 ``transfers-per-ns``
-   The maximum number of inbound zone transfers that can be concurrently
+   This is the maximum number of inbound zone transfers that can be concurrently
    transferring from a given remote name server. The default value is
    ``2``. Increasing ``transfers-per-ns`` may speed up the convergence
    of secondary zones, but it also may increase the load on the remote name
@@ -2686,12 +2680,12 @@ options apply to zone transfers.
    by using the ``transfers`` phrase of the ``server`` statement.
 
 ``transfer-source``
-   ``transfer-source`` determines which local address will be bound to
+   ``transfer-source`` determines which local address is bound to
    IPv4 TCP connections used to fetch zones transferred inbound by the
    server. It also determines the source IPv4 address, and optionally
    the UDP port, used for the refresh queries and forwarded dynamic
    updates. If not set, it defaults to a system controlled value which
-   will usually be the address of the interface "closest to" the remote
+   is usually the address of the interface "closest to" the remote
    end. This address must appear in the remote end's ``allow-transfer``
    option for the zone being transferred, if one is specified. This
    statement sets the ``transfer-source`` for all zones, but can be
@@ -2703,29 +2697,29 @@ options apply to zone transfers.
       address for TCP sockets.
 
 ``transfer-source-v6``
-   The same as ``transfer-source``, except zone transfers are performed
+   This option is the same as ``transfer-source``, except zone transfers are performed
    using IPv6.
 
 ``alt-transfer-source``
-   An alternate transfer source if the one listed in ``transfer-source``
+   This indicates an alternate transfer source if the one listed in ``transfer-source``
    fails and ``use-alt-transfer-source`` is set.
 
-   .. note:: If you do not wish the alternate transfer source to be used, you
-      should set ``use-alt-transfer-source`` appropriately and you
-      should not depend upon getting an answer back to the first refresh
+   .. note:: To avoid using the alternate transfer source,
+      set ``use-alt-transfer-source`` appropriately and
+      do not depend upon getting an answer back to the first refresh
       query.
 
 ``alt-transfer-source-v6``
-   An alternate transfer source if the one listed in
+   This indicates an alternate transfer source if the one listed in
    ``transfer-source-v6`` fails and ``use-alt-transfer-source`` is set.
 
 ``use-alt-transfer-source``
-   Use the alternate transfer sources or not. If views are specified
-   this defaults to ``no``, otherwise it defaults to ``yes``.
+   This indicates whether the alternate transfer sources should be used. If views are specified,
+   this defaults to ``no``; otherwise, it defaults to ``yes``.
 
 ``notify-source``
    ``notify-source`` determines which local source address, and
-   optionally UDP port, will be used to send NOTIFY messages. This
+   optionally UDP port, is used to send NOTIFY messages. This
    address must appear in the secondary server's ``masters`` zone clause or
    in an ``allow-notify`` clause. This statement sets the
    ``notify-source`` for all zones, but can be overridden on a per-zone
@@ -2736,7 +2730,7 @@ options apply to zone transfers.
       address for TCP sockets.
 
 ``notify-source-v6``
-   Like ``notify-source``, but applies to notify messages sent to IPv6
+   This option acts like ``notify-source``, but applies to notify messages sent to IPv6
    addresses.
 
 .. _port_lists:
@@ -2746,21 +2740,21 @@ UDP Port Lists
 
 ``use-v4-udp-ports``, ``avoid-v4-udp-ports``, ``use-v6-udp-ports``, and
 ``avoid-v6-udp-ports`` specify a list of IPv4 and IPv6 UDP ports that
-will be used or not used as source ports for UDP messages. See
+are or are not used as source ports for UDP messages. See
 :ref:`query_address` about how the available ports are
-determined. For example, with the following configuration
+determined. For example, with the following configuration:
 
 ::
 
    use-v6-udp-ports { range 32768 65535; };
    avoid-v6-udp-ports { 40000; range 50000 60000; };
 
-UDP ports of IPv6 messages sent from ``named`` will be in one of the
+UDP ports of IPv6 messages sent from ``named`` are in one of the
 following ranges: 32768 to 39999, 40001 to 49999, and 60001 to 65535.
 
 ``avoid-v4-udp-ports`` and ``avoid-v6-udp-ports`` can be used to prevent
 ``named`` from choosing as its random source port a port that is blocked
-by your firewall or a port that is used by other applications; if a
+by a firewall or a port that is used by other applications; if a
 query went out with a source port blocked by a firewall, the answer
 would not get by the firewall and the name server would have to query
 again. Note: the desired range can also be represented only with
@@ -2781,31 +2775,31 @@ amount. ``default`` uses the limit that was in force when the server was
 started. See the description of ``size_spec`` in :ref:`configuration_file_elements`.
 
 The following options set operating system resource limits for the name
-server process. Some operating systems don't support some or any of the
-limits. On such systems, a warning will be issued if the unsupported
+server process. Some operating systems do not support some or any of the
+limits; on such systems, a warning is issued if an unsupported
 limit is used.
 
 ``coresize``
-   The maximum size of a core dump. The default is ``default``.
+   This sets the maximum size of a core dump. The default is ``default``.
 
 ``datasize``
-   The maximum amount of data memory the server may use. The default is
-   ``default``. This is a hard limit on server memory usage. If the
+   This sets the maximum amount of data memory the server may use. The default is
+   ``default``. This is a hard limit on server memory usage; if the
    server attempts to allocate memory in excess of this limit, the
    allocation will fail, which may in turn leave the server unable to
    perform DNS service. Therefore, this option is rarely useful as a way
-   of limiting the amount of memory used by the server, but it can be
+   to limit the amount of memory used by the server, but it can be
    used to raise an operating system data size limit that is too small
-   by default. If you wish to limit the amount of memory used by the
+   by default. To limit the amount of memory used by the
    server, use the ``max-cache-size`` and ``recursive-clients`` options
    instead.
 
 ``files``
-   The maximum number of files the server may have open concurrently.
+   This sets the maximum number of files the server may have open concurrently.
    The default is ``unlimited``.
 
 ``stacksize``
-   The maximum amount of stack memory the server may use. The default is
+   This sets the maximum amount of stack memory the server may use. The default is
    ``default``.
 
 .. _server_resource_limits:
@@ -2814,47 +2808,47 @@ Server Resource Limits
 ^^^^^^^^^^^^^^^^^^^^^^
 
 The following options set limits on the server's resource consumption
-that are enforced internally by the server rather than the operating
+that are enforced internally by the server rather than by the operating
 system.
 
 ``max-journal-size``
-   Sets a maximum size for each journal file (see :ref:`journal`),
+   This sets a maximum size for each journal file (see :ref:`journal`),
    expressed in bytes or, if followed by an
    optional unit suffix ('k', 'm', or 'g'), in kilobytes, megabytes, or
    gigabytes. When the journal file approaches the specified size, some
-   of the oldest transactions in the journal will be automatically
+   of the oldest transactions in the journal are automatically
    removed. The largest permitted value is 2 gigabytes. Very small
-   values are rounded up to 4096 bytes. You can specify ``unlimited``,
-   which also means 2 gigabytes. If you set the limit to ``default`` or
-   leave it unset, the journal is allowed to grow up to twice as large
+   values are rounded up to 4096 bytes. It is possible to specify ``unlimited``,
+   which also means 2 gigabytes. If the limit is set to ``default`` or
+   left unset, the journal is allowed to grow up to twice as large
    as the zone. (There is little benefit in storing larger journals.)
 
    This option may also be set on a per-zone basis.
 
 ``max-records``
-   The maximum number of records permitted in a zone. The default is
-   zero which means unlimited.
+   This sets the maximum number of records permitted in a zone. The default is
+   zero, which means the maximum is unlimited.
 
 ``recursive-clients``
-   The maximum number ("hard quota") of simultaneous recursive lookups
-   the server will perform on behalf of clients. The default is
+   This sets the maximum number (a "hard quota") of simultaneous recursive lookups
+   the server performs on behalf of clients. The default is
    ``1000``. Because each recursing client uses a fair bit of memory (on
    the order of 20 kilobytes), the value of the ``recursive-clients``
    option may have to be decreased on hosts with limited memory.
 
    ``recursive-clients`` defines a "hard quota" limit for pending
-   recursive clients: when more clients than this are pending, new
+   recursive clients; when more clients than this are pending, new
    incoming requests will not be accepted, and for each incoming request
    a previous pending request will also be dropped.
 
    A "soft quota" is also set. When this lower quota is exceeded,
    incoming requests are accepted, but for each one, a pending request
-   will be dropped. If ``recursive-clients`` is greater than 1000, the
+   is dropped. If ``recursive-clients`` is greater than 1000, the
    soft quota is set to ``recursive-clients`` minus 100; otherwise it is
    set to 90% of ``recursive-clients``.
 
 ``tcp-clients``
-   The maximum number of simultaneous client TCP connections that the
+   This is the maximum number of simultaneous client TCP connections that the
    server will accept. The default is ``150``.
 
 .. _clients-per-query:
@@ -2862,46 +2856,46 @@ system.
 ``clients-per-query``; \ ``max-clients-per-query``
    These set the initial value (minimum) and maximum number of recursive
    simultaneous clients for any given query (<qname,qtype,qclass>) that
-   the server will accept before dropping additional clients. ``named``
-   will attempt to self tune this value and changes will be logged. The
+   the server accepts before dropping additional clients. ``named``
+   attempts to self-tune this value and changes are logged. The
    default values are 10 and 100.
 
    This value should reflect how many queries come in for a given name
    in the time it takes to resolve that name. If the number of queries
-   exceed this value, ``named`` will assume that it is dealing with a
-   non-responsive zone and will drop additional queries. If it gets a
-   response after dropping queries, it will raise the estimate. The
-   estimate will then be lowered in 20 minutes if it has remained
+   exceeds this value, ``named`` assumes that it is dealing with a
+   non-responsive zone and drops additional queries. If it gets a
+   response after dropping queries, it raises the estimate. The
+   estimate is then lowered in 20 minutes if it has remained
    unchanged.
 
-   If ``clients-per-query`` is set to zero, then there is no limit on
-   the number of clients per query and no queries will be dropped.
+   If ``clients-per-query`` is set to zero, there is no limit on
+   the number of clients per query and no queries are dropped.
 
-   If ``max-clients-per-query`` is set to zero, then there is no upper
-   bound other than imposed by ``recursive-clients``.
+   If ``max-clients-per-query`` is set to zero, there is no upper
+   bound other than that imposed by ``recursive-clients``.
 
 ``fetches-per-zone``
-   The maximum number of simultaneous iterative queries to any one
-   domain that the server will permit before blocking new queries for
+   This sets the maximum number of simultaneous iterative queries to any one
+   domain that the server permits before blocking new queries for
    data in or beneath that zone. This value should reflect how many
    fetches would normally be sent to any one zone in the time it would
    take to resolve them. It should be smaller than
    ``recursive-clients``.
 
    When many clients simultaneously query for the same name and type,
-   the clients will all be attached to the same fetch, up to the
-   ``max-clients-per-query`` limit, and only one iterative query will be
+   the clients are all attached to the same fetch, up to the
+   ``max-clients-per-query`` limit, and only one iterative query is
    sent. However, when clients are simultaneously querying for
-   *different* names or types, multiple queries will be sent and
+   *different* names or types, multiple queries are sent and
    ``max-clients-per-query`` is not effective as a limit.
 
    Optionally, this value may be followed by the keyword ``drop`` or
    ``fail``, indicating whether queries which exceed the fetch quota for
-   a zone will be dropped with no response, or answered with SERVFAIL.
+   a zone are dropped with no response, or answered with SERVFAIL.
    The default is ``drop``.
 
    If ``fetches-per-zone`` is set to zero, then there is no limit on the
-   number of fetches per query and no queries will be dropped. The
+   number of fetches per query and no queries are dropped. The
    default is zero.
 
    The current list of active fetches can be dumped by running
@@ -2914,26 +2908,26 @@ system.
    recreated with the counters set to zero.)
 
 ``fetches-per-server``
-   The maximum number of simultaneous iterative queries that the server
-   will allow to be sent to a single upstream name server before
+   This sets the maximum number of simultaneous iterative queries that the server
+   allows to be sent to a single upstream name server before
    blocking additional queries. This value should reflect how many
    fetches would normally be sent to any one server in the time it would
    take to resolve them. It should be smaller than
    ``recursive-clients``.
 
    Optionally, this value may be followed by the keyword ``drop`` or
-   ``fail``, indicating whether queries will be dropped with no
+   ``fail``, indicating whether queries are dropped with no
    response, or answered with SERVFAIL, when all of the servers
    authoritative for a zone are found to have exceeded the per-server
    quota. The default is ``fail``.
 
    If ``fetches-per-server`` is set to zero, then there is no limit on
-   the number of fetches per query and no queries will be dropped. The
+   the number of fetches per query and no queries are dropped. The
    default is zero.
 
    The ``fetches-per-server`` quota is dynamically adjusted in response
-   to detected congestion. As queries are sent to a server and are
-   either answered or time out, an exponentially weighted moving average
+   to detected congestion. As queries are sent to a server and either are
+   answered or time out, an exponentially weighted moving average
    is calculated of the ratio of timeouts to responses. If the current
    average timeout ratio rises above a "high" threshold, then
    ``fetches-per-server`` is reduced for that server. If the timeout
@@ -2942,12 +2936,12 @@ system.
    the parameters for this calculation.
 
 ``fetch-quota-params``
-   Sets the parameters to use for dynamic resizing of the
+   This sets the parameters to use for dynamic resizing of the
    ``fetches-per-server`` quota in response to detected congestion.
 
    The first argument is an integer value indicating how frequently to
    recalculate the moving average of the ratio of timeouts to responses
-   for each server. The default is 100, meaning we recalculate the
+   for each server. The default is 100, meaning that BIND recalculates the
    average ratio after every 100 queries have either been answered or
    timed out.
 
@@ -2962,74 +2956,74 @@ system.
    most two places after the decimal point are significant.
 
 ``reserved-sockets``
-   The number of file descriptors reserved for TCP, stdio, etc. This
+   This sets the number of file descriptors reserved for TCP, stdio, etc. This
    needs to be big enough to cover the number of interfaces ``named``
    listens on plus ``tcp-clients``, as well as to provide room for
    outgoing TCP queries and incoming zone transfers. The default is
    ``512``. The minimum value is ``128`` and the maximum value is
-   ``128`` less than maxsockets (-S). This option may be removed in the
+   ``128`` fewer than maxsockets (-S). This option may be removed in the
    future.
 
    This option has little effect on Windows.
 
 ``max-cache-size``
-   The maximum amount of memory to use for the server's cache, in bytes
-   or % of total physical memory. When the amount of data in the cache
-   reaches this limit, the server will cause records to expire
-   prematurely based on an LRU based strategy so that the limit is not
-   exceeded. The keyword ``unlimited``, or the value 0, will place no
-   limit on cache size; records will be purged from the cache only when
-   their TTLs expire. Any positive values less than 2MB will be ignored
+   This sets the maximum amount of memory to use for the server's cache, in bytes
+   or percentage of total physical memory. When the amount of data in the cache
+   reaches this limit, the server causes records to expire
+   prematurely based on an LRU-based strategy so that the limit is not
+   exceeded. The keyword ``unlimited``, or the value 0, places no
+   limit on the cache size; records are purged from the cache only when
+   their TTLs expire. Any positive values less than 2MB are ignored
    and reset to 2MB. In a server with multiple views, the limit applies
    separately to the cache of each view. The default is ``90%``. On
-   systems where detection of amount of physical memory is not supported
-   values represented as % fall back to unlimited. Note that the
+   systems where detection of the amount of physical memory is not supported,
+   values represented as a percentage fall back to unlimited. Note that the
    detection of physical memory is done only once at startup, so
-   ``named`` will not adjust the cache size if the amount of physical
+   ``named`` does not adjust the cache size if the amount of physical
    memory is changed during runtime.
 
 ``tcp-listen-queue``
-   The listen queue depth. The default and minimum is 10. If the kernel
-   supports the accept filter "dataready" this also controls how many
-   TCP connections that will be queued in kernel space waiting for some
-   data before being passed to accept. Nonzero values less than 10 will
-   be silently raised. A value of 0 may also be used; on most platforms
+   This sets the listen queue depth. The default and minimum is 10. If the kernel
+   supports the accept filter "dataready", this also controls how many
+   TCP connections that are queued in kernel space waiting for some
+   data before being passed to accept. Nonzero values less than 10 are
+   silently raised. A value of 0 may also be used; on most platforms
    this sets the listen queue length to a system-defined default value.
 
 ``tcp-initial-timeout``
-   The amount of time (in units of 100 milliseconds) the server waits on
+   This sets the amount of time (in units of 100 milliseconds) that the server waits on
    a new TCP connection for the first message from the client. The
    default is 300 (30 seconds), the minimum is 25 (2.5 seconds), and the
    maximum is 1200 (two minutes). Values above the maximum or below the
-   minimum will be adjusted with a logged warning. (Note: This value
-   must be greater than the expected round trip delay time; otherwise no
+   minimum are adjusted with a logged warning. (Note: This value
+   must be greater than the expected round-trip delay time; otherwise no
    client will ever have enough time to submit a message.) This value
    can be updated at runtime by using ``rndc tcp-timeouts``.
 
 ``tcp-idle-timeout``
-   The amount of time (in units of 100 milliseconds) the server waits on
-   an idle TCP connection before closing it when the client is not using
+   This sets the amount of time (in units of 100 milliseconds) that the server waits on
+   an idle TCP connection before closing it, when the client is not using
    the EDNS TCP keepalive option. The default is 300 (30 seconds), the
-   maximum is 1200 (two minutes), and the minimum is 1 (one tenth of a
-   second). Values above the maximum or below the minimum will be
+   maximum is 1200 (two minutes), and the minimum is 1 (one-tenth of a
+   second). Values above the maximum or below the minimum are
    adjusted with a logged warning. See ``tcp-keepalive-timeout`` for
    clients using the EDNS TCP keepalive option. This value can be
    updated at runtime by using ``rndc tcp-timeouts``.
 
 ``tcp-keepalive-timeout``
-   The amount of time (in units of 100 milliseconds) the server waits on
-   an idle TCP connection before closing it when the client is using the
+   This sets the amount of time (in units of 100 milliseconds) that the server waits on
+   an idle TCP connection before closing it, when the client is using the
    EDNS TCP keepalive option. The default is 300 (30 seconds), the
-   maximum is 65535 (about 1.8 hours), and the minimum is 1 (one tenth
-   of a second). Values above the maximum or below the minimum will be
+   maximum is 65535 (about 1.8 hours), and the minimum is 1 (one-tenth
+   of a second). Values above the maximum or below the minimum are
    adjusted with a logged warning. This value may be greater than
-   ``tcp-idle-timeout``, because clients using the EDNS TCP keepalive
+   ``tcp-idle-timeout`` because clients using the EDNS TCP keepalive
    option are expected to use TCP connections for more than one message.
    This value can be updated at runtime by using ``rndc tcp-timeouts``.
 
 ``tcp-advertised-timeout``
-   The timeout value (in units of 100 milliseconds) the server will send
-   in respones containing the EDNS TCP keepalive option. This informs a
+   This sets the timeout value (in units of 100 milliseconds) that the server sends
+   in responses containing the EDNS TCP keepalive option, which informs a
    client of the amount of time it may keep the session open. The
    default is 300 (30 seconds), the maximum is 65535 (about 1.8 hours),
    and the minimum is 0, which signals that the clients must close TCP
@@ -3046,20 +3040,20 @@ Periodic Task Intervals
    This option is obsolete.
 
 ``heartbeat-interval``
-   The server will perform zone maintenance tasks for all zones marked
+   The server performs zone maintenance tasks for all zones marked
    as ``dialup`` whenever this interval expires. The default is 60
    minutes. Reasonable values are up to 1 day (1440 minutes). The
    maximum value is 28 days (40320 minutes). If set to 0, no zone
-   maintenance for these zones will occur.
+   maintenance for these zones occurs.
 
 ``interface-interval``
-   The server will scan the network interface list every ``interface-interval``
-   minutes. The default is 60 minutes. The maximum value is 28 days (40320
-   minutes). If set to 0, interface scanning will only occur the configuration
+   The server scans the network interface list every ``interface-interval``
+   minutes. The default is 60 minutes; the maximum value is 28 days (40320
+   minutes). If set to 0, interface scanning only occurs when the configuration
    file is loaded, or when ``automatic-interface-scan`` is enabled and supported
-   by the operating system. After the scan, the server will begin listening for
+   by the operating system. After the scan, the server begins listening for
    queries on any newly discovered interfaces (provided they are allowed by the
-   ``listen-on`` configuration), and will stop listening on interfaces that have
+   ``listen-on`` configuration), and stops listening on interfaces that have
    gone away. For convenience, TTL-style time unit suffixes may be used to
    specify the value. It also accepts ISO 8601 duration formats.
 
@@ -3069,10 +3063,10 @@ The ``sortlist`` Statement
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The response to a DNS query may consist of multiple resource records
-(RRs) forming a resource record set (RRset). The name server will
-normally return the RRs within the RRset in an indeterminate order (but
+(RRs) forming a resource record set (RRset). The name server
+normally returna the RRs within the RRset in an indeterminate order (but
 see the ``rrset-order`` statement in :ref:`rrset_ordering`). The client resolver code should
-rearrange the RRs as appropriate, that is, using any addresses on the
+rearrange the RRs as appropriate; that is, using any addresses on the
 local net in preference to other addresses. However, not all resolvers
 can do this or are correctly configured. When a client is using a local
 server, the sorting can be performed in the server, based on the
@@ -3080,19 +3074,19 @@ client's address. This only requires configuring the name servers, not
 all the clients.
 
 The ``sortlist`` statement (see below) takes an ``address_match_list`` and
-interprets it in a special way. Each top level statement in the ``sortlist``
+interprets it in a special way. Each top-level statement in the ``sortlist``
 must itself be an explicit ``address_match_list`` with one or two elements. The
-first element (which may be an IP address, an IP prefix, an ACL name or a nested
-``address_match_list``) of each top level list is checked against the source
+first element (which may be an IP address, an IP prefix, an ACL name, or a nested
+``address_match_list``) of each top-level list is checked against the source
 address of the query until a match is found. When the addresses in the first
-element overlap, the first rule to match gets selected.
+element overlap, the first rule to match is selected.
 
 Once the source address of the query has been matched, if the top level
 statement contains only one element, the actual primitive element that
 matched the source address is used to select the address in the response
 to move to the beginning of the response. If the statement is a list of
 two elements, then the second element is interpreted as a topology
-preference list. Each top level element is assigned a distance and the
+preference list. Each top-level element is assigned a distance, and the
 address in the response with the minimum distance is moved to the
 beginning of the response.
 
@@ -3133,13 +3127,12 @@ directly connected networks.
        };
    };
 
-The following example will give reasonable behavior for the local host
-and hosts on directly connected networks. It is similar to the behavior
-of the address sort in BIND 4.9.x. Responses sent to queries from the
-local host will favor any of the directly connected networks. Responses
+The following example illlustrates reasonable behavior for the local host
+and hosts on directly connected networks. Responses sent to queries from the
+local host favor any of the directly connected networks. Responses
 sent to queries from any other hosts on a directly connected network
-will prefer addresses on that same network. Responses to other queries
-will not be sorted.
+prefer addresses on that same network. Responses to other queries
+are not sorted.
 
 ::
 
@@ -3153,7 +3146,7 @@ will not be sorted.
 RRset Ordering
 ^^^^^^^^^^^^^^
 
-When multiple records are returned in an answer it may be useful to
+When multiple records are returned in an answer, it may be useful to
 configure the order of the records placed into the response. The
 ``rrset-order`` statement permits configuration of the ordering of the
 records in a multiple-record response. See also the ``sortlist``
@@ -3173,13 +3166,13 @@ The legal values for ``ordering`` are:
     Records are returned in the order they are defined in the zone file. This option is only available if BIND is configured with "--enable-fixed-rrset" at compile time.
 
 ``random``
-    Records are returned in some random order.
+    Records are returned in a random order.
 
 ``cyclic``
-    Records are returned in a cyclic round-robin order, rotating by one record per query. If BIND is configured with "--enable-fixed-rrset" at compile time, then the initial ordering of the RRset will match the one specified in the zone file; otherwise the initial ordering is indeterminate.
+    Records are returned in a cyclic round-robin order, rotating by one record per query. If BIND is configured with "--enable-fixed-rrset" at compile time, the initial ordering of the RRset matches the one specified in the zone file; otherwise the initial ordering is indeterminate.
 
 ``none``
-    Records are returned in whatever order they were retrieved from the database. This order is indeterminate, but will be consistent as long as the database is not modified. When no ordering is specified, this is the default.
+    Records are returned in whatever order they were retrieved from the database. This order is indeterminate, but remains consistent as long as the database is not modified. When no ordering is specified, this is the default.
 
 For example:
 
@@ -3190,19 +3183,19 @@ For example:
       order cyclic;
    };
 
-will cause any responses for type A records in class IN that have
-"``host.example.com``" as a suffix, to always be returned in random
+causes any responses for type A records in class IN, that have
+``host.example.com`` as a suffix, to always be returned in random
 order. All other records are returned in cyclic order.
 
-If multiple ``rrset-order`` statements appear, they are not combined —
+If multiple ``rrset-order`` statements appear, they are not combined;
 the last one applies.
 
 By default, records are returned in ``random`` order.
 
 .. note::
 
-   In this release of BIND 9, the ``rrset-order`` statement does not
-   support "fixed" ordering by default. Fixed ordering can be enabled at
+   "Fixed" ordering of the ``rrset-order`` statement by default is not
+   currently supported in BIND 9. Fixed ordering can be enabled at
    compile time by specifying "--enable-fixed-rrset" on the "configure"
    command line.
 
@@ -3212,19 +3205,19 @@ Tuning
 ^^^^^^
 
 ``lame-ttl``
-   Sets the number of seconds to cache a lame server indication. 0
+   This sets the number of seconds to cache a lame server indication. 0
    disables caching. (This is **NOT** recommended.) The default is
    ``600`` (10 minutes) and the maximum value is ``1800`` (30 minutes).
 
 ``servfail-ttl``
-   Sets the number of seconds to cache a SERVFAIL response due to DNSSEC
+   This sets the number of seconds to cache a SERVFAIL response due to DNSSEC
    validation failure or other general server failure. If set to ``0``,
    SERVFAIL caching is disabled. The SERVFAIL cache is not consulted if
    a query has the CD (Checking Disabled) bit set; this allows a query
    that failed due to DNSSEC validation to be retried without waiting
    for the SERVFAIL TTL to expire.
 
-   The maximum value is ``30`` seconds; any higher value will be
+   The maximum value is ``30`` seconds; any higher value is
    silently reduced. The default is ``1`` second.
 
 ``min-ncache-ttl``
@@ -3234,33 +3227,33 @@ Tuning
    convenience, TTL-style time unit suffixes may be used to specify the
    value. It also accepts ISO 8601 duration formats.
 
-   The default ``min-ncache-ttl`` is ``0`` seconds.  ``min-ncache-ttl`` cannot
-   exceed 90 seconds and will be truncated to 90 seconds if set to a greater
+   The default ``min-ncache-ttl`` is ``0`` seconds. ``min-ncache-ttl`` cannot
+   exceed 90 seconds and is truncated to 90 seconds if set to a greater
    value.
 
 ``min-cache-ttl``
-   Sets the minimum time for which the server will cache ordinary (positive)
-   answers in seconds. For convenience, TTL-style time unit suffixes may be used
+   This sets the minimum time for which the server caches ordinary (positive)
+   answers, in seconds. For convenience, TTL-style time unit suffixes may be used
    to specify the value. It also accepts ISO 8601 duration formats.
 
    The default ``min-cache-ttl`` is ``0`` seconds. ``min-cache-ttl`` cannot
-   exceed 90 seconds and will be truncated to 90 seconds if set to a greater
+   exceed 90 seconds and is truncated to 90 seconds if set to a greater
    value.
 
 ``max-ncache-ttl``
    To reduce network traffic and increase performance, the server stores
    negative answers. ``max-ncache-ttl`` is used to set a maximum retention time
-   for these answers in the server in seconds.  For convenience, TTL-style time
+   for these answers in the server in seconds. For convenience, TTL-style time
    unit suffixes may be used to specify the value.  It also accepts ISO 8601
    duration formats.
 
    The default ``max-ncache-ttl`` is 10800 seconds (3 hours). ``max-ncache-ttl``
-   cannot exceed 7 days and will be silently truncated to 7 days if set to a
+   cannot exceed 7 days and is silently truncated to 7 days if set to a
    greater value.
 
 ``max-cache-ttl``
-   Sets the maximum time for which the server will cache ordinary (positive)
-   answers in seconds. For convenience, TTL-style time unit suffixes may be used
+   This sets the maximum time for which the server caches ordinary (positive)
+   answers, in seconds. For convenience, TTL-style time unit suffixes may be used
    to specify the value. It also accepts ISO 8601 duration formats.
 
    The default ``max-cache-ttl`` is 604800 (one week). A value of zero may cause
@@ -3269,63 +3262,63 @@ Tuning
 
 ``max-stale-ttl``
    If stale answers are enabled, ``max-stale-ttl`` sets the maximum time
-   for which the server will retain records past their normal expiry to
-   return them as stale records when the servers for those records are
+   for which the server retains records past their normal expiry to
+   return them as stale records, when the servers for those records are
    not reachable. The default is 1 week. The minimum allowed is 1
-   second; a value of 0 will be updated silently to 1 second.
+   second; a value of 0 is updated silently to 1 second.
 
    For stale answers to be returned, they must be enabled, either in the
    configuration file using ``stale-answer-enable`` or via
    ``rndc serve-stale on``.
 
 ``resolver-nonbackoff-tries``
-   Specifies how many retries occur before exponential backoff kicks in. The
+   This specifies how many retries occur before exponential backoff kicks in. The
    default is ``3``.
 
 ``resolver-retry-interval``
-   The base retry interval in milliseconds. The default is ``800``.
+   This sets the base retry interval in milliseconds. The default is ``800``.
 
 ``sig-validity-interval``
-   Specifies the number of days into the future when DNSSEC signatures
+   This specifies the number of days into the future when DNSSEC signatures
    automatically generated as a result of dynamic updates
    (:ref:`dynamic_update`) will expire. There is an optional second
-   field which specifies how long before expiry that the signatures will
-   be regenerated. If not specified, the signatures will be regenerated
-   at 1/4 of base interval. The second field is specified in days if the
-   base interval is greater than 7 days otherwise it is specified in
-   hours. The default base interval is ``30`` days giving a re-signing
-   interval of 7 1/2 days. The maximum values are 10 years (3660 days).
+   field which specifies how long before expiry the signatures will
+   be regenerated. If not specified, the signatures are regenerated
+   at 1/4 of the base interval. The second field is specified in days if the
+   base interval is greater than 7 days; otherwise it is specified in
+   hours. The default base interval is ``30`` days, giving a re-signing
+   interval of 7 1/2 days. The maximum value is 10 years (3660 days).
 
    The signature inception time is unconditionally set to one hour
-   before the current time to allow for a limited amount of clock skew.
+   before the current time, to allow for a limited amount of clock skew.
 
    The ``sig-validity-interval`` can be overridden for DNSKEY records by
    setting ``dnskey-sig-validity``.
 
-   The ``sig-validity-interval`` should be, at least, several multiples
-   of the SOA expire interval to allow for reasonable interaction
+   The ``sig-validity-interval`` should be at least several multiples
+   of the SOA expire interval, to allow for reasonable interaction
    between the various timer and expiry dates.
 
 ``dnskey-sig-validity``
-   Specifies the number of days into the future when DNSSEC signatures
+   This specifies the number of days into the future when DNSSEC signatures
    that are automatically generated for DNSKEY RRsets as a result of
    dynamic updates (:ref:`dynamic_update`) will expire.
    If set to a non-zero value, this overrides the value set by
    ``sig-validity-interval``. The default is zero, meaning
    ``sig-validity-interval`` is used. The maximum value is 3660 days (10
-   years), and higher values will be rejected.
+   years), and higher values are rejected.
 
 ``sig-signing-nodes``
-   Specify the maximum number of nodes to be examined in each quantum
+   This specifies the maximum number of nodes to be examined in each quantum
    when signing a zone with a new DNSKEY. The default is ``100``.
 
 ``sig-signing-signatures``
-   Specify a threshold number of signatures that will terminate
+   This specifies a threshold number of signatures that terminates
    processing a quantum when signing a zone with a new DNSKEY. The
    default is ``10``.
 
 ``sig-signing-type``
-   Specify a private RDATA type to be used when generating signing state
+   This specifies a private RDATA type to be used when generating signing state
    records. The default is ``65534``.
 
    It is expected that this parameter may be removed in a future version
@@ -3353,15 +3346,15 @@ Tuning
    These options are valid for secondary and stub zones, and clamp the SOA
    refresh and retry times to the specified values.
 
-   The following defaults apply. ``min-refresh-time`` 300 seconds,
+   The following defaults apply: ``min-refresh-time`` 300 seconds,
    ``max-refresh-time`` 2419200 seconds (4 weeks), ``min-retry-time``
    500 seconds, and ``max-retry-time`` 1209600 seconds (2 weeks).
 
 ``edns-udp-size``
-   Sets the maximum advertised EDNS UDP buffer size in bytes, to control
+   This sets the maximum advertised EDNS UDP buffer size in bytes, to control
    the size of packets received from authoritative servers in response
-   to recursive queries. Valid values are 512 to 4096 (values outside
-   this range will be silently adjusted to the nearest value within it).
+   to recursive queries. Valid values are 512 to 4096; values outside
+   this range are silently adjusted to the nearest value within it.
    The default value is 4096.
 
    The usual reason for setting ``edns-udp-size`` to a non-default value
@@ -3369,12 +3362,12 @@ Tuning
    fragmented packets and/or block UDP DNS packets that are greater than
    512 bytes.
 
-   When ``named`` first queries a remote server, it will advertise a UDP
+   When ``named`` first queries a remote server, it advertises a UDP
    buffer size of 512, as this has the greatest chance of success on the
    first try.
 
    If the initial query is successful with EDNS advertising a buffer size of
-   512, then ``named`` will advertise progressively larger buffer sizes on
+   512, then ``named`` advertises progressively larger buffer sizes on
    successive queries, until responses begin timing out or ``edns-udp-size`` is
    reached.
 
@@ -3385,9 +3378,9 @@ Tuning
    and IPv6 networks.)
 
 ``max-udp-size``
-   Sets the maximum EDNS UDP message size ``named`` will send in bytes.
-   Valid values are 512 to 4096 (values outside this range will be
-   silently adjusted to the nearest value within it). The default value
+   This sets the maximum EDNS UDP message size that ``named`` sends in bytes.
+   Valid values are 512 to 4096; values outside this range are
+   silently adjusted to the nearest value within it. The default value
    is 4096.
 
    This value applies to responses sent by a server; to set the
@@ -3399,19 +3392,19 @@ Tuning
    bytes. This is independent of the advertised receive buffer
    (``edns-udp-size``).
 
-   Setting this to a low value will encourage additional TCP traffic to
+   Setting this to a low value encourages additional TCP traffic to
    the nameserver.
 
 ``masterfile-format``
-   Specifies the file format of zone files (see :ref:`zonefile_format`).
+   This specifies the file format of zone files (see :ref:`zonefile_format`).
    The default value is ``text``, which
    is the standard textual representation, except for secondary zones, in
-   which the default value is ``raw``. Files in other formats than
+   which the default value is ``raw``. Files in formats other than
    ``text`` are typically expected to be generated by the
    ``named-compilezone`` tool, or dumped by ``named``.
 
-   Note that when a zone file in a different format than ``text`` is
-   loaded, ``named`` may omit some of the checks which would be
+   Note that when a zone file in a format other than ``text`` is
+   loaded, ``named`` may omit some of the checks which are
    performed for a file in the ``text`` format. In particular,
    ``check-names`` checks do not apply for the ``raw`` format. This
    means a zone file in the ``raw`` format must be generated with the
@@ -3425,11 +3418,11 @@ Tuning
    in the configuration file.
 
 ``masterfile-style``
-   Specifies the formatting of zone files during dump when the
-   ``masterfile-format`` is ``text``. (This option is ignored with any
-   other ``masterfile-format``.)
+   This specifies the formatting of zone files during dump when the
+   ``masterfile-format`` is ``text``. This option is ignored with any
+   other ``masterfile-format``.
 
-   When set to ``relative``, records are printed in a multi-line format
+   When set to ``relative``, records are printed in a multi-line format,
    with owner names expressed relative to a shared origin. When set to
    ``full``, records are printed in a single-line format with absolute
    owner names. The ``full`` format is most suitable when a zone file
@@ -3438,30 +3431,30 @@ Tuning
    be edited by hand. The default is ``relative``.
 
 ``max-recursion-depth``
-   Sets the maximum number of levels of recursion that are permitted at
+   This sets the maximum number of levels of recursion that are permitted at
    any one time while servicing a recursive query. Resolving a name may
    require looking up a name server address, which in turn requires
-   resolving another name, etc; if the number of indirections exceeds
+   resolving another name, etc.; if the number of recursion exceeds
    this value, the recursive query is terminated and returns SERVFAIL.
    The default is 7.
 
 ``max-recursion-queries``
-   Sets the maximum number of iterative queries that may be sent while
+   This sets the maximum number of iterative queries that may be sent while
    servicing a recursive query. If more queries are sent, the recursive
-   query is terminated and returns SERVFAIL. Queries to look up top
-   level domains such as "com" and "net" and the DNS root zone are
+   query is terminated and returns SERVFAIL. Queries to look up top-level
+   domains such as "com" and "net", and the DNS root zone, are
    exempt from this limitation. The default is 75.
 
 ``notify-delay``
-   The delay, in seconds, between sending sets of notify messages for a
-   zone. The default is five (5) seconds.
+   This sets the delay, in seconds, between sending sets of notify messages for a
+   zone. The default is 5 seconds.
 
    The overall rate that NOTIFY messages are sent for all zones is
    controlled by ``serial-query-rate``.
 
 ``max-rsa-exponent-size``
-   The maximum RSA exponent size, in bits, that will be accepted when
-   validating. Valid values are 35 to 4096 bits. The default zero (0) is
+   This sets the maximum RSA exponent size, in bits, that is accepted when
+   validating. Valid values are 35 to 4096 bits. The default, zero, is
    also accepted and is equivalent to 4096.
 
 ``prefetch``
@@ -3470,27 +3463,27 @@ Tuning
    immediately, ensuring that the cache always has an answer available.
 
    The ``prefetch`` specifies the "trigger" TTL value at which prefetch
-   of the current query will take place: when a cache record with a
-   lower TTL value is encountered during query processing, it will be
+   of the current query takes place; when a cache record with a
+   lower TTL value is encountered during query processing, it is
    refreshed. Valid trigger TTL values are 1 to 10 seconds. Values
-   larger than 10 seconds will be silently reduced to 10. Setting a
-   trigger TTL to zero (0) causes prefetch to be disabled. The default
+   larger than 10 seconds are silently reduced to 10. Setting a
+   trigger TTL to zero causes prefetch to be disabled. The default
    trigger TTL is ``2``.
 
    An optional second argument specifies the "eligibility" TTL: the
-   smallest *original* TTL value that will be accepted for a record to
+   smallest *original* TTL value that is accepted for a record to
    be eligible for prefetching. The eligibility TTL must be at least six
-   seconds longer than the trigger TTL; if it isn't, ``named`` will
-   silently adjust it upward. The default eligibility TTL is ``9``.
+   seconds longer than the trigger TTL; if not, ``named``
+   silently adjusts it upward. The default eligibility TTL is ``9``.
 
 ``v6-bias``
-   When determining the next nameserver to try preference IPv6
-   nameservers by this many milliseconds. The default is ``50``
+   When determining the next name server to try, this indicates by how many
+   milliseconds to prefer IPv6 name servers. The default is ``50``
    milliseconds.
 
 .. _builtin:
 
-Built-in server information zones
+Built-in Server Information Zones
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The server provides some helpful diagnostic information through a number
