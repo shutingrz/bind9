@@ -88,7 +88,7 @@ AC_CANONICAL_HOST
 build_windows=no
 AS_CASE([$host_os],
 	[mingw*],[build_windows=yes])
-AM_CONDITIONAL([WINDOWS_BUILD],[test "$build_windows" = "yes"])
+AM_CONDITIONAL([WIN32],[test "$build_windows" = "yes"])
 
 #
 # Compiler compatibility flags

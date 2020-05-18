@@ -95,7 +95,7 @@ libisc_la_HEADERS =			\
 	include/isc/utf8.h		\
 	include/isc/util.h
 
-if BUILD_WINDOWS
+if WIN32
 libisc_la_HEADERS +=			\
 	win32/include/isc/align.h	\
 	win32/include/isc/bind_registry.h	\
@@ -113,7 +113,7 @@ libisc_la_HEADERS +=			\
 	win32/include/isc/syslog.h	\
 	win32/include/isc/time.h	\
 	win32/include/isc/win32os.h
-else BUILD_WINDOWS
+else WIN32
 libisc_la_HEADERS +=			\
 	unix/include/isc/align.h	\
 	unix/include/isc/dir.h		\
@@ -125,7 +125,7 @@ libisc_la_HEADERS +=			\
 	unix/include/isc/stdtime.h	\
 	unix/include/isc/syslog.h	\
 	unix/include/isc/time.h
-endif BUILD_WINDOWS
+endif WIN32
 
 pk11dir = $(includedir)/pk11
 pk11_HEADERS =				\
@@ -221,7 +221,7 @@ libisc_la_SOURCES =		\
 	task_p.h		\
 	timer_p.h
 
-if BUILD_WINDOWS
+if WIN32
 libisc_la_SOURCES +=		\
 	win32/DLLMain.c		\
 	win32/dir.c		\
@@ -244,7 +244,7 @@ libisc_la_SOURCES +=		\
 	win32/syslog.c		\
 	win32/time.c		\
 	win32/win32os.c
-else BUILD_WINDOWS
+else WIN32
 libisc_la_SOURCES +=		\
 	unix/pk11_api.c		\
 	unix/dir.c		\
@@ -262,7 +262,7 @@ libisc_la_SOURCES +=		\
 	unix/stdtime.c		\
 	unix/syslog.c		\
 	unix/time.c
-endif
+endif WIN32
 
 libisc_la_CPPFLAGS =		\
 	$(AM_CPPFLAGS)		\
