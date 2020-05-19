@@ -1407,19 +1407,6 @@ AC_CHECK_HEADERS(locale.h)
 AC_CHECK_FUNCS(setlocale)
 
 #
-# Look for w3m
-#
-
-AC_PATH_PROGS(W3M, w3m, w3m)
-AC_SUBST(W3M)
-
-#
-# Look for pandoc
-#
-AC_PATH_PROG(PANDOC, pandoc, pandoc)
-AC_SUBST(PANDOC)
-
-#
 # was --with-tuning specified?
 #
 AC_ARG_WITH([tuning],
