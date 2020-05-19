@@ -208,7 +208,6 @@ libisc_la_SOURCES =		\
 	timer.c			\
 	tm.c			\
 	utf8.c			\
-	xoshiro128starstar.c	\
 	pthreads/condition.c	\
 	pthreads/mutex.c	\
 	pthreads/thread.c	\
@@ -253,7 +252,8 @@ if HAVE_CMOCKA
 SUBDIRS = tests
 endif
 
-EXTRA_DIST = 		\
-	api		\
-	fsaccess.c	\
+EXTRA_DIST = 			\
+	api			\
+	fsaccess.c		\
+	xoshiro128starstar.c	\
 	unix/ifiter_getifaddrs.c
