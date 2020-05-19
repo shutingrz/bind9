@@ -15,6 +15,9 @@ dist_sysconf_DATA = bind.keys
 EXTRA_DIST = 			\
 	util/bindkeys.pl	\
 	contrib			\
+	CODE_OF_CONDUCT.md	\
+	CONTRIBUTING.md		\
+	HISTORY.md		\
 	OPTIONS.md		\
 	PLATFORMS.md		\
 	README.md
