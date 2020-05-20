@@ -17,7 +17,7 @@ list1=$(
 	sort -u
 )
 list2=$(
-	awk '$1 == "|" && $3 == "|" && $NF == "|" && $2 ~ /^``.*``$/ { print $2 }' doc/arm/logging-categories.rst |
+	awk '/^``[a-z][-a-z]*[a-z]``$/ { print $0 }' doc/arm/logging-categories.rst |
 	sed 's/``//g' |
 	sort -u
 )
